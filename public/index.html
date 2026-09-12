@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>주택 매매·분양·전세 자금 조달 시뮬레이터</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Pretendard 폰트 -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Marked.js (마크다운 파서) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- 커스텀 스타일시트 -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col font-sans">
+
+  <!-- 상단 네비게이션 헤더 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+            <i data-lucide="home" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-lg text-slate-900 leading-tight">주택 매매·분양·전세 자금 조달 시뮬레이터</h1>
+            <p class="text-xs text-slate-500 flex items-center gap-1.5">
+              <span>실제 공시 금리 & 생애최초/무주택 세제 연동</span>
+              <span id="header-live-badge" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                실시간 동기화 기준
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <!-- 모드 전환 탭 (매매, 분양, 전세대출, 가구조건, 금리표) -->
+        <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <button id="tab-resale" class="tab-btn active px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5">
+            <i data-lucide="building" class="w-4 h-4"></i>
+            <span>구축·기축 매매</span>
+          </button>
+          <button id="tab-presale" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+            <i data-lucide="construction" class="w-4 h-4"></i>
+            <span>신축 분양·청약</span>
+          </button>
+          <button id="tab-jeonse" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+            <i data-lucide="key" class="w-4 h-4"></i>
+            <span>전세자금대출</span>
+          </button>
+          <button id="tab-household" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            <span>가구 조건·심사</span>
+          </button>
+          <button id="tab-rates" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+            <i data-lucide="percent" class="w-4 h-4"></i>
+            <span>금리/세제 기준표</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 레이아웃 -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+    
+    <!-- 시뮬레이터 메인 뷰 (매매, 분양, 전세) -->
+    <div id="simulator-view" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- 좌측: 입력 컨트롤 사이드바 (5 cols) -->
+      <aside class="lg:col-span-4 space-y-6">
+        
+        <!-- 0. 현재 적용 가구 조건 요약 & 원클릭 변경 배너 카드 -->
+        <div class="bg-gradient-to-r from-indigo-50/90 to-blue-50/90 p-4 rounded-2xl border border-indigo-100 shadow-xs space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-950">
+              <i data-lucide="users" class="w-4 h-4 text-indigo-600 flex-shrink-0"></i>
+              <span>가구 조건</span>
+              <span id="sidebar-active-profile-name" class="active-profile-badge text-[10.5px] font-extrabold text-indigo-700 bg-white px-2 py-0.5 rounded-md border border-indigo-200">
+                맞벌이 7.7천 (기본)
+              </span>
+            </div>
+            <button type="button" id="btn-goto-household-settings" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] font-bold transition shadow-xs flex items-center gap-1 flex-shrink-0">
+              <i data-lucide="sliders" class="w-3 h-3"></i>
+              <span>조건 변경</span>
+            </button>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-slate-600 bg-white/90 p-2 rounded-xl border border-indigo-50/80">
+            <div id="sidebar-household-summary-text" class="truncate font-semibold text-slate-700">
+              👫 기혼 7년+ · 무자녀 · 생초감면
+            </div>
+            <div id="sidebar-household-diagnosis-badge" class="flex-shrink-0 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+              디딤돌 불가 / 시중 4.2%
+            </div>
+          </div>
+        </div>
+
+        <!-- 빠른 시나리오 프리셋 -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500"></i>
+              실전 시나리오 프리셋
+            </span>
+            <span id="preset-mode-badge" class="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+              매매 모드
+            </span>
+          </div>
+
+          <!-- 매매 모드 프리셋 -->
+          <div id="resale-presets" class="grid grid-cols-2 gap-2">
+            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition" data-price="420000000" data-equity="250000000" data-rate="4.2">
+              📌 4.2억 구축 매매
+            </button>
+            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition" data-price="450000000" data-equity="250000000" data-rate="4.2">
+              📌 4.5억 구축 매매 (기본)
+            </button>
+            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition" data-price="470000000" data-equity="250000000" data-rate="4.2">
+              📌 4.7억 구축 매매
+            </button>
+            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition" data-price="500000000" data-equity="250000000" data-rate="4.2">
+              📌 5.0억 구축 매매
+            </button>
+          </div>
+
+          <!-- 분양 모드 프리셋 -->
+          <div id="presale-presets" class="hidden grid grid-cols-2 gap-2">
+            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition" data-price="400000000" data-equity="250000000" data-rate="4.2">
+              🏗️ 4.0억 분양
+            </button>
+            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition" data-price="450000000" data-equity="250000000" data-rate="4.2">
+              🏗️ 4.5억 분양 (기본)
+            </button>
+            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition" data-price="500000000" data-equity="250000000" data-rate="4.2">
+              🏗️ 5.0억 분양
+            </button>
+            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition" data-price="600000000" data-equity="250000000" data-rate="4.2">
+              🏗️ 6.0억 분양
+            </button>
+          </div>
+
+          <!-- 전세 모드 프리셋 (HUG 전세보증 기준 2.8억, 3억, 3.3억, 3.5억 / 자기자본 2.5억) -->
+          <div id="jeonse-presets" class="hidden grid grid-cols-2 gap-2">
+            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition" data-price="280000000" data-equity="250000000" data-rate="3.6">
+              🔑 2.8억 (HUG 안심)
+            </button>
+            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition" data-price="300000000" data-equity="250000000" data-rate="3.6">
+              🔑 3.0억 (HUG 안심)
+            </button>
+            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition" data-price="330000000" data-equity="250000000" data-rate="3.6">
+              🔑 3.3억 (HUG 안심)
+            </button>
+            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition" data-price="350000000" data-equity="250000000" data-rate="3.6">
+              🔑 3.5억 (HUG 안심)
+            </button>
+          </div>
+        </div>
+
+        <!-- 핵심 파라미터 입력 폼 -->
+        <form id="calc-form" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+          
+          <!-- 1. 목표 가격 (매매가 / 분양가 / 전세보증금) -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label id="lbl-price" class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                <i data-lucide="tag" class="w-4 h-4 text-blue-600"></i>
+                매매 희망 금액
+              </label>
+              <span id="txt-price-display" class="text-base font-extrabold text-blue-600">4억 5,000만 원</span>
+            </div>
+            <div class="relative">
+              <input type="text" inputmode="numeric" id="inp-price" class="w-full pl-3 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-right" value="450,000,000">
+              <span class="absolute right-3.5 top-2.5 text-xs font-semibold text-slate-400">원</span>
+            </div>
+            <!-- 간편 증감 버튼 -->
+            <div class="flex gap-1.5 mt-2">
+              <button type="button" class="price-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition" data-delta="-50000000">-5천만</button>
+              <button type="button" class="price-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition" data-delta="-10000000">-1천만</button>
+              <button type="button" class="price-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition" data-delta="10000000">+1천만</button>
+              <button type="button" class="price-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition" data-delta="50000000">+5천만</button>
+              <button type="button" class="price-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition" data-delta="100000000">+1억</button>
+            </div>
+          </div>
+
+          <!-- 2. 보유 순자산 (전세보증금 / 자기자본 현금) -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label id="lbl-equity" class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                <i data-lucide="wallet" class="w-4 h-4 text-emerald-600"></i>
+                보유 순자산 (전세보증금/현금)
+              </label>
+              <span id="txt-equity-display" class="text-sm font-bold text-emerald-600">2억 5,000만 원</span>
+            </div>
+            <div class="relative">
+              <input type="text" inputmode="numeric" id="inp-equity" class="w-full pl-3 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white text-right" value="250,000,000">
+              <span class="absolute right-3.5 top-2.5 text-xs font-semibold text-slate-400">원</span>
+            </div>
+            <!-- 순자산 간편 증감 버튼 -->
+            <div class="flex gap-1.5 mt-2">
+              <button type="button" class="equity-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-slate-700 transition" data-delta="-50000000">-5천만</button>
+              <button type="button" class="equity-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-slate-700 transition" data-delta="-10000000">-1천만</button>
+              <button type="button" class="equity-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-slate-700 transition" data-delta="10000000">+1천만</button>
+              <button type="button" class="equity-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-slate-700 transition" data-delta="50000000">+5천만</button>
+              <button type="button" class="equity-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-slate-700 transition" data-delta="100000000">+1억</button>
+            </div>
+          </div>
+
+          <!-- 3. 대출 금리 선택 및 설정 -->
+          <div class="space-y-2.5">
+            <label class="text-sm font-bold text-slate-900 flex items-center justify-between">
+              <span class="flex items-center gap-1.5">
+                <i data-lucide="badge-percent" class="w-4 h-4 text-purple-600"></i>
+                <span id="lbl-rate-title">주택담보대출 적용 금리</span>
+              </span>
+              <span id="txt-rate-display" class="text-sm font-extrabold text-purple-600">연 4.2%</span>
+            </label>
+
+            <!-- 매매/분양용 금리 프리셋 라디오 -->
+            <div id="mortgage-rate-radios" class="grid grid-cols-2 gap-2 text-xs">
+              <label id="label-rate-didimdol" class="rate-radio-card flex items-start p-2.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
+                <input type="radio" name="rate-preset" value="3.0" class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
+                <div class="ml-2 flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="font-bold text-slate-800 whitespace-nowrap">디딤돌대출</span>
+                    <span id="badge-rate-didimdol" class="rate-radio-badge text-[9.5px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap">부부합산</span>
+                  </div>
+                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">연 3.0% (생애최초·5억)</div>
+                </div>
+              </label>
+              <label id="label-rate-bogeumjari" class="rate-radio-card flex items-start p-2.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
+                <input type="radio" name="rate-preset" value="3.8" class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
+                <div class="ml-2 flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="font-bold text-slate-800 whitespace-nowrap">보금자리론</span>
+                    <span id="badge-rate-bogeumjari" class="rate-radio-badge text-[9.5px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap">부부합산</span>
+                  </div>
+                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">연 3.8% (우대·6억이하)</div>
+                </div>
+              </label>
+              <label id="label-rate-commercial" class="rate-radio-card flex items-start p-2.5 rounded-xl border-2 border-purple-500 bg-purple-50/60 shadow-sm cursor-pointer transition">
+                <input type="radio" name="rate-preset" value="4.2" checked class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
+                <div class="ml-2 flex-1 min-w-0">
+                  <div class="font-bold text-purple-900 whitespace-nowrap">시중은행 주담대</div>
+                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">연 4.2% (1금융권·LTV80%)</div>
+                </div>
+              </label>
+              <label id="label-rate-custom" class="rate-radio-card flex items-start p-2.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
+                <input type="radio" name="rate-preset" value="custom" class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
+                <div class="ml-2 flex-1 min-w-0">
+                  <div class="font-bold text-slate-800 whitespace-nowrap">직접 입력</div>
+                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">자유 금리 설정</div>
+                </div>
+              </label>
+            </div>
+
+            <!-- 전세대출 전용 금리 프리셋 라디오 -->
+            <div id="jeonse-rate-radios" class="hidden grid grid-cols-2 gap-2 text-xs">
+              <label id="label-rate-jeonse-hug" class="rate-radio-card flex items-start p-2.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
+                <input type="radio" name="jeonse-rate-preset" value="3.6" checked class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
+                <div class="ml-2 flex-1 min-w-0">
+                  <div class="font-bold text-slate-800 whitespace-nowrap">HUG 안심전세</div>
+                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">연 3.6% (반환보증 100%)</div>
+                </div>
+              </label>
+              <label id="label-rate-jeonse-bank" class="rate-radio-card flex items-start p-2.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
+                <input type="radio" name="jeonse-rate-preset" value="4.1" class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
+                <div class="ml-2 flex-1 min-w-0">
+                  <div class="font-bold text-slate-800 whitespace-nowrap">시중은행 전세대출</div>
+                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">연 4.1% (SGI/HF 표준)</div>
+                </div>
+              </label>
+              <label id="label-rate-jeonse-newlywed" class="rate-radio-card flex items-start p-2.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
+                <input type="radio" name="jeonse-rate-preset" value="2.4" class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
+                <div class="ml-2 flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="font-bold text-slate-800 whitespace-nowrap">신혼 버팀목</span>
+                    <span id="badge-rate-beotimmok-newlywed" class="rate-radio-badge text-[9.5px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap">부부합산</span>
+                  </div>
+                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">연 2.4% (혼인 7년 이내)</div>
+                </div>
+              </label>
+              <label id="label-rate-jeonse-youth" class="rate-radio-card flex items-start p-2.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
+                <input type="radio" name="jeonse-rate-preset" value="2.1" class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
+                <div class="ml-2 flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="font-bold text-slate-800 whitespace-nowrap">청년 버팀목</span>
+                    <span id="badge-rate-beotimmok-youth" class="rate-radio-badge text-[9.5px] bg-indigo-100 text-indigo-800 font-bold px-1.5 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap">단독전용</span>
+                  </div>
+                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">연 2.1% (만19~34세)</div>
+                </div>
+              </label>
+            </div>
+
+            <!-- 금리 슬라이더 / 수치 입력 -->
+            <div class="flex items-center gap-3 pt-1">
+              <input type="range" id="rng-rate" min="1.5" max="7.0" step="0.1" value="4.2" class="w-full accent-purple-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer">
+              <div class="relative w-24 flex-shrink-0">
+                <input type="number" id="inp-rate" min="1.0" max="15.0" step="0.1" value="4.2" class="w-full pl-2 pr-6 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-right focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <span class="absolute right-2 top-1 text-xs text-slate-400 font-semibold">%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. 대출 만기 및 상환 방식 -->
+          <div class="grid grid-cols-2 gap-4">
+            <div id="container-loan-years">
+              <label class="text-xs font-bold text-slate-700 block mb-1">대출 만기 기간</label>
+              <select id="sel-loan-years" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500">
+                <option value="20">20년 만기</option>
+                <option value="30" selected>30년 만기 (표준)</option>
+                <option value="35">35년 만기</option>
+                <option value="40">40년 만기</option>
+                <option value="50">50년 만기 (보금자리)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-700 block mb-1">상환 방식</label>
+              <select id="sel-repay-type" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500">
+                <option value="equal-payment" selected>원리금균등분할</option>
+                <option value="interest-only">만기일시상환 (월 이자만)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 6. 부대비용 세부 설정 (필수 취득 vs 선택 입주 이원화) -->
+          <details id="details-custom-extra" open class="group text-xs border border-slate-200 rounded-xl p-3 bg-white space-y-3">
+            <summary class="font-bold text-slate-800 cursor-pointer flex items-center justify-between select-none">
+              <span class="flex items-center gap-1.5">
+                <i data-lucide="sliders" class="w-3.5 h-3.5 text-blue-600"></i>
+                부대비용 (필수 취득 vs 선택 입주) 미세조정
+              </span>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 group-open:rotate-180 transition"></i>
+            </summary>
+
+            <div class="pt-2 space-y-3 border-t border-slate-100">
+              <!-- 1) 필수 취득·거래비용 실시간 요약 카드 -->
+              <div class="p-2.5 bg-blue-50/60 rounded-xl border border-blue-100 space-y-1.5">
+                <div class="flex justify-between items-center text-xs font-bold text-blue-900">
+                  <span class="flex items-center gap-1">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-600"></i>
+                    [필수] 취득·거래비용 (법정)
+                  </span>
+                  <span id="txt-mandatory-expense-sum" class="font-extrabold text-blue-700">약 497만 원</span>
+                </div>
+                <div class="text-[10px] text-blue-800 leading-tight space-y-0.5">
+                  <div class="flex justify-between">
+                    <span>• 취득세+지방교육세 (생초감면)</span>
+                    <span id="txt-mandatory-tax-detail" class="font-semibold">약 185만 원</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>• 공인중개사 중개보수</span>
+                    <span id="txt-mandatory-brokerage-detail" class="font-semibold">약 154만 원</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>• 법무사/등기/채권할인/인지세</span>
+                    <span id="txt-mandatory-reg-detail" class="font-semibold">약 158만 원</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2) 선택적 입주·정비비용 설정 카드 -->
+              <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-800">
+                    <input type="checkbox" id="chk-include-movein" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                    <span>[선택] 입주·수리비 예산 포함</span>
+                  </label>
+                  <span id="txt-optional-expense-sum" class="text-xs font-bold text-indigo-600">약 1,511만 원</span>
+                </div>
+
+                <div id="container-optional-inputs" class="space-y-2 pt-1 border-t border-slate-200/60">
+                  <!-- 도배/장판/샷시/수리 -->
+                  <div>
+                    <div class="flex justify-between items-center mb-1">
+                      <label id="lbl-custom-extra" class="text-[11px] font-semibold text-slate-700">도배·장판·샷시·기본수리</label>
+                      <span id="txt-custom-extra-display" class="text-[11px] font-bold text-indigo-600">1,511만 원</span>
+                    </div>
+                    <div class="relative">
+                      <input type="text" inputmode="numeric" id="inp-custom-extra" placeholder="자동 표준 산정" class="w-full pl-2 pr-8 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-right">
+                      <span class="absolute right-2 top-1.5 text-[11px] text-slate-400">원</span>
+                    </div>
+                    <div class="flex gap-1 mt-1">
+                      <button type="button" class="refurbish-adjust-btn flex-1 py-0.5 text-[10px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="-5000000">-500만</button>
+                      <button type="button" class="refurbish-adjust-btn flex-1 py-0.5 text-[10px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="3000000">+300만</button>
+                      <button type="button" class="refurbish-adjust-btn flex-1 py-0.5 text-[10px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="5000000">+500만</button>
+                    </div>
+                  </div>
+
+                  <!-- 가구/가전/포장이사비 -->
+                  <div>
+                    <div class="flex justify-between items-center mb-1">
+                      <label class="text-[11px] font-semibold text-slate-700">가구·가전·이사비 예산</label>
+                      <span id="txt-movein-extra-display" class="text-[11px] font-bold text-indigo-600">0원</span>
+                    </div>
+                    <div class="relative">
+                      <input type="text" inputmode="numeric" id="inp-movein-extra" placeholder="0" value="0" class="w-full pl-2 pr-8 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-right">
+                      <span class="absolute right-2 top-1.5 text-[11px] text-slate-400">원</span>
+                    </div>
+                    <div class="flex gap-1 mt-1">
+                      <button type="button" class="movein-adjust-btn flex-1 py-0.5 text-[10px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="-1000000">-100만</button>
+                      <button type="button" class="movein-adjust-btn flex-1 py-0.5 text-[10px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="1000000">+100만</button>
+                      <button type="button" class="movein-adjust-btn flex-1 py-0.5 text-[10px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="3000000">+300만</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 단기 신용대출 금리 -->
+              <div>
+                <label class="text-[11px] font-medium text-slate-600 block mb-1">계약금 단기 신용대출 금리</label>
+                <div class="relative">
+                  <input type="number" id="inp-credit-rate" value="4.5" step="0.1" class="w-full pl-2 pr-6 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-right">
+                  <span class="absolute right-2 top-1.5 text-[11px] text-slate-400">%</span>
+                </div>
+              </div>
+            </div>
+          </details>
+
+        </form>
+
+      </aside>
+
+      <!-- 우측: 결과 대시보드 & 보고서 영역 (7 cols) -->
+      <section class="lg:col-span-8 space-y-6">
+        
+        <!-- 상단 툴바: 뷰 모드 전환 & 액션 버튼 -->
+        <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center bg-slate-100 p-1 rounded-xl">
+            <button id="view-dashboard-btn" class="view-mode-btn active px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+              <span>대시보드 그래픽 뷰</span>
+            </button>
+            <button id="view-markdown-btn" class="view-mode-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+              <span>마크다운 보고서 뷰</span>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="btn-copy-md" class="px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition flex items-center gap-1.5 border border-slate-200">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span>MD 복사</span>
+            </button>
+            <button id="btn-download-md" class="px-3 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition flex items-center gap-1.5">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>.md 다운로드</span>
+            </button>
+            <button id="btn-print" class="px-3 py-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-xl shadow-sm transition flex items-center gap-1.5">
+              <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+              <span>인쇄/PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 뷰 1: 대시보드 그래픽 뷰 -->
+        <div id="container-dashboard-view" class="space-y-6">
+          
+          <!-- 0. 최종 핵심 요약 카드 (4 Grid) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-4 rounded-2xl text-white shadow-md shadow-blue-500/10">
+              <div class="text-xs font-medium text-blue-100 mb-1 flex items-center justify-between">
+                <span id="card-lbl-total">총 필요 예산</span>
+                <i data-lucide="calculator" class="w-4 h-4 text-blue-200"></i>
+              </div>
+              <div id="card-total-budget" class="text-xl font-extrabold tracking-tight">3억 6,240만 원</div>
+              <div id="card-budget-sub" class="text-[11px] text-blue-100 mt-1">매매가 3.5억 + 부대 1,240만</div>
+            </div>
+
+            <div class="bg-gradient-to-br from-purple-600 to-indigo-600 p-4 rounded-2xl text-white shadow-md shadow-purple-500/10">
+              <div class="text-xs font-medium text-purple-100 mb-1 flex items-center justify-between">
+                <span id="card-lbl-loan">필요 대출 금액</span>
+                <i data-lucide="landmark" class="w-4 h-4 text-purple-200"></i>
+              </div>
+              <div id="card-required-loan" class="text-xl font-extrabold tracking-tight">1억 1,240만 원</div>
+              <div id="card-ltv-badge" class="text-[11px] text-purple-100 mt-1">LTV 32.1% (법정 80% 대비 매우안전)</div>
+            </div>
+
+            <div class="bg-gradient-to-br from-emerald-600 to-teal-600 p-4 rounded-2xl text-white shadow-md shadow-emerald-500/10">
+              <div class="text-xs font-medium text-emerald-100 mb-1 flex items-center justify-between">
+                <span id="card-lbl-monthly">월 원리금 상환액</span>
+                <i data-lucide="coins" class="w-4 h-4 text-emerald-200"></i>
+              </div>
+              <div id="card-monthly-payment" class="text-xl font-extrabold tracking-tight">약 55.0만 원</div>
+              <div id="card-housing-ratio" class="text-[11px] text-emerald-100 mt-1">실수령액의 10.4% (최상급 안정)</div>
+            </div>
+
+            <div class="bg-gradient-to-br from-amber-500 to-orange-500 p-4 rounded-2xl text-white shadow-md shadow-amber-500/10">
+              <div class="text-xs font-medium text-amber-100 mb-1 flex items-center justify-between">
+                <span>월 잉여 저축 여력</span>
+                <i data-lucide="trending-up" class="w-4 h-4 text-amber-200"></i>
+              </div>
+              <div id="card-surplus" class="text-xl font-extrabold tracking-tight">245만~275만</div>
+              <div class="text-[11px] text-amber-100 mt-1">생활비 차감 후 순수 저축 가능</div>
+            </div>
+
+          </div>
+
+          <!-- 1. 자금 조달 구조 및 건전성 지표 (테이블) -->
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h2 id="title-funding-section" class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-5 h-5 text-blue-600"></i>
+              자금 조달 구조 및 핵심 재무 지표
+            </h2>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs text-left">
+                <thead class="bg-slate-100 text-slate-700 font-bold">
+                  <tr>
+                    <th class="px-4 py-2.5 rounded-l-lg">구분</th>
+                    <th class="px-4 py-2.5 text-right">금액</th>
+                    <th class="px-4 py-2.5 rounded-r-lg">산출 근거 및 비고</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-funding-structure" class="divide-y divide-slate-100">
+                  <!-- JS 동적 렌더링 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 2. 대출 조건별 월 상환액 비교 매트릭스 -->
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <h2 id="title-comparison-section" class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="scale" class="w-5 h-5 text-purple-600"></i>
+                대출 금리 및 조건별 월 부담 비교
+              </h2>
+              <span id="txt-compare-loan-amount" class="text-xs font-semibold px-2.5 py-1 bg-purple-50 text-purple-700 rounded-lg">
+                대출 1억 1,240만 원 기준
+              </span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs text-left">
+                <thead class="bg-slate-100 text-slate-700 font-bold">
+                  <tr>
+                    <th class="px-4 py-2.5 rounded-l-lg">적용 대출 조건</th>
+                    <th class="px-4 py-2.5 text-right">월 상환 부담금</th>
+                    <th class="px-4 py-2.5 text-right">소득 대비 비중</th>
+                    <th class="px-4 py-2.5 rounded-r-lg">세부 특징 및 활용 방안</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-loan-comparison" class="divide-y divide-slate-100">
+                  <!-- JS 동적 렌더링 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3. 실전 4단계 타임라인 시나리오 -->
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+            <h2 id="title-timeline-section" class="text-base font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="milestone" class="w-5 h-5 text-emerald-600"></i>
+              실전 4단계 자금 조달 및 실행 타임라인
+            </h2>
+
+            <!-- 타임라인 아이템들 -->
+            <div class="relative border-l-2 border-slate-200 ml-4 pl-6 space-y-8">
+              
+              <!-- 1단계 -->
+              <div class="relative">
+                <span class="absolute -left-[33px] top-0 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-md shadow-blue-500/20">
+                  1
+                </span>
+                <h3 id="timeline-step1-title" class="text-sm font-bold text-slate-900 mb-2">1단계: 매수 계약 체결 및 계약금 납부 (D-3개월)</h3>
+                <div id="timeline-step1-content" class="text-xs text-slate-600 space-y-1.5 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <!-- JS 동적 삽입 -->
+                </div>
+              </div>
+
+              <!-- 2단계 -->
+              <div class="relative">
+                <span class="absolute -left-[33px] top-0 w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-bold shadow-md shadow-purple-500/20">
+                  2
+                </span>
+                <h3 id="timeline-step2-title" class="text-sm font-bold text-slate-900 mb-2">2단계: 주택담보대출 신청 및 DSR 심사 (D-1~2개월)</h3>
+                <div id="timeline-step2-content" class="text-xs text-slate-600 space-y-1.5 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <!-- JS 동적 삽입 -->
+                </div>
+              </div>
+
+              <!-- 3단계 -->
+              <div class="relative">
+                <span class="absolute -left-[33px] top-0 w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-md shadow-emerald-500/20">
+                  3
+                </span>
+                <h3 id="timeline-step3-title" class="text-sm font-bold text-slate-900 mb-2">3단계: 잔금 당일 시간대별 일괄 정산 (D-Day)</h3>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left">
+                      <thead id="thead-step3" class="bg-white text-slate-700 font-bold border-b border-slate-200">
+                        <!-- JS 동적 생성 -->
+                      </thead>
+                      <tbody id="tbody-step3-settlement" class="divide-y divide-slate-200">
+                        <!-- JS 동적 생성 -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4단계 -->
+              <div class="relative">
+                <span class="absolute -left-[33px] top-0 w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold shadow-md shadow-amber-500/20">
+                  4
+                </span>
+                <h3 id="timeline-step4-title" class="text-sm font-bold text-slate-900 mb-2">4단계: 입주 후 가계 재무 안착 및 자산 증식</h3>
+                <div id="timeline-step4-content" class="text-xs text-slate-600 space-y-1.5 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <!-- JS 동적 삽입 -->
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- 4. 전략적 이점 & 주의사항 -->
+          <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg space-y-3">
+            <h2 id="title-strategy-section" class="text-base font-bold flex items-center gap-2 text-amber-400">
+              <i data-lucide="shield-check" class="w-5 h-5"></i>
+              핵심 전략적 이점 및 리스크 방어
+            </h2>
+            <div id="content-strategy-section" class="text-xs text-slate-300 space-y-2 leading-relaxed">
+              <!-- JS 동적 삽입 -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 뷰 2: 마크다운 보고서 뷰 (기존 document/와 100% 동일한 텍스트 렌더링) -->
+        <div id="container-markdown-view" class="hidden bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+          <div id="markdown-rendered-content" class="markdown-body text-slate-800 space-y-4">
+            <!-- marked.js를 통해 파싱된 마크다운이 여기에 들어감 -->
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- [신규 탭] 👥 가구 조건 및 주택 정책 대출 심사 진단 뷰 -->
+    <!-- ======================================================== -->
+    <div id="household-view" class="hidden space-y-6 max-w-5xl mx-auto">
+      
+      <!-- 상단 헤더 배너 카드 -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="users" class="w-5 h-5 text-indigo-600"></i>
+            가구 조건 및 정책 대출 심사 진단 센터
+          </h2>
+          <p class="text-xs text-slate-500 mt-1">
+            부부합산 소득, 혼인 기간, 자녀 수, 무주택 요건에 따라 디딤돌·보금자리론·시중은행 대출 적격 여부와 최적 금리를 실시간 진단합니다.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="badge-household-summary" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800">기혼 7년+ · 무자녀</span>
+          <span id="badge-auto-correct" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-purple-100 text-purple-800 flex items-center gap-1">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> 실시간 자동검증
+          </span>
+        </div>
+      </div>
+
+      <!-- 1. 5대 핵심 가구 조건 사전 설정 (원클릭 비교 카드) -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="bookmark-check" class="w-4 h-4 text-indigo-600"></i>
+            5대 가구 조건 원클릭 사전 설정
+          </h3>
+          <span id="active-profile-badge-tab" class="active-profile-badge text-xs font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-200">
+            맞벌이 7.7천 (기본)
+          </span>
+        </div>
+        <div id="container-profile-presets-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+          <!-- 1. 기본 맞벌이 무자녀 -->
+          <button type="button" class="profile-preset-card active p-3 rounded-xl border-2 border-indigo-500 bg-indigo-50/70 transition text-left flex flex-col justify-between hover:border-indigo-600 shadow-sm group" data-profile="couple-double">
+            <div>
+              <div class="flex items-center justify-between gap-1 mb-1.5">
+                <span class="font-bold text-xs text-indigo-950 whitespace-nowrap truncate">👫 맞벌이 (표준)</span>
+                <span class="profile-card-status-badge text-[10px] font-extrabold text-indigo-700 bg-white px-1.5 py-0.5 rounded shadow-xs border border-indigo-200 whitespace-nowrap flex-shrink-0">선택됨</span>
+              </div>
+              <div class="text-[11px] text-slate-600 whitespace-nowrap truncate">결혼 7년초과 · 0자녀</div>
+              <div class="text-[10.5px] font-semibold text-indigo-700 mt-1 whitespace-nowrap truncate">합산 7,700만 / 생초감면</div>
+            </div>
+            <div class="mt-2.5 text-[10px] text-slate-700 bg-white/90 px-2 py-1 rounded border border-indigo-100 text-center font-bold whitespace-nowrap truncate">
+              시중은행 (4.2%) 대상
+            </div>
+          </button>
+
+          <!-- 2. 외벌이 전략 -->
+          <button type="button" class="profile-preset-card p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition text-left flex flex-col justify-between hover:border-slate-300 group" data-profile="couple-single-earner">
+            <div>
+              <div class="flex items-center justify-between gap-1 mb-1.5">
+                <span class="font-bold text-xs text-slate-800 whitespace-nowrap truncate">💡 외벌이 전환</span>
+                <span class="profile-card-status-badge text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0 border border-slate-200/60">전략특화</span>
+              </div>
+              <div class="text-[11px] text-slate-600 whitespace-nowrap truncate">배우자 서류상 무직 전환</div>
+              <div class="text-[10.5px] font-semibold text-emerald-700 mt-1 whitespace-nowrap truncate">단독 5,120만 인정</div>
+            </div>
+            <div class="mt-2.5 text-[10px] text-emerald-800 bg-emerald-100/60 px-2 py-1 rounded border border-emerald-200 text-center font-bold whitespace-nowrap truncate">
+              디딤돌 3.0% (5.1천 절감)
+            </div>
+          </button>
+
+          <!-- 3. 1자녀 보금자리 -->
+          <button type="button" class="profile-preset-card p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition text-left flex flex-col justify-between hover:border-slate-300 group" data-profile="couple-child1">
+            <div>
+              <div class="flex items-center justify-between gap-1 mb-1.5">
+                <span class="font-bold text-xs text-slate-800 whitespace-nowrap truncate">👶 1자녀 보금자리</span>
+                <span class="profile-card-status-badge text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0 border border-slate-200/60">1자녀특례</span>
+              </div>
+              <div class="text-[11px] text-slate-600 whitespace-nowrap truncate">미성년 자녀 1명 완화</div>
+              <div class="text-[10.5px] font-semibold text-blue-700 mt-1 whitespace-nowrap truncate">합산 7,700만 통과</div>
+            </div>
+            <div class="mt-2.5 text-[10px] text-blue-800 bg-blue-100/60 px-2 py-1 rounded border border-blue-200 text-center font-bold whitespace-nowrap truncate">
+              보금자리 3.8% 승인
+            </div>
+          </button>
+
+          <!-- 4. 신혼부부 7년 이내 -->
+          <button type="button" class="profile-preset-card p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition text-left flex flex-col justify-between hover:border-slate-300 group" data-profile="newlywed">
+            <div>
+              <div class="flex items-center justify-between gap-1 mb-1.5">
+                <span class="font-bold text-xs text-slate-800 whitespace-nowrap truncate">💍 신혼부부</span>
+                <span class="profile-card-status-badge text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0 border border-slate-200/60">신혼특화</span>
+              </div>
+              <div class="text-[11px] text-slate-600 whitespace-nowrap truncate">혼인 7년 이내 우대</div>
+              <div class="text-[10.5px] font-semibold text-pink-700 mt-1 whitespace-nowrap truncate">소득 8.5천 완화 승인</div>
+            </div>
+            <div class="mt-2.5 text-[10px] text-pink-800 bg-pink-100/60 px-2 py-1 rounded border border-pink-200 text-center font-bold whitespace-nowrap truncate">
+              신혼디딤돌 3.0% / 버팀목
+            </div>
+          </button>
+
+          <!-- 5. 1인 단독 세대주 -->
+          <button type="button" class="profile-preset-card p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition text-left flex flex-col justify-between hover:border-slate-300 group" data-profile="single">
+            <div>
+              <div class="flex items-center justify-between gap-1 mb-1.5">
+                <span class="font-bold text-xs text-slate-800 whitespace-nowrap truncate">👤 1인 단독</span>
+                <span class="profile-card-status-badge text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0 border border-slate-200/60">단독</span>
+              </div>
+              <div class="text-[11px] text-slate-600 whitespace-nowrap truncate">단독 세대주 심사</div>
+              <div class="text-[10.5px] font-semibold text-amber-700 mt-1 whitespace-nowrap truncate">연소득 5,000만 원</div>
+            </div>
+            <div class="mt-2.5 text-[10px] text-amber-800 bg-amber-100/60 px-2 py-1 rounded border border-amber-200 text-center font-bold whitespace-nowrap truncate">
+              청년버팀목 · 시중주담대
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. 가계 인적 조건 및 소득 상세 설정 (2열 카드 그리드) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- 좌측: 가구 인적 조건 & 주택 보유 요건 -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-100">
+            <i data-lucide="user-check" class="w-4 h-4 text-blue-600"></i>
+            가구 인적 조건 및 세제 요건
+          </h3>
+
+          <!-- 가구 형태 선택 -->
+          <div>
+            <label class="text-xs font-bold text-slate-700 block mb-1.5">가구 형태</label>
+            <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
+              <label class="household-radio-btn flex items-center justify-center py-2 px-3 rounded-lg text-xs font-bold cursor-pointer transition bg-white text-blue-700 shadow-sm">
+                <input type="radio" name="household-type" value="couple" checked class="hidden">
+                <span class="pointer-events-none flex items-center gap-1.5">👫 기혼 (부부합산)</span>
+              </label>
+              <label class="household-radio-btn flex items-center justify-center py-2 px-3 rounded-lg text-xs font-bold cursor-pointer transition text-slate-600 hover:text-slate-900">
+                <input type="radio" name="household-type" value="single" class="hidden">
+                <span class="pointer-events-none flex items-center gap-1.5">👤 세대주 혼자 (1인)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 혼인 기간 선택 -->
+          <div id="container-marriage-period">
+            <label class="text-xs font-bold text-slate-700 block mb-1.5">혼인 기간 (신혼 여부)</label>
+            <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl text-xs font-bold">
+              <label class="marriage-period-btn flex items-center justify-center py-2 px-3 rounded-lg cursor-pointer transition bg-white text-blue-700 shadow-sm">
+                <input type="radio" name="marriage-period" value="over7" checked class="hidden">
+                <span class="pointer-events-none">결혼 7년 초과 (일반)</span>
+              </label>
+              <label class="marriage-period-btn flex items-center justify-center py-2 px-3 rounded-lg cursor-pointer transition text-slate-600 hover:text-slate-900">
+                <input type="radio" name="marriage-period" value="under7" class="hidden">
+                <span class="pointer-events-none">💍 신혼부부 (7년 이내)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 미성년 자녀 수 -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label class="text-xs font-bold text-slate-700">미성년 자녀 수 (보금자리 소득완화)</label>
+              <span id="txt-child-count-display" class="text-xs font-bold text-blue-600">0자녀 (상한 7,000만)</span>
+            </div>
+            <div class="grid grid-cols-4 gap-2" id="container-child-count">
+              <button type="button" class="child-count-btn active py-2 text-xs font-bold rounded-xl border-2 border-blue-500 bg-blue-50 text-blue-800 transition" data-count="0">0명</button>
+              <button type="button" class="child-count-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white hover:bg-blue-50 text-slate-700 transition" data-count="1">1명 (9천)</button>
+              <button type="button" class="child-count-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white hover:bg-blue-50 text-slate-700 transition" data-count="2">2명 (1억)</button>
+              <button type="button" class="child-count-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white hover:bg-blue-50 text-slate-700 transition" data-count="3">3명+ (1억)</button>
+            </div>
+          </div>
+
+          <!-- 세제 및 무주택 자격 체크 -->
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+            <label id="container-chk-first-home" class="flex items-center gap-2 cursor-pointer text-xs font-bold text-blue-900">
+              <input type="checkbox" id="chk-first-home" checked class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+              <span>생애최초 주택구입 감면 대상 (LTV 80% 허용)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-emerald-900">
+              <input type="checkbox" id="chk-homeless" checked class="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+              <span>세대원 전원 무주택 (정책대출 필수 요건)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 우측: 가계 소득 조건 설정 -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-100">
+            <i data-lucide="wallet" class="w-4 h-4 text-emerald-600"></i>
+            가계 소득 및 수령액 설정
+          </h3>
+
+          <!-- 소득 형태 간편 프리셋 (맞벌이 vs 외벌이 2분할) -->
+          <div>
+            <label class="text-xs font-bold text-slate-700 block mb-1.5">소득 형태 빠른 선택</label>
+            <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl text-xs font-bold">
+              <button type="button" class="quick-income-btn active flex items-center justify-center py-2 px-3 rounded-lg text-xs font-bold cursor-pointer transition bg-white text-blue-700 shadow-sm" data-income-type="double" data-annual="77000000" data-monthly="5300000">
+                <span class="flex items-center gap-1.5">👫 맞벌이</span>
+              </button>
+              <button type="button" class="quick-income-btn flex items-center justify-center py-2 px-3 rounded-lg text-xs font-bold cursor-pointer transition text-slate-600 hover:text-slate-900" data-income-type="single-earner" data-annual="51200000" data-monthly="3700000">
+                <span class="flex items-center gap-1.5">💡 외벌이</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 부부합산 연소득 -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label id="lbl-annual-income" class="text-xs font-bold text-slate-700">부부합산 연소득</label>
+              <span id="txt-annual-income-display" class="text-sm font-extrabold text-blue-600">7,700만 원</span>
+            </div>
+            <div class="relative">
+              <input type="text" inputmode="numeric" id="inp-annual-income" value="77,000,000" class="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 text-right focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white">
+              <span class="absolute right-3.5 top-2.5 text-xs text-slate-400 font-semibold">원</span>
+            </div>
+            <!-- 연소득 증감 버튼 -->
+            <div class="flex gap-1.5 mt-2">
+              <button type="button" class="income-adjust-btn flex-1 py-1 text-xs font-medium bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded-lg text-slate-600 transition" data-delta="-10000000">-1천만</button>
+              <button type="button" class="income-adjust-btn flex-1 py-1 text-xs font-medium bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded-lg text-slate-600 transition" data-delta="5000000">+500만</button>
+              <button type="button" class="income-adjust-btn flex-1 py-1 text-xs font-medium bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded-lg text-slate-600 transition" data-delta="10000000">+1천만</button>
+            </div>
+          </div>
+
+          <!-- 월 실수령액 -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label id="lbl-monthly-income" class="text-xs font-bold text-slate-700">월 실수령액</label>
+              <span id="txt-monthly-income-display" class="text-sm font-extrabold text-indigo-600">530만 원</span>
+            </div>
+            <div class="relative">
+              <input type="text" inputmode="numeric" id="inp-monthly-income" value="5,300,000" class="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 text-right focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white">
+              <span class="absolute right-3.5 top-2.5 text-xs text-slate-400 font-semibold">원</span>
+            </div>
+            <!-- 월 실수령액 증감 버튼 -->
+            <div class="flex gap-1.5 mt-2">
+              <button type="button" class="monthly-income-adjust-btn flex-1 py-1 text-xs font-medium bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 rounded-lg text-slate-600 transition" data-delta="-500000">-50만</button>
+              <button type="button" class="monthly-income-adjust-btn flex-1 py-1 text-xs font-medium bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 rounded-lg text-slate-600 transition" data-delta="100000">+10만</button>
+              <button type="button" class="monthly-income-adjust-btn flex-1 py-1 text-xs font-medium bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 rounded-lg text-slate-600 transition" data-delta="500000">+50만</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. 실시간 정부 정책 대출 적격성 종합 심사 진단 센터 -->
+      <div id="box-eligibility-diagnosis" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="clipboard-check" class="w-4 h-4 text-blue-600"></i>
+              정부 정책 대출 실시간 적격성 종합 진단 (가이드 V5 기준)
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">설정하신 가구 조건 및 소득에 따라 4대 핵심 대출(매매 3종 + 전세 버팀목)의 정부 공식 심사 승인 여부를 실시간 판정합니다.</p>
+          </div>
+          <span class="text-xs text-slate-400 font-medium">조건 변경 시 자동 재판정</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- 디딤돌대출 진단 카드 (매매/분양 주택구입용) -->
+          <div id="card-didimdol-status" class="p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40 transition cursor-pointer flex flex-col justify-between" title="클릭 시 디딤돌 금리(연 3.0%)로 매매 시뮬레이터 즉시 이동">
+            <div>
+              <div class="flex items-center justify-between mb-2 gap-1.5">
+                <span class="font-bold text-xs text-slate-900 whitespace-nowrap">디딤돌대출 (연 3.0%)</span>
+                <span id="badge-didimdol-status" class="text-[10px] px-2 py-0.5 rounded font-extrabold bg-red-100 text-red-700 whitespace-nowrap flex-shrink-0">❌ 부적격</span>
+              </div>
+              <p id="txt-didimdol-reason" class="text-xs text-slate-600 leading-relaxed">소득 7,000만 원 초과 (외벌이 전환 시 가능)</p>
+            </div>
+            <div class="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between gap-1 text-[10px]">
+              <span class="text-slate-400 whitespace-nowrap truncate">기금 주택구입자금</span>
+              <span id="txt-didimdol-apply-action" class="text-emerald-700 font-bold whitespace-nowrap flex-shrink-0 transition">매매 분석 ➔</span>
+            </div>
+          </div>
+
+          <!-- 보금자리론 진단 카드 (매매/분양 주택구입용) -->
+          <div id="card-bogeumjari-status" class="p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40 transition cursor-pointer flex flex-col justify-between" title="클릭 시 보금자리론 금리(연 3.8%)로 매매 시뮬레이터 즉시 이동">
+            <div>
+              <div class="flex items-center justify-between mb-2 gap-1.5">
+                <span class="font-bold text-xs text-slate-900 whitespace-nowrap">보금자리론 (연 3.8%)</span>
+                <span id="badge-bogeumjari-status" class="text-[10px] px-2 py-0.5 rounded font-extrabold bg-red-100 text-red-700 whitespace-nowrap flex-shrink-0">❌ 부적격</span>
+              </div>
+              <p id="txt-bogeumjari-reason" class="text-xs text-slate-600 leading-relaxed">무자녀 상한 7천만 초과 (1자녀 시 9천만 완화)</p>
+            </div>
+            <div class="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between gap-1 text-[10px]">
+              <span class="text-slate-400 whitespace-nowrap truncate">한국주택금융공사</span>
+              <span id="txt-bogeumjari-apply-action" class="text-indigo-700 font-bold whitespace-nowrap flex-shrink-0 transition">매매 분석 ➔</span>
+            </div>
+          </div>
+
+          <!-- 시중은행 주담대 진단 카드 (매매/분양 일반용) -->
+          <div id="card-commercial-status" class="p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-blue-300 hover:bg-blue-50/40 transition cursor-pointer flex flex-col justify-between" title="클릭 시 시중은행 금리(연 4.2%)로 매매 시뮬레이터 즉시 이동">
+            <div>
+              <div class="flex items-center justify-between mb-2 gap-1.5">
+                <span id="lbl-commercial-title" class="font-bold text-xs text-slate-900 whitespace-nowrap">시중은행 주담대 (4.2%)</span>
+                <span id="badge-commercial-status" class="text-[10px] px-2 py-0.5 rounded font-extrabold bg-emerald-100 text-emerald-800 whitespace-nowrap flex-shrink-0">⭕ 승인 적격</span>
+              </div>
+              <p id="txt-commercial-reason" class="text-xs text-slate-600 leading-relaxed">생애최초 LTV 80%, 단독/부부합산 DSR 40% 충족</p>
+            </div>
+            <div class="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between gap-1 text-[10px]">
+              <span class="text-slate-400 whitespace-nowrap truncate">1금융권 시중은행</span>
+              <span id="txt-commercial-apply-action" class="text-blue-700 font-bold whitespace-nowrap flex-shrink-0 transition">매매 분석 ➔</span>
+            </div>
+          </div>
+
+          <!-- 버팀목 전세대출 진단 카드 (전세 임대차자금 전용) -->
+          <div id="card-beotimmok-status" class="p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-teal-300 hover:bg-teal-50/40 transition cursor-pointer flex flex-col justify-between" title="클릭 시 전세대출 금리로 전세대출 시뮬레이터 즉시 이동">
+            <div>
+              <div class="flex items-center justify-between mb-2 gap-1.5">
+                <span id="lbl-beotimmok-title" class="font-bold text-xs text-slate-900 whitespace-nowrap truncate">버팀목 전세대출</span>
+                <span id="badge-beotimmok-status" class="text-[10px] px-2 py-0.5 rounded font-extrabold bg-emerald-100 text-emerald-800 whitespace-nowrap flex-shrink-0">⭕ 신혼 적격</span>
+              </div>
+              <p id="txt-beotimmok-reason" class="text-xs text-slate-600 leading-relaxed">혼인 7년 이내 신혼부부 전용 버팀목 (연 2.4%)</p>
+            </div>
+            <div class="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between gap-1 text-[10px]">
+              <span id="lbl-beotimmok-source" class="text-slate-400 whitespace-nowrap truncate">주택도시기금 버팀목</span>
+              <span id="txt-beotimmok-apply-action" class="text-teal-700 font-bold whitespace-nowrap flex-shrink-0 transition">전세대출 분석 ➔</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 외벌이 전환 시 이자 절감 전략 알림 배너 -->
+        <div id="banner-single-earner-tip" class="p-3.5 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="font-bold text-emerald-950 flex items-center gap-1.5">
+                <span>💡 외벌이 전환 정책대출(디딤돌) 우회 승인 전략</span>
+                <span class="text-[10px] bg-emerald-200/80 text-emerald-900 px-1.5 py-0.2 rounded font-extrabold">절감 특화</span>
+              </div>
+              <p id="txt-single-earner-tip-desc" class="text-[11px] text-emerald-800 mt-0.5">
+                배우자 서류상 무직 처리 시 <span class="font-bold underline">디딤돌 3.0% (30년 총이자 약 5,100만 원 순절감)</span> 즉시 가능!
+              </p>
+            </div>
+          </div>
+          <button type="button" id="btn-apply-single-earner-tip" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+            <span>외벌이 전략 원클릭 적용</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 4. 하단 시뮬레이션 화면 바로가기 액션 바 -->
+      <div class="bg-gradient-to-r from-slate-900 to-indigo-950 p-6 rounded-2xl text-white shadow-md flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h3 class="text-sm md:text-base font-bold flex items-center gap-2">
+            <i data-lucide="arrow-right-circle" class="w-5 h-5 text-indigo-400"></i>
+            설정된 가구 조건으로 실전 시뮬레이션을 시작하세요!
+          </h3>
+          <p class="text-xs text-slate-300 mt-1">위에서 설정하신 가구 조건과 정책 심사 결과가 모든 시뮬레이터에 실시간 반영되어 있습니다.</p>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <button type="button" id="btn-action-goto-resale" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs md:text-sm font-bold transition shadow-md flex items-center gap-1.5">
+            <i data-lucide="building" class="w-4 h-4"></i>
+            <span>구축 매매 분석 ➔</span>
+          </button>
+          <button type="button" id="btn-action-goto-presale" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs md:text-sm font-bold transition shadow-md flex items-center gap-1.5">
+            <i data-lucide="construction" class="w-4 h-4"></i>
+            <span>신축 분양 분석 ➔</span>
+          </button>
+          <button type="button" id="btn-action-goto-jeonse" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs md:text-sm font-bold transition shadow-md flex items-center gap-1.5">
+            <i data-lucide="key" class="w-4 h-4"></i>
+            <span>전세대출 분석 ➔</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 최신 금리 및 세제 기준표 뷰 (상단 5번째 탭) -->
+    <!-- 금리 및 세제 기준표 뷰 (주택마련대출 vs 전세자금대출 분리 개편) -->
+    <div id="rates-view" class="hidden space-y-6">
+      
+      <!-- 기준표 최상단 헤더 & 카테고리 필터 서브 탭 -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+          <div>
+            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="landmark" class="w-5 h-5 text-blue-600"></i>
+              정부 정책금융, 주택마련대출 및 전세자금대출 공시 기준표
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">국토교통부·주택도시기금, 한국주택금융공사(HF), HUG 주택도시보증공사, 은행연합회 최신 공시 기준</p>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <span id="rates-standard-date" class="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg border border-slate-200">
+              기준일자: 2026.09.04 (실시간 동기화)
+            </span>
+            <button id="btn-sync-rates" type="button" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg border border-blue-200 flex items-center gap-1.5 transition">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              <span>공시 금리 새로고침</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 기준표 대분류 카테고리 서브 필터 탭 -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" id="btn-filter-all-rates" class="rates-filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-sm transition">
+            🔘 전체 한눈에 보기
+          </button>
+          <button type="button" id="btn-filter-purchase-rates" class="rates-filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition flex items-center gap-1.5">
+            <i data-lucide="home" class="w-3.5 h-3.5 text-blue-600"></i>
+            🏠 1. 주택마련 (매매·분양) 대출 & 세제
+          </button>
+          <button type="button" id="btn-filter-jeonse-rates" class="rates-filter-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition flex items-center gap-1.5">
+            <i data-lucide="key" class="w-3.5 h-3.5 text-emerald-600"></i>
+            🔑 2. 전세자금대출 & 임대차 기준
+          </button>
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- [대분류 1] 🏠 주택마련 (매매·구입·분양) 대출 및 세제 기준표 -->
+      <!-- ======================================================== -->
+      <div id="section-purchase-rates" class="space-y-6">
+        
+        <!-- 대분류 1 헤더 카드 -->
+        <div class="bg-gradient-to-r from-blue-900 to-indigo-900 p-5 rounded-2xl text-white shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-md bg-blue-500/30 text-blue-200 text-xs font-extrabold tracking-wider border border-blue-400/30">
+                CATEGORY 1
+              </span>
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                🏠 주택마련 (기축 매매 & 신축 분양) 대출 및 세제 기준
+              </h3>
+            </div>
+            <p class="text-xs text-blue-200">생애최초 무주택자 및 서민·실수요자 주택구입용 정책모기지·시중은행 주담대 및 취득세 기준</p>
+          </div>
+          <span class="text-xs font-semibold px-3 py-1 bg-white/10 rounded-xl text-blue-100 border border-white/15">
+            LTV 최대 80% / DSR 규제 적용
+          </span>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+          
+          <!-- 1-1. 디딤돌 대출 금리표 (매매용) -->
+          <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <h4 class="text-sm font-bold text-blue-950 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                  1. 주택도시기금 내집마련 디딤돌대출 (정부 정책모기지)
+                </h4>
+                <p class="text-[11px] text-blue-700 mt-0.5">대상: 부부합산 연소득 6천만(생초·2자녀 7천만, 신혼 8.5천만) 이하 | 주택가격 5억(신혼·2자녀 6억) 이하 | 한도 일반 2.0억(생초 2.4억, 신혼·2자녀 3.2억)</p>
+              </div>
+              <button type="button" class="apply-rate-btn px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg shadow-sm transition flex items-center gap-1" data-rate="3.0" data-mode="resale">
+                ⚡ 연 3.0% 디딤돌 적용
+              </button>
+            </div>
+            <table class="w-full text-xs text-left border border-blue-200 rounded-xl overflow-hidden bg-white">
+              <thead class="bg-blue-100/70 text-blue-900 font-bold">
+                <tr>
+                  <th class="px-4 py-2">소득 구간</th>
+                  <th class="px-4 py-2 text-center">10년 만기</th>
+                  <th class="px-4 py-2 text-center">15년 만기</th>
+                  <th class="px-4 py-2 text-center">20년 만기</th>
+                  <th class="px-4 py-2 text-center">30년 만기</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-blue-100 text-slate-700">
+                <tr>
+                  <td class="px-4 py-2 font-medium">연소득 2천만 원 이하</td>
+                  <td class="px-4 py-2 text-center">연 2.85%</td>
+                  <td class="px-4 py-2 text-center">연 2.95%</td>
+                  <td class="px-4 py-2 text-center">연 3.05%</td>
+                  <td class="px-4 py-2 text-center font-bold text-blue-600">연 3.15%</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-2 font-medium">연소득 2천만 ~ 4천만 원 이하</td>
+                  <td class="px-4 py-2 text-center">연 3.20%</td>
+                  <td class="px-4 py-2 text-center">연 3.30%</td>
+                  <td class="px-4 py-2 text-center">연 3.40%</td>
+                  <td class="px-4 py-2 text-center font-bold text-blue-600">연 3.50%</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-2 font-medium">연소득 4천만 ~ 6천만 원 이하</td>
+                  <td class="px-4 py-2 text-center">연 3.55%</td>
+                  <td class="px-4 py-2 text-center">연 3.65%</td>
+                  <td class="px-4 py-2 text-center">연 3.75%</td>
+                  <td class="px-4 py-2 text-center font-bold text-blue-600">연 3.85%</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-2 font-medium">연소득 6천만 ~ 8.5천만 원 이하 (생애최초/신혼)</td>
+                  <td class="px-4 py-2 text-center">연 3.85%</td>
+                  <td class="px-4 py-2 text-center">연 3.95%</td>
+                  <td class="px-4 py-2 text-center">연 4.05%</td>
+                  <td class="px-4 py-2 text-center font-bold text-blue-600">연 4.15%</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="flex flex-wrap items-center justify-between gap-2 mt-2 text-[11px] text-blue-800">
+              <span>* 생애최초 주택구입자 0.2%p 우대금리 적용 시 최저 연 2.65% ~ 3.0%대 진입 가능</span>
+              <span class="font-bold text-amber-700">⚠️ 기혼자는 법정 규정상 '부부합산 소득 심사' 필수</span>
+            </div>
+          </div>
+
+          <!-- 1-2. 보금자리론 및 시중은행 주담대 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- 보금자리론 -->
+            <div class="p-4 bg-purple-50/50 rounded-xl border border-purple-200 space-y-3">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-bold text-purple-950 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-purple-600"></span>
+                  2. 한국주택금융공사(HF) 보금자리론
+                </h4>
+                <button type="button" class="apply-rate-btn px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-bold rounded-lg shadow-sm transition flex items-center gap-1" data-rate="3.8" data-mode="resale">
+                  ⚡ 연 3.8% 우대 적용
+                </button>
+              </div>
+              <div class="p-3.5 bg-white rounded-lg border border-purple-100 text-xs space-y-2 text-slate-700">
+                <div class="flex justify-between"><span>아낌e 기본 고시금리:</span><span class="font-bold">연 4.90% ~ 5.20%</span></div>
+                <div class="flex justify-between"><span>우대금리(최대 1.0%p):</span><span class="font-bold text-purple-700">실효 연 3.80% ~ 4.20%</span></div>
+                <div class="flex justify-between"><span>대상 주택 가격:</span><span class="font-semibold">6억 원 이하 (1자녀 9천만 / 다자녀 1억 완화)</span></div>
+                <div class="flex justify-between"><span>최장 만기 / 대출 한도:</span><span class="font-bold">10~50년 / 일반 3.6억 (생초 4.2억)</span></div>
+              </div>
+              <p class="text-[10.5px] text-purple-800 leading-tight">기혼 시 부부합산 필수(미혼 1인 단독 신청 가능). 최장 50년 고정금리로 금리 변동 위험을 원천 차단하는 장기 모기지.</p>
+            </div>
+
+            <!-- 시중은행 일반 주담대 -->
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-slate-700"></span>
+                  3. 시중 5대 은행 일반 주택담보대출
+                </h4>
+                <button type="button" class="apply-rate-btn px-2.5 py-1 bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-bold rounded-lg shadow-sm transition flex items-center gap-1" data-rate="4.2" data-mode="resale">
+                  ⚡ 연 4.2% 표준 적용
+                </button>
+              </div>
+              <div class="p-3.5 bg-white rounded-lg border border-slate-200 text-xs space-y-2 text-slate-700">
+                <div class="flex justify-between"><span>5년 고정 혼합형/주기형:</span><span class="font-bold text-blue-700">연 3.85% ~ 4.55%</span></div>
+                <div class="flex justify-between"><span>신용대출 (계약금 단기 브릿지):</span><span class="font-bold text-amber-700">연 4.20% ~ 5.50%</span></div>
+                <div class="flex justify-between"><span>소득/주택가격 제한:</span><span class="font-semibold text-emerald-700">제한 없음 (누구나 신청 가능)</span></div>
+                <div class="flex justify-between"><span>LTV / 심사 규정:</span><span class="font-bold">생애최초 80% / 차주 단독 or 합산 선택</span></div>
+              </div>
+              <p class="text-[10.5px] text-slate-600 leading-tight">소득 심사 시 본인 단독 신청(단독 DSR 40%) 또는 부부합산 신청을 자유롭게 선택할 수 있습니다.</p>
+            </div>
+
+          </div>
+
+          <!-- 1-3. 매매 취득세 감면 및 매매 중개보수 기준표 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-100">
+            <!-- 취득세 기준 -->
+            <div class="p-4 bg-slate-50/70 rounded-xl border border-slate-200 space-y-2.5">
+              <h5 class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <i data-lucide="receipt" class="w-4 h-4 text-emerald-600"></i>
+                생애최초 주택 취득세 감면 및 매매 세율
+              </h5>
+              <ul class="text-xs text-slate-700 space-y-1.5">
+                <li class="flex items-start gap-1.5">
+                  <span class="text-emerald-600 font-bold">•</span>
+                  <div><strong>생애최초 주택구입 감면:</strong> 12억 원 이하 주택 취득 시 취득세 최대 <strong>200만 원 한도 전액 감면</strong> (지방세특례제한법 제36조의3)</div>
+                </li>
+                <li class="flex items-start gap-1.5">
+                  <span class="text-emerald-600 font-bold">•</span>
+                  <div><strong>6억 원 이하 주택:</strong> 취득세율 1.0% + 지방교육세 0.1% = <strong>총 1.1%</strong></div>
+                </li>
+                <li class="flex items-start gap-1.5">
+                  <span class="text-emerald-600 font-bold">•</span>
+                  <div><strong>6억 초과 ~ 9억 이하:</strong> <code>(취득가액 × 2/3억 - 3)%</code> 비례 누진세율 적용</div>
+                </li>
+              </ul>
+            </div>
+
+            <!-- 매매 중개보수 요율 기준 -->
+            <div class="p-4 bg-slate-50/70 rounded-xl border border-slate-200 space-y-2.5">
+              <h5 class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <i data-lucide="calculator" class="w-4 h-4 text-blue-600"></i>
+                공인중개사 매매·분양 중개보수 법정 상한 요율
+              </h5>
+              <ul class="text-xs text-slate-700 space-y-1.5">
+                <li class="flex items-start gap-1.5">
+                  <span class="text-blue-600 font-bold">•</span>
+                  <div><strong>매매 5천만 ~ 2억 미만:</strong> 상한 요율 <strong>0.5%</strong> (한도 80만 원)</div>
+                </li>
+                <li class="flex items-start gap-1.5">
+                  <span class="text-blue-600 font-bold">•</span>
+                  <div><strong>매매 2억 ~ 9억 미만:</strong> 상한 요율 <strong>0.4%</strong> (상한액 없음, 부가세 별도)</div>
+                </li>
+                <li class="flex items-start gap-1.5">
+                  <span class="text-blue-600 font-bold">•</span>
+                  <div><strong>매매 9억 ~ 12억 미만:</strong> 상한 요율 <strong>0.5%</strong> (상한액 없음)</div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- [대분류 2] 🔑 전세자금대출 & 임대차 보증금 기준표 -->
+      <!-- ======================================================== -->
+      <div id="section-jeonse-rates" class="space-y-6">
+        
+        <!-- 대분류 2 헤더 카드 -->
+        <div class="bg-gradient-to-r from-emerald-900 to-teal-900 p-5 rounded-2xl text-white shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-md bg-emerald-500/30 text-emerald-200 text-xs font-extrabold tracking-wider border border-emerald-400/30">
+                CATEGORY 2
+              </span>
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                🔑 전세자금대출 & 임대차 보증금·보증보험 기준
+              </h3>
+            </div>
+            <p class="text-xs text-emerald-200">무주택 청년·신혼부부 버팀목, HUG 안심전세(반환보증 100%) 및 1금융권 전세대출 공시 기준</p>
+          </div>
+          <span class="text-xs font-semibold px-3 py-1 bg-white/10 rounded-xl text-emerald-100 border border-white/15">
+            보증금의 최대 80%~90% / DSR 미적용
+          </span>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+          
+          <!-- 2-1. 버팀목 전세자금대출 금리표 -->
+          <div class="bg-emerald-50/60 p-4 rounded-xl border border-emerald-200">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <h4 class="text-sm font-bold text-emerald-950 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                  1. 주택도시기금 버팀목 전세자금대출 (청년/신혼/일반)
+                </h4>
+                <p class="text-[11px] text-emerald-800 mt-0.5">정부 지원 초저금리 전세자금대출 (보증금 수도권 3~4억 이하 / 대상별 맞춤 한도)</p>
+              </div>
+              <div class="flex gap-2">
+                <button type="button" class="apply-rate-btn px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg shadow-sm transition flex items-center gap-1" data-rate="2.1" data-mode="jeonse">
+                  ⚡ 연 2.1% 청년 적용
+                </button>
+                <button type="button" class="apply-rate-btn px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold rounded-lg shadow-sm transition flex items-center gap-1" data-rate="2.4" data-mode="jeonse">
+                  ⚡ 연 2.4% 신혼 적용
+                </button>
+              </div>
+            </div>
+            <table class="w-full text-xs text-left border border-emerald-200 rounded-xl overflow-hidden bg-white">
+              <thead class="bg-emerald-100/70 text-emerald-900 font-bold">
+                <tr>
+                  <th class="px-4 py-2">상품 유형</th>
+                  <th class="px-4 py-2">대상 자격 요건</th>
+                  <th class="px-4 py-2 text-center">보증금 한도</th>
+                  <th class="px-4 py-2 text-center">대출 한도</th>
+                  <th class="px-4 py-2 text-center">공시 금리</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-emerald-100 text-slate-700">
+                <tr>
+                  <td class="px-4 py-2 font-bold text-emerald-900">청년전용 버팀목</td>
+                  <td class="px-4 py-2">만 19세~34세 무주택 청년 (연소득 5천만 이하)</td>
+                  <td class="px-4 py-2 text-center">3억 원 이하</td>
+                  <td class="px-4 py-2 text-center font-semibold">최대 2.0억 (80%)</td>
+                  <td class="px-4 py-2 text-center font-extrabold text-emerald-700">연 1.8% ~ 2.7%</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-2 font-bold text-teal-900">신혼부부 버팀목</td>
+                  <td class="px-4 py-2">혼인 7년 이내 무주택 신혼 (부부 연소득 7.5천만 이하)</td>
+                  <td class="px-4 py-2 text-center">수도권 4억 (지방 3억)</td>
+                  <td class="px-4 py-2 text-center font-semibold">최대 3.0억 (80%)</td>
+                  <td class="px-4 py-2 text-center font-extrabold text-teal-700">연 2.1% ~ 2.9%</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-2 font-bold text-slate-800">일반 버팀목</td>
+                  <td class="px-4 py-2">무주택 세대주 (단독/부부합산 연 5천만 이하, 2자녀 6천만)</td>
+                  <td class="px-4 py-2 text-center">수도권 3억 (지방 2억)</td>
+                  <td class="px-4 py-2 text-center font-semibold">수도권 1.2억 / 지방 8천만</td>
+                  <td class="px-4 py-2 text-center font-bold text-blue-600">연 2.4% ~ 3.1%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 2-2. HUG 안심전세대출 & 시중은행 일반 전세대출 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- HUG/HF 안심전세대출 -->
+            <div class="p-4 bg-teal-50/50 rounded-xl border border-teal-200 space-y-3">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-bold text-teal-950 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-teal-600"></span>
+                  2. HUG / HF 안심전세대출 (반환보증 100% 결합)
+                </h4>
+                <button type="button" class="apply-rate-btn px-2.5 py-1 bg-teal-700 hover:bg-teal-800 text-white text-[11px] font-bold rounded-lg shadow-sm transition flex items-center gap-1" data-rate="3.6" data-mode="jeonse">
+                  ⚡ 연 3.6% 안심전세 적용
+                </button>
+              </div>
+              <div class="p-3.5 bg-white rounded-lg border border-teal-100 text-xs space-y-2 text-slate-700">
+                <div class="flex justify-between"><span>표준 고시금리:</span><span class="font-bold text-teal-700">연 3.40% ~ 3.90%</span></div>
+                <div class="flex justify-between"><span>보증금 한도:</span><span class="font-semibold">수도권 7억 이하 (지방 5억 이하)</span></div>
+                <div class="flex justify-between"><span>대출 한도:</span><span class="font-bold">최대 4.0억 원 (보증금의 80%)</span></div>
+                <div class="flex justify-between"><span>특징:</span><span class="font-bold text-emerald-700">전세대출 + 반환보증보험 원스톱 100% 가입</span></div>
+              </div>
+              <p class="text-[10.5px] text-teal-800 leading-tight">소득 제한 없음. 임대인 미반환 시 HUG가 보증금을 100% 직접 반환하므로 깡통전세 위험을 완벽히 방어합니다.</p>
+            </div>
+
+            <!-- 시중 1금융권 일반 전세대출 -->
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-slate-700"></span>
+                  3. 시중 5대 은행 일반 전세자금대출 (SGI/HF)
+                </h4>
+                <button type="button" class="apply-rate-btn px-2.5 py-1 bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-bold rounded-lg shadow-sm transition flex items-center gap-1" data-rate="4.1" data-mode="jeonse">
+                  ⚡ 연 4.1% 일반전세 적용
+                </button>
+              </div>
+              <div class="p-3.5 bg-white rounded-lg border border-slate-200 text-xs space-y-2 text-slate-700">
+                <div class="flex justify-between"><span>1금융권 공시금리:</span><span class="font-bold text-purple-700">연 3.80% ~ 4.60%</span></div>
+                <div class="flex justify-between"><span>보증금 제한:</span><span class="font-semibold text-emerald-700">SGI 기준 제한 없음 (고액 전세 가능)</span></div>
+                <div class="flex justify-between"><span>대출 한도:</span><span class="font-bold">SGI 최대 5.0억 / HF 최대 4.0억</span></div>
+                <div class="flex justify-between"><span>주택 보유 규제:</span><span class="font-semibold">무주택 or 1주택자(2억한도) / 2주택 불가</span></div>
+              </div>
+              <p class="text-[10.5px] text-slate-600 leading-tight">소득 및 보증금 액수 제한 없이 실행 가능한 1금융권 표준 전세대출 상품입니다.</p>
+            </div>
+
+          </div>
+
+          <!-- 2-3. 전세 임대차 중개보수 및 HUG 반환보증보험료 요율표 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-100">
+            <!-- 전세 중개보수 -->
+            <div class="p-4 bg-slate-50/70 rounded-xl border border-slate-200 space-y-2.5">
+              <h5 class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <i data-lucide="calculator" class="w-4 h-4 text-emerald-600"></i>
+                공인중개사 전세·임대차 중개보수 법정 상한 요율
+              </h5>
+              <ul class="text-xs text-slate-700 space-y-1.5">
+                <li class="flex items-start gap-1.5">
+                  <span class="text-emerald-600 font-bold">•</span>
+                  <div><strong>전세 5천만 ~ 1억 미만:</strong> 상한 요율 <strong>0.4%</strong> (한도 30만 원)</div>
+                </li>
+                <li class="flex items-start gap-1.5">
+                  <span class="text-emerald-600 font-bold">•</span>
+                  <div><strong>전세 1억 ~ 6억 미만:</strong> 상한 요율 <strong>0.3%</strong> (상한액 없음, 부가세 별도)</div>
+                </li>
+                <li class="flex items-start gap-1.5">
+                  <span class="text-emerald-600 font-bold">•</span>
+                  <div><strong>전세 6억 ~ 12억 미만:</strong> 상한 요율 <strong>0.4%</strong> (상한액 없음)</div>
+                </li>
+              </ul>
+            </div>
+
+            <!-- HUG 전세보증금 반환보증보험 요율 & 안전 수칙 -->
+            <div class="p-4 bg-slate-50/70 rounded-xl border border-slate-200 space-y-2.5">
+              <h5 class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <i data-lucide="shield-check" class="w-4 h-4 text-teal-600"></i>
+                HUG 전세보증금 반환보증보험 요율 & 계약 수칙
+              </h5>
+              <ul class="text-xs text-slate-700 space-y-1.5">
+                <li class="flex items-start gap-1.5">
+                  <span class="text-teal-600 font-bold">•</span>
+                  <div><strong>아파트 보증료율:</strong> 연 <strong>0.115% ~ 0.128%</strong> (부채비율 80% 이하 기준)</div>
+                </li>
+                <li class="flex items-start gap-1.5">
+                  <span class="text-teal-600 font-bold">•</span>
+                  <div><strong>다세대·연립·빌라:</strong> 연 <strong>0.139% ~ 0.154%</strong></div>
+                </li>
+                <li class="flex items-start gap-1.5">
+                  <span class="text-teal-600 font-bold">•</span>
+                  <div><strong>필수 안전 특약:</strong> "선순위 근저당권 말소 조건" 및 "대출/보증보험 불가 시 계약금 전액 반환 특약" 필수 명시</div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- 토스트 알림 컴포넌트 -->
+  <div id="toast-message" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 z-50 bg-slate-900 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 border border-slate-700">
+    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-text">알림 메시지</span>
+  </div>
+
+  <!-- 푸터 -->
+  <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4">
+      <p>주택 매매·분양·전세 자금 조달 시뮬레이터 &copy; 2026. 국토교통부·주택도시기금·HF·은행연합회 공시 기준 연동</p>
+    </div>
+  </footer>
+
+  <!-- 앱 스크립트 모듈 로드 -->
+  <script src="js/data/interestRates.js"></script>
+  <script src="js/calculator/taxCalc.js"></script>
+  <script src="js/calculator/loanCalc.js"></script>
+  <script src="js/calculator/scenarioEngine.js"></script>
+  <script src="js/mdGenerator.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

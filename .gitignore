@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Agent Documentation & Workspace (Isolated)
+.agent/
+scratch/
+
+# Environment and Logs
+.env
+*.log
+*.tmp
+
+# System and Cache
+.DS_Store
+Thumbs.db
+
+# Temporary Test Files
+test_calc.js

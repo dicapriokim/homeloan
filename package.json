@@ -1,0 +1,20 @@
+{
+  "name": "home-fund-simulator",
+  "version": "1.0.0",
+  "description": "주택 매매 및 분양 자금 조달 실전 시뮬레이터",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "real-estate",
+    "mortgage",
+    "loan-simulator",
+    "housing-fund"
+  ],
+  "author": "Antigravity",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
