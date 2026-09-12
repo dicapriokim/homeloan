@@ -13,6 +13,18 @@ body {
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
+/* 컨테이너 및 뷰 전환 시 브라우저 기본 포커스 외곽선(검은 테두리 띠) 원천 차단 */
+#simulator-view,
+#household-view,
+#rates-view,
+#simulator-view:focus,
+#household-view:focus,
+#rates-view:focus,
+[tabindex="-1"]:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .view-mode-btn.active {
   background-color: #ffffff;
   color: #0f172a;

@@ -358,9 +358,9 @@ const INTEREST_RATES_DATA = {
 const HOUSEHOLD_PROFILES = {
   'couple-over7-nochild': {
     id: 'couple-over7-nochild',
-    name: '맞벌이 7.7천 (기본)',
+    name: '맞벌이 (기본)',
     label: '기본형: 맞벌이 7년차·무자녀',
-    badge: '👫 맞벌이 7.7천만',
+    badge: '👫 맞벌이',
     description: '결혼 7년 이상 생애최초 무주택, 맞벌이 합산 7,700만 원 (디딤돌/보금자리 7천만 초과로 시중은행 주담대 4.2% 적격)',
     householdType: 'couple',
     marriagePeriod: 'over7',
@@ -378,9 +378,9 @@ const HOUSEHOLD_PROFILES = {
   },
   'single-earner-strategy': {
     id: 'single-earner-strategy',
-    name: '외벌이 전략 (5.12천)',
-    label: '전략형: 외벌이 전환·무자녀',
-    badge: '⚡ 외벌이 5.12천만 (디딤돌)',
+    name: '외벌이',
+    label: '외벌이·무자녀',
+    badge: '💡 외벌이',
     description: '배우자 서류상 무직 전환 시 단독 5,120만 원 인정 ➔ 디딤돌 3.0% 전격 합격 (30년 총이자 약 5,100만 원 순절감)',
     householdType: 'couple',
     marriagePeriod: 'over7',
@@ -398,9 +398,9 @@ const HOUSEHOLD_PROFILES = {
   },
   'couple-with-child': {
     id: 'couple-with-child',
-    name: '1자녀 보금자리 (7.7천)',
+    name: '1자녀 보금자리',
     label: '유자녀형: 1자녀 이상·맞벌이',
-    badge: '👨‍👩‍👧 1자녀 맞벌이 7.7천만 (보금자리)',
+    badge: '👨‍👩‍👧 1자녀 맞벌이',
     description: '결혼 7년 이상이라도 미성년 1자녀 시 보금자리론 소득 9,000만 원 이하 완화 특례 통과 (연 3.8% 장기 고정금리 적격)',
     householdType: 'couple',
     marriagePeriod: 'over7',

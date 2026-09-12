@@ -20,16 +20,16 @@
   <!-- 상단 네비게이션 헤더 -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-16">
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+      <div class="flex flex-col py-3 gap-3 w-full">
+        <div class="flex items-center space-x-3 w-full">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 flex-shrink-0">
             <i data-lucide="home" class="w-5 h-5"></i>
           </div>
           <div>
             <h1 class="font-bold text-lg text-slate-900 leading-tight">주택 매매·분양·전세 자금 조달 시뮬레이터</h1>
-            <p class="text-xs text-slate-500 flex items-center gap-1.5">
+            <p class="text-xs text-slate-500 flex items-center gap-1.5 flex-wrap">
               <span>실제 공시 금리 & 생애최초/무주택 세제 연동</span>
-              <span id="header-live-badge" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+              <span id="header-live-badge" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 whitespace-nowrap">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 실시간 동기화 기준
               </span>
@@ -38,26 +38,30 @@
         </div>
 
         <!-- 모드 전환 탭 (매매, 분양, 전세대출, 가구조건, 금리표) -->
-        <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
-          <button id="tab-resale" class="tab-btn active px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5">
-            <i data-lucide="building" class="w-4 h-4"></i>
+        <div class="flex flex-wrap items-center bg-slate-100 p-1 rounded-xl border border-slate-200 gap-1 w-full sm:w-fit">
+          <button id="tab-resale" class="tab-btn active px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap">
+            <i data-lucide="building" class="w-4 h-4 flex-shrink-0"></i>
             <span>구축·기축 매매</span>
           </button>
-          <button id="tab-presale" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
-            <i data-lucide="construction" class="w-4 h-4"></i>
+          <button id="tab-presale" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 whitespace-nowrap">
+            <i data-lucide="construction" class="w-4 h-4 flex-shrink-0"></i>
             <span>신축 분양·청약</span>
           </button>
-          <button id="tab-jeonse" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
-            <i data-lucide="key" class="w-4 h-4"></i>
+          <button id="tab-jeonse" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 whitespace-nowrap">
+            <i data-lucide="key" class="w-4 h-4 flex-shrink-0"></i>
             <span>전세자금대출</span>
           </button>
-          <button id="tab-household" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
-            <i data-lucide="users" class="w-4 h-4"></i>
+          <button id="tab-household" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 whitespace-nowrap">
+            <i data-lucide="users" class="w-4 h-4 flex-shrink-0"></i>
             <span>가구 조건·심사</span>
           </button>
-          <button id="tab-rates" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
-            <i data-lucide="percent" class="w-4 h-4"></i>
+          <button id="tab-rates" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 whitespace-nowrap">
+            <i data-lucide="percent" class="w-4 h-4 flex-shrink-0"></i>
             <span>금리/세제 기준표</span>
+          </button>
+          <button id="tab-amortization" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 whitespace-nowrap">
+            <i data-lucide="calendar-days" class="w-4 h-4 flex-shrink-0"></i>
+            <span>상환일정표</span>
           </button>
         </div>
       </div>
@@ -68,7 +72,7 @@
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
     
     <!-- 시뮬레이터 메인 뷰 (매매, 분양, 전세) -->
-    <div id="simulator-view" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div id="simulator-view" class="grid grid-cols-1 lg:grid-cols-12 gap-8 outline-none focus:outline-none">
       
       <!-- 좌측: 입력 컨트롤 사이드바 (5 cols) -->
       <aside class="lg:col-span-4 space-y-6">
@@ -80,7 +84,7 @@
               <i data-lucide="users" class="w-4 h-4 text-indigo-600 flex-shrink-0"></i>
               <span>가구 조건</span>
               <span id="sidebar-active-profile-name" class="active-profile-badge text-[10.5px] font-extrabold text-indigo-700 bg-white px-2 py-0.5 rounded-md border border-indigo-200">
-                맞벌이 7.7천 (기본)
+                맞벌이 (기본)
               </span>
             </div>
             <button type="button" id="btn-goto-household-settings" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] font-bold transition shadow-xs flex items-center gap-1 flex-shrink-0">
@@ -642,7 +646,7 @@
     <!-- ======================================================== -->
     <!-- [신규 탭] 👥 가구 조건 및 주택 정책 대출 심사 진단 뷰 -->
     <!-- ======================================================== -->
-    <div id="household-view" class="hidden space-y-6 max-w-5xl mx-auto">
+    <div id="household-view" class="hidden space-y-6 max-w-5xl mx-auto outline-none focus:outline-none">
       
       <!-- 상단 헤더 배너 카드 -->
       <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
@@ -671,7 +675,7 @@
             5대 가구 조건 원클릭 사전 설정
           </h3>
           <span id="active-profile-badge-tab" class="active-profile-badge text-xs font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-200">
-            맞벌이 7.7천 (기본)
+            맞벌이 (기본)
           </span>
         </div>
         <div id="container-profile-presets-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
@@ -1004,7 +1008,7 @@
 
     <!-- 최신 금리 및 세제 기준표 뷰 (상단 5번째 탭) -->
     <!-- 금리 및 세제 기준표 뷰 (주택마련대출 vs 전세자금대출 분리 개편) -->
-    <div id="rates-view" class="hidden space-y-6">
+    <div id="rates-view" class="hidden space-y-6 outline-none focus:outline-none">
       
       <!-- 기준표 최상단 헤더 & 카테고리 필터 서브 탭 -->
       <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
@@ -1401,14 +1405,107 @@
 
     </div>
 
+    <!-- ======================================================== -->
+    <!-- [신규 탭] 대출상환원리금 조회 뷰 -->
+    <!-- ======================================================== -->
+    <div id="amortization-view" class="hidden space-y-6 max-w-5xl mx-auto outline-none focus:outline-none w-full">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2 mb-4">
+          <i data-lucide="calendar-days" class="w-5 h-5 text-indigo-600"></i>
+          대출상환원리금 조회
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <div>
+            <label class="text-xs font-bold text-slate-700 block mb-1">대출금액 (원)</label>
+            <input type="text" inputmode="numeric" id="amort-amount" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-right" value="100,000,000">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-700 block mb-1">상환방식</label>
+            <select id="amort-type" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="equal-payment">원리금균등분할상환</option>
+              <option value="equal-principal">원금균등분할상환</option>
+              <option value="interest-only">만기일시상환</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-700 block mb-1">대출실행일</label>
+            <input type="date" id="amort-date" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-700 block mb-1">첫 상환일</label>
+            <input type="date" id="amort-first-date" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-700 block mb-1">대출금리 (%)</label>
+            <input type="number" id="amort-rate" step="0.01" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-right" value="4.2">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-700 block mb-1">대출기간 (년)</label>
+            <input type="number" id="amort-term" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-right" value="10">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-700 block mb-1">거치기간 (년)</label>
+            <input type="number" id="amort-grace" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-right" value="0">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button id="btn-calc-amort" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm transition flex items-center gap-1.5">
+            <i data-lucide="calculator" class="w-4 h-4"></i>
+            계산하기
+          </button>
+        </div>
+      </div>
+      
+      <!-- 결과 테이블 -->
+      <div id="amort-result-container" class="hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto scroll-mt-48">
+        <h3 class="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <i data-lucide="table" class="w-4 h-4 text-blue-600"></i>
+          월별 상환일정표
+        </h3>
+        <table class="w-full text-xs text-right border-collapse">
+          <thead class="bg-slate-100 text-slate-700 font-bold border-y-2 border-slate-300">
+            <tr>
+              <th class="px-3 py-2.5 text-center">회차</th>
+              <th class="px-3 py-2.5 text-center">상환일</th>
+              <th class="px-3 py-2.5">납입원금</th>
+              <th class="px-3 py-2.5">이자</th>
+              <th class="px-3 py-2.5">월상환금</th>
+              <th class="px-3 py-2.5">잔금</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-amort-result" class="divide-y divide-slate-100">
+            <!-- JS 동적 생성 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </main>
 
   <!-- 토스트 알림 컴포넌트 -->
-  <div id="toast-message" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 z-50 bg-slate-900 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 border border-slate-700">
+  <div id="toast-message" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 translate-y-20 opacity-0 transition-all duration-300 z-[70] bg-slate-900 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 border border-slate-700">
     <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
     <span id="toast-text">알림 메시지</span>
   </div>
-
+  
+  <!-- 상환일정표 전용 스크롤 컨트롤러 (최상단, 위, 아래, 정지) -->
+  <div id="scroll-controller" class="hidden fixed bottom-6 right-6 flex flex-col gap-2 z-[60]">
+    <button id="btn-scroll-top" class="hidden w-10 h-10 bg-slate-800 text-white rounded-full shadow-xl flex items-center justify-center hover:bg-slate-700 hover:scale-105 transition-all focus:outline-none" title="최상단으로">
+      <i data-lucide="chevrons-up" class="w-5 h-5"></i>
+    </button>
+    <button id="btn-scroll-up" class="w-10 h-10 bg-slate-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-slate-500 hover:scale-105 transition-all focus:outline-none" title="자동 스크롤 위로">
+      <i data-lucide="chevron-up" class="w-5 h-5"></i>
+    </button>
+    <button id="btn-scroll-stop" class="hidden w-10 h-10 bg-red-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-red-400 hover:scale-105 transition-all focus:outline-none" title="스크롤 중지">
+      <i data-lucide="square" class="w-4 h-4 fill-current"></i>
+    </button>
+    <button id="btn-scroll-down" class="w-10 h-10 bg-slate-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-slate-500 hover:scale-105 transition-all focus:outline-none" title="자동 스크롤 아래로">
+      <i data-lucide="chevron-down" class="w-5 h-5"></i>
+    </button>
+    <button id="btn-scroll-bottom" class="w-10 h-10 bg-slate-800 text-white rounded-full shadow-xl flex items-center justify-center hover:bg-slate-700 hover:scale-105 transition-all focus:outline-none" title="최하단으로">
+      <i data-lucide="chevrons-down" class="w-5 h-5"></i>
+    </button>
+  </div>
   <!-- 푸터 -->
   <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
     <div class="max-w-7xl mx-auto px-4">

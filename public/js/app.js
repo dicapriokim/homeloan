@@ -37,6 +37,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const simulatorView = document.getElementById('simulator-view');
   const householdView = document.getElementById('household-view');
   const ratesView = document.getElementById('rates-view');
+  const tabAmortization = document.getElementById('tab-amortization');
+  const amortizationView = document.getElementById('amortization-view');
+  
+  const amortAmount = document.getElementById('amort-amount');
+  const amortType = document.getElementById('amort-type');
+  const amortDate = document.getElementById('amort-date');
+  const amortFirstDate = document.getElementById('amort-first-date');
+  const amortRate = document.getElementById('amort-rate');
+  const amortTerm = document.getElementById('amort-term');
+  const amortGrace = document.getElementById('amort-grace');
+  const btnCalcAmort = document.getElementById('btn-calc-amort');
+  const amortResultContainer = document.getElementById('amort-result-container');
+  const tbodyAmortResult = document.getElementById('tbody-amort-result');
 
   // 사이드바 가구 요약 배너 및 신규 액션 버튼 DOMs
   const btnGotoHouseholdSettings = document.getElementById('btn-goto-household-settings');
@@ -750,7 +763,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     state.mode = mode;
 
-    [tabResale, tabPresale, tabJeonse, tabHousehold, tabRates].forEach(tab => {
+    [tabResale, tabPresale, tabJeonse, tabHousehold, tabRates, tabAmortization].forEach(tab => {
       if (tab) {
         tab.classList.remove('active');
         tab.classList.add('text-slate-600');
@@ -764,6 +777,7 @@ document.addEventListener('DOMContentLoaded', () => {
       simulatorView.classList.remove('hidden');
       if (householdView) householdView.classList.add('hidden');
       ratesView.classList.add('hidden');
+      if (amortizationView) amortizationView.classList.add('hidden');
 
       resalePresets.classList.remove('hidden');
       presalePresets.classList.add('hidden');
@@ -799,6 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
       simulatorView.classList.remove('hidden');
       if (householdView) householdView.classList.add('hidden');
       ratesView.classList.add('hidden');
+      if (amortizationView) amortizationView.classList.add('hidden');
 
       resalePresets.classList.add('hidden');
       presalePresets.classList.remove('hidden');
@@ -833,7 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
       simulatorView.classList.remove('hidden');
       if (householdView) householdView.classList.add('hidden');
       ratesView.classList.add('hidden');
-
+      if (amortizationView) amortizationView.classList.add('hidden');
       resalePresets.classList.add('hidden');
       presalePresets.classList.add('hidden');
       jeonsePresets.classList.remove('hidden');
@@ -874,6 +889,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       simulatorView.classList.add('hidden');
       ratesView.classList.add('hidden');
+      if (amortizationView) amortizationView.classList.add('hidden');
       if (householdView) householdView.classList.remove('hidden');
     } else if (mode === 'rates') {
       tabRates.classList.add('active');
@@ -881,16 +897,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
       simulatorView.classList.add('hidden');
       if (householdView) householdView.classList.add('hidden');
+      if (amortizationView) amortizationView.classList.add('hidden');
       ratesView.classList.remove('hidden');
+    } else if (mode === 'amortization') {
+      tabAmortization.classList.add('active');
+      tabAmortization.classList.remove('text-slate-600');
+
+      simulatorView.classList.add('hidden');
+      if (householdView) householdView.classList.add('hidden');
+      ratesView.classList.add('hidden');
+      if (amortizationView) amortizationView.classList.remove('hidden');
+      
+      // Initialize with current values
+      if (amortAmount) {
+        let loanAmt = 100000000;
+        if (state.simMode) {
+          const simPrice = state.price || 450000000;
+          const simEquity = state.equity || 250000000;
+          if (simPrice > simEquity) {
+            loanAmt = simPrice - simEquity;
+          }
+        }
+        amortAmount.value = loanAmt.toLocaleString();
+      }
+      if (amortRate) amortRate.value = state.loanRate || 4.2;
+      if (amortType && selRepayType) amortType.value = selRepayType.value;
+      if (amortTerm) amortTerm.value = state.loanYears || 10;
+      if (amortDate && !amortDate.value) {
+        const today = new Date();
+        amortDate.value = today.toISOString().split('T')[0];
+        
+        const nextMonth = new Date(today);
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+        if (amortFirstDate) amortFirstDate.value = nextMonth.toISOString().split('T')[0];
+      }
+      
+      setTimeout(() => {
+        if (typeof calculateAmortization === 'function') {
+          calculateAmortization(true);
+        }
+      }, 50);
     }
 
     refreshIcons();
-    if (mode !== 'rates') {
+    if (mode !== 'rates' && mode !== 'amortization') {
       validateAndAutoCorrectLoanRules('household');
       recalculate();
     }
 
-    // 탭 이동 시 화면 포커스 및 스크롤 최상단 즉각 안착
+    // 탭 이동 시 화면 포커스 및 스크롤 최상단 즉각 안착 (외곽선 링 방지)
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     requestAnimationFrame(() => {
       window.scrollTo(0, 0);
@@ -899,9 +954,20 @@ document.addEventListener('DOMContentLoaded', () => {
         : ((mode === 'rates') ? ratesView : simulatorView);
       if (targetView) {
         targetView.setAttribute('tabindex', '-1');
+        targetView.style.outline = 'none';
         targetView.focus({ preventScroll: true });
       }
     });
+
+    const scrollController = document.getElementById('scroll-controller');
+    if (scrollController) {
+      if (mode === 'amortization') {
+        scrollController.classList.remove('hidden');
+        window.dispatchEvent(new Event('scroll'));
+      } else {
+        scrollController.classList.add('hidden');
+      }
+    }
   }
 
   // 6-1. 가구 조건 요약 배지 및 사이드바 미니 배너 동시 업데이트
@@ -2067,13 +2133,215 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 9. 이벤트 바인딩
   // 1) 모드 탭 (매매, 분양, 전세, 가구조건, 금리표)
   tabResale.addEventListener('click', () => setMode('resale'));
   tabPresale.addEventListener('click', () => setMode('presale'));
   tabJeonse.addEventListener('click', () => setMode('jeonse'));
   if (tabHousehold) tabHousehold.addEventListener('click', () => setMode('household'));
   tabRates.addEventListener('click', () => setMode('rates'));
+  if (tabAmortization) tabAmortization.addEventListener('click', () => setMode('amortization'));
+  
+  if (btnCalcAmort) {
+    btnCalcAmort.addEventListener('click', () => calculateAmortization(false));
+  }
+  
+  function calculateAmortization(skipScroll = false) {
+    if (!amortAmount || !amortType || !amortRate || !amortTerm || !tbodyAmortResult || !amortResultContainer) return;
+    
+    const amount = Number(amortAmount.value.replace(/[^0-9]/g, '')) || 0;
+    const type = amortType.value;
+    const rate = Number(amortRate.value) / 100 / 12 || 0;
+    const term = (Number(amortTerm.value) || 10) * 12;
+    const grace = (Number(amortGrace.value) || 0) * 12;
+    const startDate = new Date(amortDate.value || new Date());
+    let firstPaymentDate = new Date(startDate);
+    firstPaymentDate.setMonth(firstPaymentDate.getMonth() + 1);
+    if (amortFirstDate && amortFirstDate.value) {
+      firstPaymentDate = new Date(amortFirstDate.value);
+    }
+    
+    if (amount <= 0 || term <= 0) {
+      showToast('⚠️ 대출금액과 대출기간을 올바르게 입력해주세요.');
+      return;
+    }
+    
+    let html = '';
+    let balance = amount;
+    
+    if (type === 'equal-payment') {
+      // 원리금균등분할상환
+      const paymentTerm = term - grace;
+      let monthlyPayment = 0;
+      if (paymentTerm > 0) {
+        // 월 상환금은 은행 표준 방식(월 이율 1/12)으로 고정액 산출
+        monthlyPayment = rate === 0 ? amount / paymentTerm : (amount * rate * Math.pow(1 + rate, paymentTerm)) / (Math.pow(1 + rate, paymentTerm) - 1);
+      }
+      
+      let prevDate = startDate;
+      for (let i = 1; i <= term; i++) {
+        let currentDate;
+        if (i === term) {
+          // 마지막 달은 대출실행일(startDate) 기준 만기일
+          currentDate = new Date(startDate);
+          currentDate.setMonth(currentDate.getMonth() + term);
+        } else {
+          currentDate = new Date(firstPaymentDate);
+          currentDate.setMonth(currentDate.getMonth() + (i - 1));
+        }
+        const dateStr = currentDate.toISOString().split('T')[0];
+        
+        const annualRate = rate * 12;
+        let interest = 0;
+        let principal = 0;
+        let total = 0;
+        
+        // 은행 기준: 이자 산출 시작일(prevDate)이 속한 연도가 윤년이면 366일로 나눔
+        const isLeapYear = (year) => (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+        const daysInYear = isLeapYear(prevDate.getFullYear()) ? 366 : 365;
+        
+        if (type === 'equal-payment') {
+          // 공홈(HF) 하이브리드 방식: 전 구간 실일수 적용 + 마지막 달 잔액 강제 매칭
+          const days = Math.round((currentDate - prevDate) / (1000 * 60 * 60 * 24));
+          interest = Math.floor(balance * (annualRate * days / daysInYear));
+          
+          if (i > grace) {
+            if (i === 1) {
+              const standardPrevDate = new Date(currentDate);
+              standardPrevDate.setMonth(standardPrevDate.getMonth() - 1);
+              const standardDays = Math.round((currentDate - standardPrevDate) / (1000 * 60 * 60 * 24));
+              const standardDaysInYear = isLeapYear(standardPrevDate.getFullYear()) ? 366 : 365;
+              const standardInterest = Math.floor(balance * (annualRate * standardDays / standardDaysInYear));
+              principal = Math.round(monthlyPayment) - standardInterest;
+              total = principal + interest;
+            } else {
+              total = Math.round(monthlyPayment);
+              principal = total - interest;
+            }
+            
+            if (i === term || balance < principal) {
+              principal = Math.round(balance);
+              total = principal + interest;
+            }
+          } else {
+            total = interest;
+          }
+        }
+        
+        balance -= principal;
+        if (balance < 0) balance = 0;
+        prevDate = currentDate;
+        
+        html += `
+          <tr class="${i % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}">
+            <td class="px-3 py-2 text-center text-slate-500">${i}</td>
+            <td class="px-3 py-2 text-center text-slate-700">${dateStr}</td>
+            <td class="px-3 py-2 text-slate-800">${principal.toLocaleString()}</td>
+            <td class="px-3 py-2 text-slate-800">${interest.toLocaleString()}</td>
+            <td class="px-3 py-2 font-bold text-indigo-700">${total.toLocaleString()}</td>
+            <td class="px-3 py-2 font-semibold text-slate-600">${Math.round(balance).toLocaleString()}</td>
+          </tr>
+        `;
+      }
+    } else if (type === 'equal-principal') {
+      // 원금균등분할상환
+      const paymentTerm = term - grace;
+      const principalMonthly = paymentTerm > 0 ? amount / paymentTerm : 0;
+      
+      let prevDate = startDate;
+      for (let i = 1; i <= term; i++) {
+        let currentDate;
+        if (i === term) {
+          currentDate = new Date(startDate);
+          currentDate.setMonth(currentDate.getMonth() + term);
+        } else {
+          currentDate = new Date(firstPaymentDate);
+          currentDate.setMonth(currentDate.getMonth() + (i - 1));
+        }
+        const dateStr = currentDate.toISOString().split('T')[0];
+        
+        const days = Math.round((currentDate - prevDate) / (1000 * 60 * 60 * 24));
+        const annualRate = rate * 12;
+        const isLeapYear = (year) => (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+        const daysInYear = isLeapYear(prevDate.getFullYear()) ? 366 : 365;
+        let interest = Math.floor(balance * (annualRate * days / daysInYear));
+        let principal = 0;
+        
+        if (i > grace) {
+          principal = Math.round(principalMonthly);
+          if (i === term || balance < principal) {
+            principal = Math.round(balance);
+          }
+        }
+        
+        let total = principal + interest;
+        balance -= principal;
+        if (balance < 0) balance = 0;
+        prevDate = currentDate;
+        
+        html += `
+          <tr class="${i % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}">
+            <td class="px-3 py-2 text-center text-slate-500">${i}</td>
+            <td class="px-3 py-2 text-center text-slate-700">${dateStr}</td>
+            <td class="px-3 py-2 text-slate-800">${principal.toLocaleString()}</td>
+            <td class="px-3 py-2 text-slate-800">${interest.toLocaleString()}</td>
+            <td class="px-3 py-2 font-bold text-indigo-700">${total.toLocaleString()}</td>
+            <td class="px-3 py-2 font-semibold text-slate-600">${Math.round(balance).toLocaleString()}</td>
+          </tr>
+        `;
+      }
+    } else {
+      // 만기일시상환
+      let prevDate = startDate;
+      for (let i = 1; i <= term; i++) {
+        let currentDate;
+        if (i === term) {
+          currentDate = new Date(startDate);
+          currentDate.setMonth(currentDate.getMonth() + term);
+        } else {
+          currentDate = new Date(firstPaymentDate);
+          currentDate.setMonth(currentDate.getMonth() + (i - 1));
+        }
+        const dateStr = currentDate.toISOString().split('T')[0];
+        
+        const days = Math.round((currentDate - prevDate) / (1000 * 60 * 60 * 24));
+        const annualRate = rate * 12;
+        const isLeapYear = (year) => (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+        const daysInYear = isLeapYear(prevDate.getFullYear()) ? 366 : 365;
+        let interest = Math.floor(balance * (annualRate * days / daysInYear));
+        let principal = i === term ? Math.round(balance) : 0;
+        let total = principal + interest;
+        balance -= principal;
+        if (balance < 0) balance = 0;
+        prevDate = currentDate;
+        
+        html += `
+          <tr class="${i % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}">
+            <td class="px-3 py-2 text-center text-slate-500">${i}</td>
+            <td class="px-3 py-2 text-center text-slate-700">${dateStr}</td>
+            <td class="px-3 py-2 text-slate-800">${principal.toLocaleString()}</td>
+            <td class="px-3 py-2 text-slate-800">${interest.toLocaleString()}</td>
+            <td class="px-3 py-2 font-bold text-indigo-700">${total.toLocaleString()}</td>
+            <td class="px-3 py-2 font-semibold text-slate-600">${Math.round(balance).toLocaleString()}</td>
+          </tr>
+        `;
+      }
+    }
+    
+    tbodyAmortResult.innerHTML = html;
+    amortResultContainer.classList.remove('hidden');
+    showToast('상환일정표 계산이 완료되었습니다. 👇');
+    
+    // Scroll to result only if explicitly clicked
+    if (skipScroll !== true) {
+      setTimeout(() => {
+        amortResultContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }
+  
+  if (amortAmount) {
+    bindMoneyInput(amortAmount);
+  }
 
   // 1-2) 사이드바 가구 조건 변경 배너 및 하단 액션 버튼 바인딩
   if (btnGotoHouseholdSettings) {
@@ -2488,23 +2756,105 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.apply-rate-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const rate = Number(btn.dataset.rate);
-      const targetMode = btn.dataset.mode;
-      if (rate) {
-        if (targetMode) {
-          setMode(targetMode);
-        } else if (rate <= 2.9) {
-          setMode('jeonse');
-        } else {
-          setMode(state.mode === 'rates' ? 'resale' : state.mode);
-        }
+      const targetMode = btn.dataset.mode || (rate <= 2.9 ? 'jeonse' : 'resale');
+      if (!rate) return;
 
+      // 1. 타깃 시뮬레이터 모드로 전환 (가구 조건 및 소득은 사용자 설정 100% 온전 보존)
+      setMode(targetMode);
+
+      const priceVal = (targetMode === 'jeonse') ? (state.price || 250000000) : (state.price || 450000000);
+      const el = (typeof INTEREST_RATES_DATA !== 'undefined' && INTEREST_RATES_DATA.evaluateEligibility)
+        ? INTEREST_RATES_DATA.evaluateEligibility(state, priceVal, targetMode)
+        : null;
+
+      const modeLabel = targetMode === 'resale' ? '구축 매매' : targetMode === 'presale' ? '신축 분양' : '전세대출';
+
+      // 2. 정책 대출 자격 심사 및 정석 적용
+      // 1) 디딤돌대출 (연 3.0%) 클릭 시
+      if (Math.abs(rate - 3.0) < 0.05) {
+        const isPassed = el && el.didimdol ? el.didimdol.passed : false;
+        if (isPassed) {
+          state.loanRate = 3.0;
+          inpRate.value = 3.0;
+          rngRate.value = 3.0;
+          syncRateToRadios(3.0);
+          showToast(`연 3.0% 디딤돌대출 금리가 [${modeLabel} 시뮬레이터]에 정상 승인·적용되었습니다! 🚀`);
+        } else {
+          // 부적격 시: 억지로 가구 조건을 조작하지 않고 정직하게 부적격 고지 및 적격 상품(보금자리 3.8% 또는 시중 4.2%) 적용
+          const fallbackRate = (el && el.bogeumjari && el.bogeumjari.passed) ? 3.8 : 4.2;
+          state.loanRate = fallbackRate;
+          inpRate.value = fallbackRate;
+          rngRate.value = fallbackRate;
+          syncRateToRadios(fallbackRate);
+          const reason = el && el.didimdol ? el.didimdol.reason : '자격 요건 미달';
+          showToast(`⚠️ 현재 가구 조건은 디딤돌대출 요건(${reason})을 충족하지 못하여 신청 불가입니다. 적격 상품인 [${fallbackRate === 3.8 ? '보금자리론 (연 3.8%)' : '시중은행 주담대 (연 4.2%)'}]가 적용되었습니다.`);
+        }
+      }
+      // 2) 보금자리론 (연 3.8%) 클릭 시
+      else if (Math.abs(rate - 3.8) < 0.05) {
+        const isPassed = el && el.bogeumjari ? el.bogeumjari.passed : false;
+        if (isPassed) {
+          state.loanRate = 3.8;
+          inpRate.value = 3.8;
+          rngRate.value = 3.8;
+          syncRateToRadios(3.8);
+          showToast(`연 3.8% 보금자리론 금리가 [${modeLabel} 시뮬레이터]에 정상 승인·적용되었습니다! 🚀`);
+        } else {
+          state.loanRate = 4.2;
+          inpRate.value = 4.2;
+          rngRate.value = 4.2;
+          syncRateToRadios(4.2);
+          const reason = el && el.bogeumjari ? el.bogeumjari.reason : '자격 요건 미달';
+          showToast(`⚠️ 현재 가구 조건은 보금자리론 요건(${reason})을 충족하지 못하여 신청 불가입니다. [시중은행 일반 주담대 (연 4.2%)]가 적용되었습니다.`);
+        }
+      }
+      // 3) 청년 버팀목 (연 2.1%) 클릭 시
+      else if (Math.abs(rate - 2.1) < 0.05) {
+        const isPassed = (state.householdType === 'single') && (Number(state.annualIncome) <= 50000000);
+        if (isPassed) {
+          state.loanRate = 2.1;
+          inpRate.value = 2.1;
+          rngRate.value = 2.1;
+          syncRateToRadios(2.1);
+          showToast(`연 2.1% 청년 버팀목전세 금리가 [${modeLabel} 시뮬레이터]에 정상 승인·적용되었습니다! 🚀`);
+        } else {
+          const fallbackRate = 3.6;
+          state.loanRate = fallbackRate;
+          inpRate.value = fallbackRate;
+          rngRate.value = fallbackRate;
+          syncRateToRadios(fallbackRate);
+          showToast(`⚠️ 청년 버팀목은 1인 단독 세대주(연소득 5천만 이하) 전용 상품입니다. 현재 조건에서 이용 가능한 [HUG 안심전세대출 (연 3.6%)]가 적용되었습니다.`);
+        }
+      }
+      // 4) 신혼 버팀목 (연 2.4%) 클릭 시
+      else if (Math.abs(rate - 2.4) < 0.05) {
+        const isPassed = (state.householdType === 'couple') && (state.marriagePeriod === 'under7') && (Number(state.annualIncome) <= 75000000);
+        if (isPassed) {
+          state.loanRate = 2.4;
+          inpRate.value = 2.4;
+          rngRate.value = 2.4;
+          syncRateToRadios(2.4);
+          showToast(`연 2.4% 신혼 버팀목전세 금리가 [${modeLabel} 시뮬레이터]에 정상 승인·적용되었습니다! 🚀`);
+        } else {
+          const fallbackRate = 3.6;
+          state.loanRate = fallbackRate;
+          inpRate.value = fallbackRate;
+          rngRate.value = fallbackRate;
+          syncRateToRadios(fallbackRate);
+          showToast(`⚠️ 신혼 버팀목은 혼인 7년 이내 신혼부부(합산소득 7.5천 이하) 전용 상품입니다. 현재 조건에서 이용 가능한 [HUG 안심전세대출 (연 3.6%)]가 적용되었습니다.`);
+        }
+      }
+      // 5) 시중은행 일반 주담대 (연 4.2%), 안심전세 (연 3.6%), 일반전세 (연 4.1%)
+      else {
+        state.loanRate = rate;
         inpRate.value = rate;
         rngRate.value = rate;
         syncRateToRadios(rate);
-        recalculate();
-        const modeLabel = state.mode === 'resale' ? '매매' : state.mode === 'presale' ? '분양' : '전세';
         showToast(`연 ${rate.toFixed(1)}% 금리가 [${modeLabel} 시뮬레이터]에 즉시 적용되었습니다! 🚀`);
       }
+
+      validateAndAutoCorrectLoanRules('rate-preset', { selectedRate: state.loanRate });
+      recalculate();
     });
   });
 
@@ -2560,6 +2910,114 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // 최초 로드 실행
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+  window.scrollTo(0, 0);
+  
+  // 스크롤 컨트롤러 로직 (최상단, 위, 아래)
+  const scrollController = document.getElementById('scroll-controller');
+  const btnScrollTop = document.getElementById('btn-scroll-top');
+  const btnScrollUp = document.getElementById('btn-scroll-up');
+  const btnScrollDown = document.getElementById('btn-scroll-down');
+  const btnScrollBottom = document.getElementById('btn-scroll-bottom');
+  const btnScrollStop = document.getElementById('btn-scroll-stop');
+  
+  if (scrollController) {
+    let autoScrollId = null;
+    
+    function stopAutoScroll() {
+      if (autoScrollId) {
+        cancelAnimationFrame(autoScrollId);
+        autoScrollId = null;
+      }
+      if (btnScrollStop) btnScrollStop.classList.add('hidden');
+    }
+    
+    function startAutoScroll(direction) {
+      stopAutoScroll(); // 혹시 실행 중인 스크롤이 있으면 중지
+      if (btnScrollStop) btnScrollStop.classList.remove('hidden');
+      
+      const speed = 3; // 스크롤 속도 (픽셀)
+      
+      function scrollStep() {
+        window.scrollBy({ top: direction * speed, behavior: 'instant' });
+        
+        // 최상단이거나 최하단에 도달하면 자동 중지
+        if (direction === -1 && window.scrollY <= 0) {
+          stopAutoScroll();
+          return;
+        }
+        const maxScroll = document.body.scrollHeight - window.innerHeight;
+        if (direction === 1 && window.scrollY >= maxScroll) {
+          stopAutoScroll();
+          return;
+        }
+        
+        autoScrollId = requestAnimationFrame(scrollStep);
+      }
+      autoScrollId = requestAnimationFrame(scrollStep);
+    }
+    
+    window.addEventListener('scroll', () => {
+      const isAmort = state.mode === 'amortization';
+      
+      if (btnScrollTop) {
+        if (isAmort && window.scrollY > 300) {
+          btnScrollTop.classList.remove('hidden');
+        } else {
+          btnScrollTop.classList.add('hidden');
+        }
+      }
+      
+      if (btnScrollBottom) {
+        const maxScroll = document.body.scrollHeight - window.innerHeight;
+        // 하단에서 300px 이내로 접근하면 숨김 처리
+        if (isAmort && window.scrollY < maxScroll - 300) {
+          btnScrollBottom.classList.remove('hidden');
+        } else {
+          btnScrollBottom.classList.add('hidden');
+        }
+      }
+    });
+    
+    // 마우스 휠이나 터치 시 자동 스크롤 중지 (사용자 개입)
+    window.addEventListener('wheel', stopAutoScroll, { passive: true });
+    window.addEventListener('touchstart', stopAutoScroll, { passive: true });
+
+    if (btnScrollTop) {
+      btnScrollTop.addEventListener('click', () => {
+        stopAutoScroll();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+    
+    if (btnScrollUp) {
+      btnScrollUp.addEventListener('click', () => {
+        startAutoScroll(-1);
+      });
+    }
+    
+    if (btnScrollDown) {
+      btnScrollDown.addEventListener('click', () => {
+        startAutoScroll(1);
+      });
+    }
+    
+    if (btnScrollStop) {
+      btnScrollStop.addEventListener('click', () => {
+        stopAutoScroll();
+      });
+    }
+
+    if (btnScrollBottom) {
+      btnScrollBottom.addEventListener('click', () => {
+        stopAutoScroll();
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      });
+    }
+  }
+
   syncRatesFromServer(true);
   setMode('resale');
 });
