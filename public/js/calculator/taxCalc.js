@@ -101,13 +101,16 @@ const TaxCalculator = {
     const taxInfo = this.calculateAcquisitionTax(price, isFirstHome);
     const brokerageInfo = this.calculateBrokerageFee(price, true);
     const regDetails = this.calculateRegistrationDetails(price);
+    // 선수관리비 (관리비 예치금): 아파트 분양 시 예치금으로 잔금일 매도인에게 현금 승계 정산 (통상 20만~40만 원, 표준 30만 원)
+    const prepaidManagementFee = 300000;
     
-    const totalMandatory = taxInfo.finalTax + brokerageInfo.totalFee + regDetails.totalRegFee;
+    const totalMandatory = taxInfo.finalTax + brokerageInfo.totalFee + regDetails.totalRegFee + prepaidManagementFee;
 
     return {
       taxInfo,
       brokerageInfo,
       regDetails,
+      prepaidManagementFee,
       totalMandatory,
       totalMandatoryTenThousand: Math.round(totalMandatory / 10000)
     };
@@ -191,6 +194,7 @@ const TaxCalculator = {
       brokerageInfo: mandatory.brokerageInfo,
       regFee: mandatory.regDetails.totalRegFee,
       regDetails: mandatory.regDetails,
+      prepaidManagementFee: mandatory.prepaidManagementFee,
       refurbishCost: optional.refurbishCost,
       moveinCost: optional.moveinCost,
       totalMandatory: mandatory.totalMandatory,
@@ -224,7 +228,9 @@ const TaxCalculator = {
 
     const taxInfo = this.calculateAcquisitionTax(price, isFirstHome);
     const regDetails = this.calculateRegistrationDetails(price);
-    const totalMandatory = taxInfo.finalTax + regDetails.totalRegFee;
+    // 관리비 예치금(선수관리비): 신축 아파트 입주증 발급 시 관리사무소 지정 계좌 현금 선납 (통상 30만~40만 원, 표준 30만 원)
+    const prepaidManagementFee = 300000;
+    const totalMandatory = taxInfo.finalTax + regDetails.totalRegFee + prepaidManagementFee;
 
     // 발코니 확장 및 필수 시스템 에어컨/옵션 비용 (기본 약 3,000만 ~ 3,500만원)
     let optionCost = customOption;
@@ -260,6 +266,7 @@ const TaxCalculator = {
       taxInfo,
       regFee: regDetails.totalRegFee,
       regDetails,
+      prepaidManagementFee,
       optionCost: includeMovein ? optionCost : 0,
       moveinCost: includeMovein ? moveinCost : 0,
       totalMandatory,

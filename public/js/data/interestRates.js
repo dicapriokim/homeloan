@@ -160,7 +160,7 @@ const INTEREST_RATES_DATA = {
     rateRange: { min: 4.2, max: 5.5 }
   },
 
-  // 6. 가이드 V4 심사 팩트 기반 대출 적격성 종합 평가 엔진
+  // 6. 가이드 V5 (최종 완결판) 심사 팩트 기반 대출 적격성 종합 평가 엔진
   evaluateEligibility: function(profile, price, mode = 'resale') {
     const isCouple = profile.householdType === 'couple';
     const isUnder7 = profile.marriagePeriod === 'under7';
@@ -354,7 +354,7 @@ const INTEREST_RATES_DATA = {
   }
 };
 
-// 5대 핵심 가구 프로필 사전 설정 (가이드 V4/V5 완벽 매핑)
+// 5대 핵심 가구 프로필 사전 설정 (가이드 V5 완벽 매핑)
 const HOUSEHOLD_PROFILES = {
   'couple-over7-nochild': {
     id: 'couple-over7-nochild',

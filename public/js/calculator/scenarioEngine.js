@@ -61,6 +61,7 @@ const ScenarioEngine = {
       monthlyNetIncome = 5300000,
       loanRate = 4.2,
       loanYears = 30,
+      repayType = 'equal-payment',
       creditLoanRate = 4.5,
       isFirstHome = true,
       isHomeless = true,
@@ -76,33 +77,34 @@ const ScenarioEngine = {
     const mandatoryExpense = expenseData.totalMandatory;
     const optionalExpense = expenseData.totalOptional;
     const totalExpense = expenseData.totalExpense;
+    const actualMandatory = params.includeMandatory === false ? 0 : mandatoryExpense;
 
     // 순수 취득 기준 vs 최종 입주 완비 기준 예산
-    const pureTotalBudget = price + mandatoryExpense;
-    const fullTotalBudget = price + mandatoryExpense + (expenseData.isMoveinIncluded ? optionalExpense : 0);
+    const pureTotalBudget = price + actualMandatory;
+    const fullTotalBudget = price + actualMandatory + (expenseData.isMoveinIncluded ? optionalExpense : 0);
     const totalBudget = fullTotalBudget;
 
-    // 2. 필요 주택담보대출 계산 (순수 취득 기준 vs 최종 입주 완비 기준)
-    const pureRequiredLoan = Math.max(0, pureTotalBudget - equity);
-    const fullRequiredLoan = Math.max(0, fullTotalBudget - equity);
-    const requiredLoan = fullRequiredLoan;
+    // 2. 필요 주택담보대출 계산 (매매 희망 금액 - 보유 순자산)
+    const requiredLoan = Math.max(0, price - equity);
+    const pureRequiredLoan = requiredLoan;
+    const fullRequiredLoan = requiredLoan;
 
     const pureLtv = LoanCalculator.calculateLTV(pureRequiredLoan, price);
     const fullLtv = LoanCalculator.calculateLTV(fullRequiredLoan, price);
     const ltv = fullLtv;
 
     // 3. 월 원리금 상환액 및 건전성
-    const monthlyPayment = LoanCalculator.calculateEqualPayment(requiredLoan, loanRate, loanYears);
-    const pureMonthlyPayment = LoanCalculator.calculateEqualPayment(pureRequiredLoan, loanRate, loanYears);
+    const monthlyPayment = LoanCalculator.calculateFirstMonthPayment(requiredLoan, loanRate, loanYears, repayType);
+    const pureMonthlyPayment = LoanCalculator.calculateFirstMonthPayment(pureRequiredLoan, loanRate, loanYears, repayType);
     const annualRepayment = monthlyPayment * 12;
     const dsr = LoanCalculator.calculateDSR(annualRepayment, annualIncome);
     const pureDsr = LoanCalculator.calculateDSR(pureMonthlyPayment * 12, annualIncome);
     const housingRatio = LoanCalculator.calculateHousingCostRatio(monthlyPayment, monthlyNetIncome);
 
     // 정책모기지 (디딤돌 3.0% 기준) 월 상환액
-    const didimdolPayment = LoanCalculator.calculateEqualPayment(requiredLoan, 3.0, loanYears);
+    const didimdolPayment = LoanCalculator.calculateFirstMonthPayment(requiredLoan, 3.0, loanYears, repayType);
 
-    // 3-2. 가이드 V4 맞벌이(시중은행) vs 외벌이/무직(디딤돌) 금융비용 정밀 비교
+    // 3-2. 가이드 V5 맞벌이(시중은행) vs 외벌이/무직(디딤돌) 금융비용 정밀 비교
     const commercial30YrTotalInterest = Math.max(0, (monthlyPayment * loanYears * 12) - requiredLoan);
     const didimdol30YrTotalInterest = Math.max(0, (didimdolPayment * loanYears * 12) - requiredLoan);
     const strategyComparison = {
@@ -142,7 +144,7 @@ const ScenarioEngine = {
     // 금리/만기 비교 매트릭스
     const comparisonMatrix = LoanCalculator.generateComparisonMatrix(requiredLoan, monthlyNetIncome, price);
 
-    // 가이드 V4 심사 팩트 기반 적격성 진단
+    // 가이드 V5 심사 팩트 기반 적격성 진단
     const userProfile = {
       householdType,
       marriagePeriod,
@@ -199,6 +201,7 @@ const ScenarioEngine = {
       ltv,
       pureMonthlyPayment,
       monthlyPayment,
+      lastMonthlyPayment: LoanCalculator.calculateLastMonthPayment(requiredLoan, loanRate, loanYears, repayType),
       didimdolPayment,
       pureDsr,
       dsr,
@@ -239,6 +242,7 @@ const ScenarioEngine = {
       monthlyNetIncome = 5300000,
       loanRate = 4.2,
       loanYears = 30,
+      repayType = 'equal-payment',
       creditLoanRate = 4.5,
       isFirstHome = true,
       isHomeless = true,
@@ -255,28 +259,30 @@ const ScenarioEngine = {
     const optionalExpense = expenseData.totalOptional;
     const totalExpense = expenseData.totalExpense;
 
+    const actualMandatory = params.includeMandatory === false ? 0 : mandatoryExpense;
     // 순수 취득 기준 vs 최종 입주 완비 기준 예산
-    const pureTotalBudget = price + mandatoryExpense;
-    const fullTotalBudget = price + mandatoryExpense + (expenseData.isMoveinIncluded ? optionalExpense : 0);
+    const fullTotalBudget = price + actualMandatory + (expenseData.isMoveinIncluded ? optionalExpense : 0);
+    const pureTotalBudget = price + actualMandatory;
     const totalBudget = fullTotalBudget;
 
-    // 2. 필요 잔금 주택담보대출 (총 필요 자금 - 전세보증금 회수액)
-    const pureRequiredLoan = Math.max(0, pureTotalBudget - equity);
-    const fullRequiredLoan = Math.max(0, fullTotalBudget - equity);
-    const requiredLoan = fullRequiredLoan;
+    // 2. 필요 주택담보대출 (잔금 대출) = 매매 희망 금액 - 보유 순자산
+    const requiredLoan = Math.max(0, price - equity);
+    const pureRequiredLoan = requiredLoan;
+    const fullRequiredLoan = requiredLoan;
 
     const pureLtv = LoanCalculator.calculateLTV(pureRequiredLoan, price);
     const fullLtv = LoanCalculator.calculateLTV(fullRequiredLoan, price);
     const ltv = fullLtv;
 
-    // 3. 월 원리금 상환액 및 건전성
-    const monthlyPayment = LoanCalculator.calculateEqualPayment(requiredLoan, loanRate, loanYears);
-    const pureMonthlyPayment = LoanCalculator.calculateEqualPayment(pureRequiredLoan, loanRate, loanYears);
+    // 3. 월 상환액 및 DSR
+    const monthlyPayment = LoanCalculator.calculateFirstMonthPayment(requiredLoan, loanRate, loanYears, repayType);
+    const pureMonthlyPayment = LoanCalculator.calculateFirstMonthPayment(pureRequiredLoan, loanRate, loanYears, repayType);
     const annualRepayment = monthlyPayment * 12;
     const dsr = LoanCalculator.calculateDSR(annualRepayment, annualIncome);
     const pureDsr = LoanCalculator.calculateDSR(pureMonthlyPayment * 12, annualIncome);
     const housingRatio = LoanCalculator.calculateHousingCostRatio(monthlyPayment, monthlyNetIncome);
 
+    const didimdolPayment = LoanCalculator.calculateFirstMonthPayment(requiredLoan, 3.0, loanYears, repayType);
     // 4. 4단계 타임라인
     const downPayment = Math.floor(price * 0.1);
     const creditLoanMonthlyInterest = Math.round(downPayment * (creditLoanRate / 100) / 12);
@@ -301,7 +307,7 @@ const ScenarioEngine = {
     // 금리/만기 비교 매트릭스
     const comparisonMatrix = LoanCalculator.generateComparisonMatrix(requiredLoan, monthlyNetIncome, price);
 
-    // 가이드 V4 심사 팩트 기반 적격성 진단
+    // 가이드 V5 심사 팩트 기반 적격성 진단
     const userProfile = {
       householdType,
       marriagePeriod,
@@ -358,6 +364,7 @@ const ScenarioEngine = {
       ltv,
       pureMonthlyPayment,
       monthlyPayment,
+      lastMonthlyPayment: LoanCalculator.calculateLastMonthPayment(requiredLoan, loanRate, loanYears, repayType),
       pureDsr,
       dsr,
       housingRatio,
@@ -430,8 +437,9 @@ const ScenarioEngine = {
     const optionalExpense = (includeMovein && customMoveinCost) ? customMoveinCost : 0;
     const totalExpense = mandatoryExpense + optionalExpense;
     
-    const pureTotalBudget = deposit + mandatoryExpense;
-    const fullTotalBudget = deposit + mandatoryExpense + optionalExpense;
+    const actualMandatory = params.includeMandatory === false ? 0 : mandatoryExpense;
+    const pureTotalBudget = deposit + actualMandatory;
+    const fullTotalBudget = deposit + actualMandatory + optionalExpense;
     const totalBudget = fullTotalBudget;
 
     // 3. 월 상환 부담금 산출
@@ -457,7 +465,7 @@ const ScenarioEngine = {
     // 금리별 비교 매트릭스
     const comparisonMatrix = LoanCalculator.generateJeonseComparisonMatrix(requiredLoan, monthlyNetIncome, deposit, repayType);
 
-    // 가이드 V4 심사 팩트 기반 적격성 진단
+    // 가이드 V5 심사 팩트 기반 적격성 진단
     const userProfile = {
       householdType,
       marriagePeriod,

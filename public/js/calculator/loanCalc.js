@@ -23,6 +23,56 @@ const LoanCalculator = {
     return Math.round(monthlyPayment);
   },
 
+  calculateFirstMonthPayment: function(principal, annualRate, years, repayType) {
+    if (repayType === 'interest-only') {
+      return this.calculateInterestOnly(principal, annualRate);
+    }
+    if (repayType === 'equal-principal') {
+      const principalMonthly = principal / (years * 12);
+      const firstMonthInterest = principal * (annualRate / 100) / 12;
+      return Math.round(principalMonthly + firstMonthInterest);
+    }
+    if (repayType === 'graduated') {
+      const g = 0.002;
+      const rate = (annualRate / 100) / 12;
+      const term = years * 12;
+      if (rate === g) {
+        return Math.round(principal * (1 + rate) / term);
+      } else {
+        const q = (1 + g) / (1 + rate);
+        return Math.round(principal * (1 + rate) * (1 - q) / (1 - Math.pow(q, term)));
+      }
+    }
+    return this.calculateEqualPayment(principal, annualRate, years);
+  },
+
+  calculateLastMonthPayment: function(principal, annualRate, years, repayType) {
+    if (repayType === 'interest-only') return this.calculateInterestOnly(principal, annualRate);
+    if (repayType === 'equal-payment') return this.calculateEqualPayment(principal, annualRate, years);
+    
+    if (repayType === 'equal-principal') {
+      const principalMonthly = principal / (years * 12);
+      const lastMonthInterest = principalMonthly * (annualRate / 100) / 12;
+      return Math.round(principalMonthly + lastMonthInterest);
+    }
+    
+    if (repayType === 'graduated') {
+      const g = 0.002;
+      const rate = (annualRate / 100) / 12;
+      const term = years * 12;
+      let pmt1 = 0;
+      if (rate === g) {
+        pmt1 = principal * (1 + rate) / term;
+      } else {
+        const q = (1 + g) / (1 + rate);
+        pmt1 = principal * (1 + rate) * (1 - q) / (1 - Math.pow(q, term));
+      }
+      return Math.round(pmt1 * Math.pow(1 + g, term - 1));
+    }
+    
+    return this.calculateEqualPayment(principal, annualRate, years);
+  },
+
   /**
    * 전세대출/만기일시상환 월 순수 이자 산출
    * @param {number} principal 대출 원금 (원)

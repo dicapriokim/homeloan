@@ -35,7 +35,7 @@ const MarkdownGenerator = {
       ? `부부합산 연소득(${annualIncomeWon}) 기준 ${loanWon} 대출 시 단독 DSR은 **약 ${s.dsr}%**에 불과합니다. 정부 정책대출(디딤돌/보금자리론)은 법정 규정상 기혼 시 **'부부합산 소득 심사'가 필수**이며, 계약금 명목으로 기실행된 단기 신용대출(${downPaymentWon})을 보유한 상태로 은행 심사를 받더라도 부부 합산 총 DSR은 약 ${s.combinedDSR}% 내외로 법적 규제 한도(40%) 대비 매우 넉넉하여 즉시 무조건 승인 판정이 납니다.`
       : `단독 연소득(${annualIncomeWon}) 기준 ${loanWon} 대출 시 DSR은 **약 ${s.dsr}%** 수준입니다. 본 시뮬레이션은 차주 본인 소득만으로 심사 가능한 **${singleLoanDesc}**을 적용합니다. 계약금 신용대출(${downPaymentWon}) 포함 총 DSR은 약 ${s.combinedDSR}% 내외로 법적 규제 한도(40%)를 안전하게 충족합니다.`;
 
-    const taxDesc = `생애최초 취득세 감면(약 ${formatTenMan(s.expenseData.taxInfo.finalTax, false)}) + 중개보수(약 ${formatTenMan(s.expenseData.brokerageInfo.totalFee, false)}) + 법무사/등기/채권할인/인지세(약 ${formatTenMan(s.expenseData.regFee, false)})`;
+    const taxDesc = `생애최초 취득세 감면(약 ${formatTenMan(s.expenseData.taxInfo.finalTax, false)}) + 중개보수(약 ${formatTenMan(s.expenseData.brokerageInfo.totalFee, false)}) + 법무사/등기/채권할인/인지세(약 ${formatTenMan(s.expenseData.regFee, false)}) + 선수관리비(약 ${formatTenMan(s.expenseData.prepaidManagementFee, false)})`;
     const optionalDesc = s.expenseData.isMoveinIncluded 
       ? `도배/장판/샷시/기본수리(약 ${formatTenMan(s.expenseData.refurbishCost, false)})${s.expenseData.moveinCost > 0 ? ` + 가구/가전/이사비(약 ${formatTenMan(s.expenseData.moveinCost, false)})` : ''}`
       : '선택 안 함 (0원)';
@@ -47,21 +47,29 @@ const MarkdownGenerator = {
     md += `본 문서는 ${incomePrefix} ${annualIncomeWon}(${netIncomePrefix} ${monthlyNetWon}), ${householdDetailStr}, 생애최초 무주택자 조건에서 보유 중인 기존 전세보증금(${equityWon})을 활용하여 **${priceWon} 규모의 기존 구축/기축 아파트**를 일반 매매로 취득할 때의 실전 4단계 자금 조달 실행 계획입니다.\n\n`;
     md += `> **※ 소득 심사 기준:** ${s.auditInfo?.householdLabel || (isCouple ? '👫 기혼 부부합산 심사' : '👤 차주 단독 심사')} (${s.auditInfo?.auditMethodName || '부부합산 DSR 심사'})\n`;
     if (s.eligibility) {
-      md += `> **※ 가이드 V4 심사 판정:** 디딤돌(${s.eligibility.didimdol.passed ? '⭕ 승인적격' : '❌ 부적격'}) | 보금자리(${s.eligibility.bogeumjari.passed ? '⭕ 승인적격' : '❌ 부적격'}) | 시중은행(${s.eligibility.commercial.passed ? '⭕ 승인적격' : '⚠️ DSR주의'})\n\n`;
+      md += `> **※ 가이드 V5 심사 판정:** 디딤돌(${s.eligibility.didimdol.passed ? '⭕ 승인적격' : '❌ 부적격'}) | 보금자리(${s.eligibility.bogeumjari.passed ? '⭕ 승인적격' : '❌ 부적격'}) | 시중은행(${s.eligibility.commercial.passed ? '⭕ 승인적격' : '⚠️ DSR주의'})\n\n`;
     } else {
       md += `\n`;
     }
 
     // 0. 최종 핵심 요약
     md += `## **0\\. 최종 핵심 요약**\n\n`;
-    if (s.expenseData.isMoveinIncluded) {
+    if (s.includeMandatory && s.expenseData.isMoveinIncluded) {
       md += `> * **순수 취득 필요 자금:** **약 ${formatWon(s.pureTotalBudget)}** (매매가 ${priceWon} \\+ 필수 취득·거래비용 약 ${formatWon(s.mandatoryExpense)})  \n`;
       md += `> * **입주 완비 총 소요 예산:** **약 ${budgetWon}** (순수 취득 자금 \\+ 선택적 입주·정비비용 약 ${formatWon(s.optionalExpense)})  \n`;
-    } else {
+    } else if (s.includeMandatory) {
       md += `> * **총 소요 자금 (순수 취득):** **약 ${formatWon(s.pureTotalBudget)}** (매매가 ${priceWon} \\+ 필수 취득·거래비용 약 ${formatWon(s.mandatoryExpense)})  \n`;
+    } else if (s.expenseData.isMoveinIncluded) {
+      md += `> * **선택비용 포함 총 예산:** **약 ${budgetWon}** (매매가 ${priceWon} \\+ 선택적 입주·정비비용 약 ${formatWon(s.optionalExpense)})  \n`;
+    } else {
+      md += `> * **총 소요 자금 (매매 대금):** **${priceWon}** (부대비용 미포함)  \n`;
     }
     md += `> * **자기 자본 (순자산):** 기존 전세보증금 ${equityWon} (퇴거 시 전액 회수)  \n`;
-    md += `> * **필요 주택담보대출:** **${loanWon}** (LTV 약 ${s.ltv}% / 순수 취득 기준 시 ${formatWon(s.pureRequiredLoan)})  \n`;
+    md += `> * **필요 주택담보대출:** **${loanWon}** (LTV 약 ${s.ltv}% / 매매 대금 기준 ${loanWon})  \n`;
+    const extraCostTotal = (s.includeMandatory ? s.mandatoryExpense : 0) + (s.expenseData.isMoveinIncluded ? s.optionalExpense : 0);
+    if (extraCostTotal > 0) {
+      md += `> * **준비해야 할 부가 비용:** **약 ${formatWon(extraCostTotal)}** (대출 외 별도 현금 준비 필요)  \n`;
+    }
     md += `> * **입주 후 월 상환액:** **${monthlyPayWon}** (${s.loanYears}년 만기 원리금균등, 연 ${s.loanRate}% 기준 / 디딤돌 연 3.0% 적용 시 ${didimdolPayWon})  \n`;
     md += `> * **가계 재무 평가:** 월 실수령액(${monthlyNetWon}) 대비 주거비 지출 비중이 **약 ${s.housingRatio}%**에 불과하여, 매월 약 ${Math.floor(s.surplusMin / 10000)}만 원 이상의 순수 잉여 저축 여력을 완벽 확보\n\n`;
 
@@ -70,16 +78,30 @@ const MarkdownGenerator = {
     md += `| 구분 | 금액 | 비고 및 산출 근거   |\n`;
     md += `| :---- | ----: | :---- |\n`;
     md += `| **1. 아파트 매매 대금** | ${priceWon} | 기준 실거래 매매 계약가 |\n`;
-    md += `| **2. [필수] 취득·거래비용** | 약 ${formatWon(s.mandatoryExpense)} | ${taxDesc} |\n`;
+    if (s.includeMandatory) {
+      md += `| **2. [필수] 취득·거래비용** | 약 ${formatWon(s.mandatoryExpense)} | ${taxDesc} |\n`;
+      if (!s.expenseData.isMoveinIncluded) {
+        md += `| **➔ [소계] 순수 취득 필요 자금** | **${formatWon(s.pureTotalBudget)}** | **매매 대금 \\+ 법정 필수비용 (실제 매수 최소 자금)** |\n`;
+      }
+    }
     if (s.expenseData.isMoveinIncluded) {
-      md += `| **➔ [소계] 순수 취득 필요 자금** | **${formatWon(s.pureTotalBudget)}** | **매매 대금 \\+ 법정 필수비용 (실제 매수 최소 자금)** |\n`;
       md += `| **3. [선택] 입주·정비비용** | 약 ${formatWon(s.optionalExpense)} | ${optionalDesc} |\n`;
-      md += `| **➔ [총계] 입주 완료 총 소요 예산** | **${budgetWon}** | **매매 \\+ 필수취득 \\+ 선택입주 완비 종합 예산** |\n`;
-    } else {
-      md += `| **➔ [총계] 순수 취득 총 소요 자금** | **${formatWon(s.pureTotalBudget)}** | **매매 대금 \\+ 법정 필수비용 (법정 필수 정산 완비)** |\n`;
+      if (s.includeMandatory) {
+        md += `| **➔ [총계] 입주 완료 총 소요 예산** | **${budgetWon}** | **매매 \\+ 필수취득 \\+ 선택입주 완비 종합 예산** |\n`;
+      } else {
+        md += `| **➔ [소계] 선택적 비용 포함시 예산** | **${budgetWon}** | **매매 대금 \\+ 선택적 입주·정비비용 합산** |\n`;
+      }
     }
     md += `| **보유 순자산 (전세보증금)** | ${equityWon} | 이사 당일 임대인으로부터 전액 반환 |\n`;
-    md += `| **필요 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (순수 취득 기준 ${formatWon(s.pureRequiredLoan)} / 입주 완료 기준 ${formatWon(s.fullRequiredLoan)}) |\n`;
+    md += `| **필요 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (매매 대금 기준 ${loanWon}) |\n`;
+    if (extraCostTotal > 0) {
+      const extraDesc = (s.includeMandatory && s.expenseData.isMoveinIncluded)
+        ? `법정 취득비용(${formatTenMan(s.mandatoryExpense, false)}) \\+ 입주정비비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`
+        : (s.includeMandatory
+            ? `취득세·중개보수·등기비 등 법정 필수비용(${formatTenMan(s.mandatoryExpense, false)}) 별도 현금 준비 필요`
+            : `도배·장판·이사비 등 선택적 입주비용(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`);
+      md += `| **준비해야 할 부가 비용** | **약 ${formatWon(extraCostTotal)}** | ${extraDesc} |\n`;
+    }
     md += `| **월 원리금 상환액** | ${monthlyPayWon} | ${s.loanYears}년 만기 원리금균등 (금리 연 ${s.loanRate}% 기준) |\n`;
     md += `| **소득 대비 주거비 비중** | 약 ${s.housingRatio}% | 월 실수령액 ${monthlyNetWon} 기준 (최상급 안정권) |\n`;
     md += `| **DSR (총부채원리금상환비율)** | 약 ${s.dsr}% | ${incomePrefix} ${annualIncomeWon} 기준 (규제 한도 40% 대비 초안전) |\n\n`;
@@ -105,9 +127,13 @@ const MarkdownGenerator = {
     md += `  * 계약서 작성 시 잔금 지급일을 현재 거주 중인 전세 계약 종료일(보증금 수령일)과 동일자로 확정 기재합니다.  \n`;
     md += `  * *"매수인의 잔금 지급 및 입주는 매수인이 현재 임차 중인 주택의 보증금 반환 및 대출 실행과 동시이행 조건으로 진행한다"*는 실무 협의를 사전에 조율합니다.\n\n`;
 
-    md += `### **2단계: 주택담보대출 신청 및 심사 (D-1\\~2개월 전)**\n\n`;
-    md += `> * **대출 신청:** 필요 주택담보대출 **${loanWon}** 신청 (주택가격 5억 이하 및 무주택 요건 충족 시 HUG/HF **디딤돌대출** 또는 아낌e-보금자리론 우선 접수 권장).  \n`;
-    md += `> * **DSR 적격 심사:** ${dsrAuditDesc}\n\n`;
+    const isPolicy = (s.loanRate === 3.0 || s.loanRate === 3.8);
+    md += `### **2단계: ${isPolicy ? '정부 정책대출 사전 자산심사 및 접수 (D-40~60일 전)' : '시중은행 주택담보대출 정식 접수 및 본심사 (D-30일 전)'}**\n\n`;
+    md += `> * **대출 신청:** 필요 주택담보대출 **${loanWon}** 신청 (${isPolicy ? (s.loanRate === 3.0 ? 'HUG/HF 디딤돌대출' : 'HF 보금자리론') : '시중 1금융권 일반 주택담보대출'}).  \n`;
+    md += `> * **DSR 적격 심사:** ${dsrAuditDesc}  \n`;
+    md += `> * **📌 금융사별 접수 시기 현장 실무 팩트:**  \n`;
+    md += `  * **정부 정책대출 (디딤돌·보금자리):** 기금e든든/HF 사전자산심사(1~2주) ➔ 은행 본심사(2~3주) 등 40일 이상 소요되므로 **잔금 D-40~60일 전(1.5~2개월 전)**에 미리 접수해야 기표 지연이 없습니다.  \n`;
+    md += `  * **시중은행 일반 주담대 (1금융권):** 서류 유효기간(1개월)으로 인해 **D-2개월 전에는 접수 불가(반려)**하며, **잔금 D-30일 전(약 3~4주 전)**에 정식 서류를 접수하면 2주 내외로 자서(약정)까지 신속하게 완료됩니다.\n\n`;
 
     md += `### **3단계: 잔금 당일 일괄 정산 및 소유권 이전 (D-Day)**\n\n`;
     md += `잔금일 당일 오전 반나절 동안 자금이 체계적으로 유입·배분되며, 기존 신용대출 상환과 매매대금 완납, 소유권 이전이 원스톱으로 종료됩니다.\n\n`;
@@ -135,12 +161,14 @@ const MarkdownGenerator = {
     }
     md += `> * **공사 대기 및 금융 비용 리스크 '0':** 신축 분양과 달리 2.5\\~3년 동안 소요되는 공사 대기 기간이 없고, 1,500만\\~2,000만 원에 달하는 중도금 후불이자 부담이 원천 차단됩니다.  \n`;
     md += `> * **실물 검증 및 즉시 리모델링 가능:** 일조권, 단지 상태, 주차 환경을 현장에서 직접 확인하고 매수할 수 있으며, 약 ${expenseWon}의 부대정비 예산으로 샷시/도배/바닥을 깔끔하게 정비하여 입주 만족도를 극대화할 수 있습니다.  \n`;
-    md += `> * **단순하고 명료한 자금 정산:** 전세보증금 반환금과 주담대만으로 잔금 당일 신용대출까지 100% 털어내는 깔끔한 단일 결산 구조입니다.\n`;
+    md += `> * **단순하고 명료한 자금 정산:** 전세보증금 반환금과 주담대만으로 잔금 당일 신용대출까지 100% 털어내는 깔끔한 단일 결산 구조입니다.  \n`;
+    md += `> * **선수관리비 승계 및 장기수선충당금 사전 정산:** 잔금 당일 매도인에게 선수관리비(관리비 예치금 약 ${formatTenMan(s.expenseData.prepaidManagementFee, false)})를 계좌이체로 승계 정산하며, 기존 세입자가 살던 집인 경우 임대차 기간 동안 적립된 장기수선충당금 반환 의무는 기존 소유자(매도인)에게 있으므로 매수인에게 전가되지 않도록 잔금 전 중개사와 정산 주체를 사전 확정합니다.\n`;
     if (s.strategyComparison && s.strategyComparison.totalInterestSaving > 0) {
-      md += `> * **💡 가이드 V4 맞벌이 vs 외벌이 금융비용 정밀 비교 전략:**  \n`;
+      md += `> * **💡 가이드 V5 맞벌이 vs 외벌이 금융비용 정밀 비교 전략:**  \n`;
       md += `  * **맞벌이 유지 시 (연봉 7,700만):** 시중은행 일반 주담대(연 ${s.strategyComparison.commercialRate}%) ➔ 30년 총이자 약 ${formatWon(s.strategyComparison.commercialTotalInterest)}  \n`;
       md += `  * **외벌이 전환 시 (배우자 서류상 무직·단독 5,120만):** 디딤돌대출(연 3.0%) 승인 ➔ 30년 총이자 약 ${formatWon(s.strategyComparison.didimdolTotalInterest)}  \n`;
-      md += `  * **➔ 30년 총이자 약 ${formatWon(s.strategyComparison.totalInterestSaving)} 순절감 (매월 약 ${formatTenMan(s.strategyComparison.monthlySaving)} 절약)** 효과 발생\n`;
+      md += `  * **➔ 30년 총이자 약 ${formatWon(s.strategyComparison.totalInterestSaving)} 순절감 (매월 약 ${formatTenMan(s.strategyComparison.monthlySaving)} 절약)** 효과 발생  \n`;
+      md += `  * *(주의: 국토부 관리방안에 따라 수도권 아파트는 방공제 5,500만 원 차감으로 생초 호당 한도 최대 1.85억 제한 사전 확인 필수)*\n`;
     }
 
     return md;
@@ -170,7 +198,7 @@ const MarkdownGenerator = {
     const netIncomePrefix = isCouple ? '월 실수령액 약' : '월 실수령액 약';
     const loanBorrowerDesc = isCouple ? '본인 또는 배우자 명의의 신용대출 또는 마이너스통장' : '본인 명의의 신용대출 또는 마이너스통장';
 
-    const taxDesc = `생애최초 취득세 감면(약 ${formatTenMan(s.expenseData.taxInfo.finalTax, false)}) + 소유권 이전 등기/인지세/채권할인(약 ${formatTenMan(s.expenseData.regFee, false)})`;
+    const taxDesc = `생애최초 취득세 감면(약 ${formatTenMan(s.expenseData.taxInfo.finalTax, false)}) + 소유권 이전 등기/인지세/채권할인(약 ${formatTenMan(s.expenseData.regFee, false)}) + 관리비예치금(약 ${formatTenMan(s.expenseData.prepaidManagementFee, false)})`;
     const optionalDesc = s.expenseData.isMoveinIncluded 
       ? `발코니 확장 및 필수 유상옵션(약 ${formatTenMan(s.expenseData.optionCost, false)})${s.expenseData.moveinCost > 0 ? ` + 가구/가전/이사비(약 ${formatTenMan(s.expenseData.moveinCost, false)})` : ''}`
       : '선택 안 함 (0원)';
@@ -182,24 +210,32 @@ const MarkdownGenerator = {
     md += `본 문서는 ${incomePrefix} ${annualIncomeWon}(${netIncomePrefix} ${monthlyNetWon}), ${householdDetailStr}, 생애최초 무주택자 조건에서 보유 중인 기존 전세보증금(${equityWon}) 반환 일정과 목표 **분양가 ${priceWon}**을 연계하여 월 주택담보대출 상환액을 ${monthlyPayWon} 수준(실수령액 대비 약 ${s.housingRatio}%)으로 최적화하고 가계 재무 안정성을 극대화한 실전 4단계 자금 조달 실행 계획(V3)입니다.\n\n`;
     md += `> **※ 소득 심사 기준:** ${s.auditInfo?.householdLabel || (isCouple ? '👫 기혼 부부합산 심사' : '👤 차주 단독 심사')} (${s.auditInfo?.auditMethodName || '부부합산 DSR 심사'})\n`;
     if (s.eligibility) {
-      md += `> **※ 가이드 V4 심사 판정:** 디딤돌(${s.eligibility.didimdol.passed ? '⭕ 승인적격' : '❌ 부적격'}) | 보금자리(${s.eligibility.bogeumjari.passed ? '⭕ 승인적격' : '❌ 부적격'}) | 시중은행(${s.eligibility.commercial.passed ? '⭕ 승인적격' : '⚠️ DSR주의'})\n\n`;
+      md += `> **※ 가이드 V5 심사 판정:** 디딤돌(${s.eligibility.didimdol.passed ? '⭕ 승인적격' : '❌ 부적격'}) | 보금자리(${s.eligibility.bogeumjari.passed ? '⭕ 승인적격' : '❌ 부적격'}) | 시중은행(${s.eligibility.commercial.passed ? '⭕ 승인적격' : '⚠️ DSR주의'})\n\n`;
     } else {
       md += `\n`;
     }
 
     // 0. 최종 핵심 요약
     md += `## **0\\. 최종 핵심 요약**\n\n`;
-    if (s.expenseData.isMoveinIncluded) {
+    if (s.includeMandatory && s.expenseData.isMoveinIncluded) {
       md += `> * **순수 취득 필요 자금:** **약 ${formatWon(s.pureTotalBudget)}** (분양가 ${priceWon} \\+ 필수 취득·등기비용 약 ${formatWon(s.mandatoryExpense)})  \n`;
       md += `> * **입주 완비 총 소요 예산:** **약 ${budgetWon}** (순수 취득 자금 \\+ 선택적 발코니/옵션/이사비용 약 ${formatWon(s.optionalExpense)})  \n`;
-    } else {
+    } else if (s.includeMandatory) {
       md += `> * **총 소요 자금 (순수 분양):** **약 ${formatWon(s.pureTotalBudget)}** (분양가 ${priceWon} \\+ 필수 취득·등기비용 약 ${formatWon(s.mandatoryExpense)})  \n`;
+    } else if (s.expenseData.isMoveinIncluded) {
+      md += `> * **선택비용 포함 총 예산:** **약 ${budgetWon}** (분양가 ${priceWon} \\+ 선택적 발코니/옵션/이사비용 약 ${formatWon(s.optionalExpense)})  \n`;
+    } else {
+      md += `> * **총 소요 자금 (분양가):** **${priceWon}** (부대비용 미포함)  \n`;
     }
     md += `> * **당장 들어가는 계약금:** ${downPaymentWon} (전세보증금이 묶여 있으므로 신용대출/마이너스통장으로 납부 후 입주 잔금일에 전세보증금을 반환받아 전액 일괄 상환 및 해지)  \n`;
     md += `> * **공사 기간(약 2.5년 \\~ 3년):**  \n`;
     md += `  * 중도금(60%, ${middlePaymentWon})은 HUG/시공사 보증 집단대출로 처리되어 매달 들어가는 원금 부담 없음 (DSR 미적용).  \n`;
     md += `  * ${isCouple ? '부부합산 월 실수령액' : '월 실수령액'}(${monthlyNetWon}) 중 매월 저축하여 중도금 후불이자, 옵션 잔금, 비상 자금으로 총 3,000만\\~4,000만 원을 안전하게 축적.  \n`;
     md += `> * **입주 시점 정산:** 전세보증금 회수액(${equityWon}) \\+ 잔금 주택담보대출(${loanWon})으로 기존 중도금 대출, 계약금 신용대출, 분양 잔금, 취득세 및 옵션비를 일괄 정산하여 부채를 단일 장기 주담대로 통합.  \n`;
+    const presaleExtraCostTotal = (s.includeMandatory ? s.mandatoryExpense : 0) + (s.expenseData.isMoveinIncluded ? s.optionalExpense : 0);
+    if (presaleExtraCostTotal > 0) {
+      md += `> * **준비해야 할 부가 비용:** **약 ${formatWon(presaleExtraCostTotal)}** (대출 외 별도 현금 준비 필요)  \n`;
+    }
     md += `> * **입주 후 상환 부담:** ${s.loanYears}년 만기 원리금균등분할상환(금리 ${s.loanRate}% 기준) 시 월 원리금 ${monthlyPayWon}으로, 가계 실수령액의 ${s.housingRatio}% 수준에 불과하여 월 ${Math.floor(s.surplusMin / 10000)}만 원 이상의 여유 저축 여력을 확보.\n\n`;
 
     // 1. 목표 분양가 및 기본 재무 지표
@@ -207,16 +243,30 @@ const MarkdownGenerator = {
     md += `| 항목 | 금액 | 산정 내역 및 세부 지표   |\n`;
     md += `| :---- | ----: | :---- |\n`;
     md += `| **1. 목표 분양가** | ${priceWon} | 청약 입주자모집공고 기준 분양 공급가 |\n`;
-    md += `| **2. [필수] 취득·등기비용** | 약 ${formatWon(s.mandatoryExpense)} | ${taxDesc} |\n`;
+    if (s.includeMandatory) {
+      md += `| **2. [필수] 취득·등기비용** | 약 ${formatWon(s.mandatoryExpense)} | ${taxDesc} |\n`;
+      if (!s.expenseData.isMoveinIncluded) {
+        md += `| **➔ [소계] 순수 분양 필요 자금** | **${formatWon(s.pureTotalBudget)}** | **분양가 \\+ 법정 취득/등기 필수비용** |\n`;
+      }
+    }
     if (s.expenseData.isMoveinIncluded) {
-      md += `| **➔ [소계] 순수 취득 필요 자금** | **${formatWon(s.pureTotalBudget)}** | **분양가 \\+ 법정 취득/등기 필수비용** |\n`;
       md += `| **3. [선택] 발코니·옵션·입주비용** | 약 ${formatWon(s.optionalExpense)} | ${optionalDesc} |\n`;
-      md += `| **➔ [총계] 입주 완료 총 소요 예산** | **${budgetWon}** | **분양가 \\+ 필수취득 \\+ 선택옵션/이사 완비 종합 예산** |\n`;
-    } else {
-      md += `| **➔ [총계] 순수 분양 총 소요 자금** | **${formatWon(s.pureTotalBudget)}** | **분양가 \\+ 필수 취득/등기비용 (법정 필수 정산 완비)** |\n`;
+      if (s.includeMandatory) {
+        md += `| **➔ [총계] 입주 완료 총 소요 자금** | **${budgetWon}** | **분양가 \\+ 필수취득 \\+ 선택옵션/이사 완비 종합 예산** |\n`;
+      } else {
+        md += `| **➔ [소계] 선택적 비용 포함시 예산** | **${budgetWon}** | **분양가 \\+ 발코니확장/옵션 \\+ 입주비용 합산** |\n`;
+      }
     }
     md += `| **보유 순자산 (전세보증금)** | ${equityWon} | 입주 당일 기존 임대인으로부터 전액 반환 |\n`;
-    md += `| **필요 잔금 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (순수 취득 기준 ${formatWon(s.pureRequiredLoan)} / 입주 완료 기준 ${formatWon(s.fullRequiredLoan)}) |\n`;
+    md += `| **필요 잔금 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (분양가 기준 ${loanWon}) |\n`;
+    if (presaleExtraCostTotal > 0) {
+      const presaleExtraDesc = (s.includeMandatory && s.expenseData.isMoveinIncluded)
+        ? `필수 취득세/등기비(${formatTenMan(s.mandatoryExpense, false)}) \\+ 옵션/입주비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`
+        : (s.includeMandatory
+            ? `생애최초 취득세 및 소유권이전 등기비용(${formatTenMan(s.mandatoryExpense, false)}) 별도 현금 준비 필요`
+            : `발코니확장/옵션 및 가전이사비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`);
+      md += `| **준비해야 할 부가 비용** | **약 ${formatWon(presaleExtraCostTotal)}** | ${presaleExtraDesc} |\n`;
+    }
     md += `| **월 원리금 상환액** | ${monthlyPayWon} | ${s.loanYears}년 만기 원리금균등 (연 ${s.loanRate}% 기준) |\n`;
     md += `| **가계 소득 대비 주거비 부담율** | 약 ${s.housingRatio}% | 월 실수령액 ${monthlyNetWon} 기준 (초안정 구간) |\n`;
     md += `| **DSR (총부채원리금상환비율)** | 약 ${s.dsr}% | ${incomePrefix} ${annualIncomeWon} 기준 (법정 한도 40% 대비 초안전) |\n\n`;
@@ -305,16 +355,29 @@ const MarkdownGenerator = {
     md += `본 문서는 ${incomePrefix} ${annualIncomeWon}(${netIncomePrefix} ${monthlyNetWon}), ${householdDetailStr}, ${s.isHomeless ? '무주택자' : '1주택자'} 조건에서 보유 순자산(${equityWon})을 기반으로 **전세보증금 ${depositWon}** 규모의 주택 임대차 계약을 체결할 때의 실전 4단계 전세대출 자금 조달 및 안전 실행 로드맵입니다.\n\n`;
     md += `> **※ 소득 심사 기준:** ${s.auditInfo?.householdLabel || (isCouple ? '👫 기혼 부부합산 심사' : '👤 세대주 단독 심사')} (${s.auditInfo?.auditMethodName || '부부합산 심사'})\n`;
     if (s.eligibility) {
-      md += `> **※ 가이드 V4 심사 판정:** 버팀목전세(${s.eligibility.beotimmok?.passed ? '⭕ 승인적격' : '❌ 부적격'}) | HUG안심전세(⭕ 소득무관 적격) | 시중은행전세(${s.eligibility.commercial?.passed ? '⭕ 승인적격' : '⚠️ DSR주의'})\n\n`;
+      md += `> **※ 가이드 V5 심사 판정:** 버팀목전세(${s.eligibility.beotimmok?.passed ? '⭕ 승인적격' : '❌ 부적격'}) | HUG안심전세(⭕ 소득무관 적격) | 시중은행전세(${s.eligibility.commercial?.passed ? '⭕ 승인적격' : '⚠️ DSR주의'})\n\n`;
     } else {
       md += `\n`;
     }
 
     // 0. 최종 핵심 요약
     md += `## **0\\. 최종 핵심 요약**\n\n`;
-    md += `> * **총 전세 소요 예산:** 약 ${budgetWon} (전세보증금 ${depositWon} \\+ 중개보수, HUG 반환보증보험료 및 인지세 약 ${expenseWon})  \n`;
+    if (s.includeMandatory && s.isMoveinIncluded) {
+      md += `> * **순수 전세 필요 자금:** **약 ${formatWon(s.pureTotalBudget)}** (보증금 ${depositWon} \\+ 법정 부대비용 약 ${formatWon(s.mandatoryExpense)})  \n`;
+      md += `> * **최종 입주 총 소요 예산:** **약 ${budgetWon}** (순수 전세 자금 \\+ 입주·이사비용 약 ${formatWon(s.optionalExpense)})  \n`;
+    } else if (s.includeMandatory) {
+      md += `> * **총 전세 필요 예산:** **약 ${formatWon(s.pureTotalBudget)}** (보증금 ${depositWon} \\+ 법정 부대비용 약 ${formatWon(s.mandatoryExpense)})  \n`;
+    } else if (s.isMoveinIncluded) {
+      md += `> * **선택비용 포함시 예산:** **약 ${budgetWon}** (보증금 ${depositWon} \\+ 입주·이사비용 약 ${formatWon(s.optionalExpense)})  \n`;
+    } else {
+      md += `> * **총 전세 소요 예산:** **${depositWon}** (부대비용 미포함)  \n`;
+    }
     md += `> * **자기 자본 (보유 현금):** ${equityWon}  \n`;
     md += `> * **필요 전세자금대출:** **${loanWon}** (보증금 대비 대출비율 약 ${s.loanRatio}%로 법정 안전 한도 80% 이내 충족)  \n`;
+    const jeonseExtraCostTotal = (s.includeMandatory ? s.mandatoryExpense : 0) + (s.isMoveinIncluded ? s.optionalExpense : 0);
+    if (jeonseExtraCostTotal > 0) {
+      md += `> * **준비해야 할 부가 비용:** **약 ${formatWon(jeonseExtraCostTotal)}** (대출 외 별도 현금 준비 필요)  \n`;
+    }
     md += `> * **월 주거비 부담액:** **${monthlyPayWon}** (${repayTypeDesc}, 금리 연 ${s.loanRate}% 기준)  \n`;
     md += `> * **가계 재무 건전성:** 월 실수령액(${monthlyNetWon}) 대비 주거비 지출 비중이 **약 ${s.housingRatio}%** 수준으로, 매월 생활비(${s.livingCostDesc}) 지출 후 **약 ${Math.floor(s.surplusMin / 10000)}만\\~${Math.floor(s.surplusMax / 10000)}만 원**의 순수 잉여 저축 여력을 완벽히 확보 가능\n\n`;
 
@@ -322,11 +385,31 @@ const MarkdownGenerator = {
     md += `## **1\\. 전세 자금 조달 구조 및 건전성 지표**\n\n`;
     md += `| 구분 | 금액 | 비고 및 산출 근거   |\n`;
     md += `| :---- | ----: | :---- |\n`;
-    md += `| **목표 전세보증금** | ${depositWon} | 임대차 계약 기준 보증금 |\n`;
-    md += `| **부대비용 합계** | 약 ${expenseWon} | 중개보수(${formatTenMan(s.brokerageFee, false)}) \\+ HUG 반환보증료(${formatTenMan(s.guaranteeFee, false)}) \\+ 인지세(${formatTenMan(s.stampDuty, false)}) |\n`;
-    md += `| **총 필요 전세 예산** | 약 ${budgetWon} | 전세보증금 \\+ 부대비용 |\n`;
-    md += `| **보유 순자산 (보유 현금)** | ${equityWon} | 본인 보유 가용 자본 |\n`;
-    md += `| **필요 전세자금대출** | ${loanWon} | 보증금 대비 대출비율 약 ${s.loanRatio}% (한도 80% 이내 적격) |\n`;
+    md += `| **1. 목표 전세보증금** | ${depositWon} | 임대차 계약 기준 보증금 |\n`;
+    if (s.includeMandatory) {
+      md += `| **2. [필수] 취득·거래비용** | 약 ${formatWon(s.mandatoryExpense)} | 중개보수(${formatTenMan(s.brokerageFee, false)}) \\+ HUG 반환보증료(${formatTenMan(s.guaranteeFee, false)}) \\+ 인지세(${formatTenMan(s.stampDuty, false)}) |\n`;
+      if (!s.isMoveinIncluded) {
+        md += `| **➔ [소계] 순수 전세 필요 자금** | **${formatWon(s.pureTotalBudget)}** | **보증금 \\+ 법정 부대비용 (최소 전세 자금)** |\n`;
+      }
+    }
+    if (s.isMoveinIncluded) {
+      md += `| **3. [선택] 입주·이사비용** | 약 ${formatWon(s.optionalExpense)} | 포장이사 및 입주 청소 예산 |\n`;
+      if (s.includeMandatory) {
+        md += `| **➔ [총계] 최종 입주 총 소요 예산** | **${budgetWon}** | **전세보증금 \\+ 법정비용 \\+ 입주이사비 합산** |\n`;
+      } else {
+        md += `| **➔ [소계] 선택적 비용 포함시 예산** | **${budgetWon}** | **전세보증금 \\+ 선택적 입주·이사비용 합산** |\n`;
+      }
+    }
+    md += `| **보유 자기자본 (현금)** | ${equityWon} | 본인 보유 가용 자본 |\n`;
+    md += `| **필요 전세자금대출** | **${loanWon}** | 보증금 대비 대출비율 약 ${s.loanRatio}% (한도 80% 이내 적격) |\n`;
+    if (jeonseExtraCostTotal > 0) {
+      const jeonseExtraDesc = (s.includeMandatory && s.isMoveinIncluded)
+        ? `법정비용(${formatTenMan(s.mandatoryExpense, false)}) \\+ 입주이사비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`
+        : (s.includeMandatory
+            ? `중개보수/보증료 등 법정 필수비용(${formatTenMan(s.mandatoryExpense, false)}) 별도 현금 준비 필요`
+            : `포장이사/청소 등 입주비용(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`);
+      md += `| **준비해야 할 부가 비용** | **약 ${formatWon(jeonseExtraCostTotal)}** | ${jeonseExtraDesc} |\n`;
+    }
     md += `| **월 주거비 상환액** | ${monthlyPayWon} | ${repayTypeDesc} (금리 연 ${s.loanRate}% 기준) |\n`;
     md += `| **소득 대비 주거비 비중** | 약 ${s.housingRatio}% | 월 실수령액 ${monthlyNetWon} 기준 (가계 재무 안정권) |\n\n`;
 
@@ -350,10 +433,14 @@ const MarkdownGenerator = {
     md += `  * 등기부등본 갑구/을구 열람: 선순위 근저당권 및 압류/가압류 여부 확인 (근저당 + 전세금 합산이 매매 시세의 70% 이내여야 안전).  \n`;
     md += `  * *"임대인 및 임차목적물의 하자로 인한 전세자금대출 및 전세보증금 반환보증보험 가입 불가 시 본 계약은 무효로 하며, 임대인은 기지급된 계약금 전액을 즉시 반환한다"*는 특약을 명시합니다.\n\n`;
 
-    md += `### **2단계: 확정일자 부여 및 전세대출 신청 (D-1개월 전)**\n\n`;
+    const isJeonsePolicy = (s.loanRate <= 3.0);
+    md += `### **2단계: ${isJeonsePolicy ? '기금e든든 자격심사 및 전세대출 신청 (D-40~50일 전)' : '시중은행 전세자금대출 정식 접수 및 심사 (D-30일 전)'}**\n\n`;
     md += `> * **확정일자 발급:** 계약 즉시 주민센터 또는 인터넷등기소를 통해 임대차계약서에 확정일자를 부여받습니다.  \n`;
-    md += `> * **대출 신청:** 취급 은행에 방문하여 전세자금대출 **${loanWon}** 신청 접수 (버팀목 전세대출, HUG 안심전세대출, HF 보증서 대출 중 최적 상품 심사).  \n`;
-    md += `> * **자격 적격 심사:** 연소득(${annualIncomeWon}) 및 무주택 요건 충족 여부, 보증기관 한도 조회를 거쳐 대출 승인 통보를 수령합니다.\n\n`;
+    md += `> * **대출 신청:** 취급 은행에 방문하여 전세자금대출 **${loanWon}** 신청 접수 (${isJeonsePolicy ? '주택도시기금 버팀목전세대출' : '시중 1금융권 일반 전세자금대출'}).  \n`;
+    md += `> * **자격 적격 심사:** 연소득(${annualIncomeWon}) 및 무주택 요건 충족 여부, 보증기관 한도 조회를 거쳐 대출 승인 통보를 수령합니다.  \n`;
+    md += `> * **📌 전세대출 상품별 접수 시기 현장 실무 팩트:**  \n`;
+    md += `  * **정부 버팀목·기금 전세대출:** 기금e든든 비대면 자격심사 및 HUG 자산심사(1~2주) ➔ 은행 수탁 심사(2주) 소요로 **잔금 D-40~50일 전(1.5개월 전)**에 미리 신청해야 안전합니다.  \n`;
+    md += `  * **시중은행 일반 전세대출 (SGI/HF/HUG):** 대출 유효기간(1개월)으로 인해 D-2개월 전에는 접수를 받지 않으며, **잔금 D-30일 전(약 3~4주 전)**에 접수하면 2~3주 내외로 충분히 승인 완료됩니다.\n\n`;
 
     md += `### **3단계: 잔금 당일 전세대출 실행 및 대항력 확보 (D-Day)**\n\n`;
     md += `> * **대출 실행:** 은행에서 전세대출금 **${loanWon}**을 임대인 계좌로 직접 송금합니다.  \n`;

@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const txtMandatoryTaxDetail = document.getElementById('txt-mandatory-tax-detail');
   const txtMandatoryBrokerageDetail = document.getElementById('txt-mandatory-brokerage-detail');
   const txtMandatoryRegDetail = document.getElementById('txt-mandatory-reg-detail');
-
+  const chkIncludeMandatory = document.getElementById('chk-include-mandatory');
   const chkIncludeMovein = document.getElementById('chk-include-movein');
   const txtOptionalExpenseSum = document.getElementById('txt-optional-expense-sum');
   const containerOptionalInputs = document.getElementById('container-optional-inputs');
@@ -164,6 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const cardLtvBadge = document.getElementById('card-ltv-badge');
   const cardLblMonthly = document.getElementById('card-lbl-monthly');
   const cardMonthlyPayment = document.getElementById('card-monthly-payment');
+  const cardMonthlyPaymentDetail = document.getElementById('card-monthly-payment-detail');
   const cardHousingRatio = document.getElementById('card-housing-ratio');
   const cardSurplus = document.getElementById('card-surplus');
 
@@ -753,7 +754,66 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+
     return corrected;
+  }
+
+  // 4-6. 상환방식(드롭다운) 동적 옵션 제어 (모드 및 상품별 독립)
+  function updateRepayTypeOptions(mode, rate) {
+    const selRepayType = document.getElementById('sel-repay-type');
+    const amortType = document.getElementById('amort-type');
+    if (!selRepayType) return;
+    
+    const isJeonse = mode === 'jeonse';
+    const isHF = (!isJeonse && (Math.abs(rate - 3.0) < 0.05 || Math.abs(rate - 3.8) < 0.05));
+    
+    Array.from(selRepayType.options).forEach(opt => {
+      if (opt.value === 'interest-only') {
+        if (isJeonse || (!isJeonse && !isHF)) {
+          opt.disabled = false;
+          opt.textContent = '만기일시상환 (월 이자만)';
+        } else {
+          opt.disabled = true;
+          opt.textContent = '만기일시상환 (HF 불가)';
+          if (selRepayType.value === 'interest-only') {
+            selRepayType.value = 'equal-payment';
+            state.repayType = 'equal-payment';
+          }
+        }
+      } else if (opt.value === 'graduated') {
+        if (isJeonse) {
+          opt.disabled = true;
+          opt.textContent = '체증식 분할상환 (전세 불가)';
+          if (selRepayType.value === 'graduated') {
+            selRepayType.value = 'interest-only';
+            state.repayType = 'interest-only';
+          }
+        } else {
+          opt.disabled = false;
+          opt.textContent = '체증식 분할상환';
+        }
+      } else if (opt.value === 'equal-principal' || opt.value === 'equal-payment') {
+        if (isJeonse) {
+          // 전세에서는 만기일시상환이 기본이므로 원금 분할상환 억제 옵션 추가 가능. 하지만 HF 버팀목 등에서는 원금균등도 가능.
+          opt.disabled = false; 
+        } else {
+          opt.disabled = false;
+        }
+      }
+    });
+
+    if (amortType && amortType.options.length > 0) {
+      Array.from(amortType.options).forEach(opt => {
+        const matchOpt = selRepayType.querySelector(`option[value="${opt.value}"]`);
+        if (matchOpt) {
+          opt.disabled = matchOpt.disabled;
+          opt.textContent = matchOpt.textContent;
+        }
+      });
+      if (amortType.querySelector(`option[value="${amortType.value}"]`)?.disabled) {
+        amortType.value = selRepayType.value;
+      }
+    }
   }
 
   // 5. 모드 전환 핸들러 (매매, 분양, 전세, 가구조건, 금리표)
@@ -1453,6 +1513,7 @@ document.addEventListener('DOMContentLoaded', () => {
     state.isHomeless = chkHomeless.checked;
     state.creditLoanRate = Number(inpCreditRate.value) || 4.5;
     state.customExtra = inpCustomExtra.value ? parseMoney(inpCustomExtra.value) : null;
+    state.includeMandatory = chkIncludeMandatory ? chkIncludeMandatory.checked : true;
     state.includeMovein = chkIncludeMovein ? chkIncludeMovein.checked : false;
     state.moveinExtra = inpMoveinExtra ? parseMoney(inpMoveinExtra.value) : 0;
 
@@ -1499,12 +1560,14 @@ document.addEventListener('DOMContentLoaded', () => {
         monthlyNetIncome: state.monthlyNetIncome,
         loanRate: state.loanRate,
         loanYears: state.loanYears,
+        repayType: state.repayType,
         creditLoanRate: state.creditLoanRate,
         isFirstHome: state.isFirstHome,
         isHomeless: state.isHomeless,
         customRefurbishCost: state.customExtra,
         customMoveinCost: state.moveinExtra,
-        includeMovein: state.includeMovein
+        includeMovein: state.includeMovein,
+        includeMandatory: state.includeMandatory
       });
       state.generatedMarkdown = MarkdownGenerator.generateResaleMarkdown(scenario);
     } else if (calcMode === 'presale') {
@@ -1519,12 +1582,14 @@ document.addEventListener('DOMContentLoaded', () => {
         monthlyNetIncome: state.monthlyNetIncome,
         loanRate: state.loanRate,
         loanYears: state.loanYears,
+        repayType: state.repayType,
         creditLoanRate: state.creditLoanRate,
         isFirstHome: state.isFirstHome,
         isHomeless: state.isHomeless,
         customOptionCost: state.customExtra,
         customMoveinCost: state.moveinExtra,
-        includeMovein: state.includeMovein
+        includeMovein: state.includeMovein,
+        includeMandatory: state.includeMandatory
       });
       state.generatedMarkdown = MarkdownGenerator.generatePresaleMarkdown(scenario);
     } else {
@@ -1541,7 +1606,8 @@ document.addEventListener('DOMContentLoaded', () => {
         repayType: state.repayType,
         isHomeless: state.isHomeless,
         customMoveinCost: state.moveinExtra,
-        includeMovein: state.includeMovein
+        includeMovein: state.includeMovein,
+        includeMandatory: state.includeMandatory
       });
       state.generatedMarkdown = MarkdownGenerator.generateJeonseMarkdown(scenario);
     }
@@ -1551,7 +1617,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 사이드바 필수/선택 요약 실시간 갱신
     if (txtMandatoryExpenseSum && scenario.mandatoryExpense !== undefined) {
-      txtMandatoryExpenseSum.textContent = `약 ${ScenarioEngine.formatKoreanMoney(scenario.mandatoryExpense)}`;
+      txtMandatoryExpenseSum.textContent = state.includeMandatory 
+        ? `약 ${ScenarioEngine.formatKoreanMoney(scenario.mandatoryExpense)}`
+        : '0원 (미포함)';
     }
     if (txtOptionalExpenseSum && scenario.optionalExpense !== undefined) {
       txtOptionalExpenseSum.textContent = scenario.isMoveinIncluded 
@@ -1605,8 +1673,16 @@ document.addEventListener('DOMContentLoaded', () => {
       cardLtvBadge.textContent = `대출비율 ${s.loanRatio}% (안전 한도 80% 이내)`;
 
       cardLblMonthly.textContent = s.repayType === 'equal-payment' ? '월 원리금 상환액' : '월 순수 이자 부담';
+      cardMonthlyPaymentDetail.classList.add('hidden');
       cardMonthlyPayment.textContent = formatTenMan(s.monthlyPayment);
       cardHousingRatio.textContent = `실수령액의 ${s.housingRatio}% (${s.housingRatio <= 10 ? '최상급 초안전' : '안정권'})`;
+
+      const extraCostTotal = (state.includeMandatory ? s.mandatoryExpense : 0) + (s.isMoveinIncluded ? s.optionalExpense : 0);
+      const extraCostDesc = (state.includeMandatory && s.isMoveinIncluded)
+        ? `법정비용(${formatTenMan(s.mandatoryExpense, false)}) + 입주이사비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`
+        : (state.includeMandatory
+            ? `중개보수/보증료 등 법정 필수비용(${formatTenMan(s.mandatoryExpense, false)}) 별도 현금 준비 필요`
+            : `포장이사/청소 등 입주비용(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`);
 
       titleFundingSection.innerHTML = `<i data-lucide="pie-chart" class="w-5 h-5 text-emerald-600"></i> 전세 자금 조달 구조 및 건전성 지표`;
       tbodyFundingStructure.innerHTML = `
@@ -1615,32 +1691,30 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-4 py-3 text-right font-extrabold text-emerald-600">${formatWon(s.deposit)}</td>
           <td class="px-4 py-3 text-slate-500">임대차 계약 기준 전세금</td>
         </tr>
+        ${state.includeMandatory ? `
         <tr class="bg-emerald-50/30">
-          <td class="px-4 py-3 font-bold text-emerald-900 flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-            2. [필수] 취득·거래비용
-          </td>
+          <td class="px-4 py-3 font-bold text-emerald-900">2. [필수] 취득·거래비용</td>
           <td class="px-4 py-3 text-right font-extrabold text-emerald-700 whitespace-nowrap">약 ${formatWon(s.mandatoryExpense)}</td>
           <td class="px-4 py-3 text-slate-600">중개보수(${formatTenMan(s.brokerageFee, false)}) + HUG 반환보증료(${formatTenMan(s.guaranteeFee, false)}) + 인지세(${formatTenMan(s.stampDuty, false)})</td>
         </tr>
+        ${!s.isMoveinIncluded ? `
         <tr class="bg-emerald-100/50 border-t border-b border-emerald-200">
-          <td class="px-4 py-2.5 font-extrabold text-emerald-900">➔ ${s.isMoveinIncluded ? '[소계] 순수 전세 필요 자금' : '[총계] 총 전세 필요 예산'}</td>
+          <td class="px-4 py-2.5 font-extrabold text-emerald-900">➔ [소계] 순수 전세 필요 자금</td>
           <td class="px-4 py-2.5 text-right font-black text-emerald-900 whitespace-nowrap">${formatWon(s.pureTotalBudget)}</td>
-          <td class="px-4 py-2.5 text-emerald-800 font-bold">보증금 + 법정 부대비용 (${s.isMoveinIncluded ? '최소 전세 자금' : '법정 필수 정산 완비'})</td>
+          <td class="px-4 py-2.5 text-emerald-800 font-bold">보증금 + 법정 부대비용 (최소 전세 자금)</td>
         </tr>
+        ` : ''}
+        ` : ''}
         ${s.isMoveinIncluded ? `
         <tr class="bg-indigo-50/30">
-          <td class="px-4 py-3 font-bold text-indigo-900 flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-            3. [선택] 입주·이사비용
-          </td>
+          <td class="px-4 py-3 font-bold text-indigo-900">3. [선택] 입주·이사비용</td>
           <td class="px-4 py-3 text-right font-extrabold text-indigo-700 whitespace-nowrap">약 ${formatWon(s.optionalExpense)}</td>
           <td class="px-4 py-3 text-slate-600">포장이사 및 입주 청소 예산</td>
         </tr>
         <tr class="bg-indigo-100/60 border-t border-b border-indigo-200">
-          <td class="px-4 py-2.5 font-extrabold text-indigo-950">➔ [총계] 최종 입주 총 소요 예산</td>
+          <td class="px-4 py-2.5 font-extrabold text-indigo-950">➔ ${state.includeMandatory ? '[총계] 최종 입주 총 소요 예산' : '[소계] 선택적 비용 포함시 예산'}</td>
           <td class="px-4 py-2.5 text-right font-black text-indigo-950 whitespace-nowrap">${formatWon(s.fullTotalBudget)}</td>
-          <td class="px-4 py-2.5 text-indigo-900 font-bold">전세보증금 + 법정비용 + 입주이사비 합산</td>
+          <td class="px-4 py-2.5 text-indigo-900 font-bold">${state.includeMandatory ? '전세보증금 + 법정비용 + 입주이사비 합산' : '전세보증금 + 선택적 입주·이사비용 합산'}</td>
         </tr>
         ` : ''}
         <tr>
@@ -1653,10 +1727,17 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-4 py-3 text-right font-extrabold text-purple-700">${formatWon(s.requiredLoan)}</td>
           <td class="px-4 py-3 text-purple-700 font-medium">보증금 대비 대출비율 약 ${s.loanRatio}% (정부/은행 한도 80% 적격)</td>
         </tr>
-        <tr>
-          <td class="px-4 py-3 font-semibold text-slate-700">월 상환 부담금 (이자)</td>
-          <td class="px-4 py-3 text-right font-bold text-slate-800">${formatTenMan(s.monthlyPayment)}</td>
-          <td class="px-4 py-3 text-slate-500">${s.repayType === 'equal-payment' ? '2년 만기 원리금' : '2년 만기일시 (월 순수 이자)'} / 금리 연 ${s.loanRate}% 기준</td>
+        ${extraCostTotal > 0 ? `
+        <tr class="bg-amber-50/50">
+          <td class="px-4 py-3 font-bold text-amber-950">준비해야 할 부가 비용</td>
+          <td class="px-4 py-3 text-right font-extrabold text-amber-700 whitespace-nowrap">약 ${formatWon(extraCostTotal)}</td>
+          <td class="px-4 py-3 text-amber-900 font-medium">${extraCostDesc}</td>
+        </tr>
+        ` : ''}
+        <tr class="border-t-2 border-slate-400">
+          <td class="px-4 py-3 pt-3.5 font-semibold text-slate-700 border-t-2 border-slate-400">월 상환 부담금 (이자)</td>
+          <td class="px-4 py-3 pt-3.5 text-right font-bold text-slate-800 border-t-2 border-slate-400">${formatTenMan(s.monthlyPayment)}</td>
+          <td class="px-4 py-3 pt-3.5 text-slate-500 border-t-2 border-slate-400">${s.repayType === 'equal-payment' ? '2년 만기 원리금' : '2년 만기일시 (월 순수 이자)'} / 금리 연 ${s.loanRate}% 기준</td>
         </tr>
         <tr>
           <td class="px-4 py-3 font-semibold text-slate-700">소득 대비 주거비 비중</td>
@@ -1669,9 +1750,9 @@ document.addEventListener('DOMContentLoaded', () => {
       txtCompareLoanAmount.textContent = `전세대출 ${formatWon(s.requiredLoan)} 기준`;
       tbodyLoanComparison.innerHTML = s.comparisonMatrix.map(row => `
         <tr class="${row.rate === s.loanRate ? 'bg-emerald-50/60 font-bold' : ''}">
-          <td class="px-4 py-3 font-semibold text-slate-800">${row.label}</td>
-          <td class="px-4 py-3 text-right font-extrabold text-purple-700">약 ${row.monthlyPaymentTenThousand}만 원</td>
-          <td class="px-4 py-3 text-right font-bold text-slate-700">${row.ratio}%</td>
+          <td class="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">${row.label}</td>
+          <td class="px-4 py-3 text-right font-extrabold text-purple-700 whitespace-nowrap">약 ${row.monthlyPaymentTenThousand}만 원</td>
+          <td class="px-4 py-3 text-right font-bold text-slate-700 whitespace-nowrap">${row.ratio}%</td>
           <td class="px-4 py-3 text-slate-600">${row.desc}</td>
         </tr>
       `).join('');
@@ -1688,11 +1769,48 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
 
-      timelineStep2Title.textContent = '2단계: 확정일자 부여 및 전세대출 신청·심사 (D-1개월)';
+      const isJeonsePolicyLoan = (s.loanRate <= 3.0);
+      timelineStep2Title.textContent = isJeonsePolicyLoan 
+        ? '2단계: 기금e든든 자격심사 및 전세대출 신청 (D-40~50일 전)' 
+        : '2단계: 시중은행 전세자금대출 정식 접수 및 심사 (D-30일 전)';
+
       timelineStep2.innerHTML = `
         <div>• <strong>확정일자:</strong> 계약 직후 주민센터 또는 인터넷등기소에서 확정일자를 부여받아 대항력 순위를 선점합니다.</div>
-        <div>• <strong>대출 신청:</strong> 취급 은행에 방문하여 전세자금대출 <strong>${formatWon(s.requiredLoan)}</strong> 신청 접수 (버팀목, HUG 안심전세, HF 보증서 중 최적 상품 심사).</div>
+        <div>• <strong>대출 신청:</strong> 취급 은행에 방문하여 전세자금대출 <strong>${formatWon(s.requiredLoan)}</strong> 신청 접수 (${isJeonsePolicyLoan ? '주택도시기금 <strong>버팀목전세대출 (연 ' + s.loanRate + '%)</strong> 최우선 심사' : '시중 1금융권 <strong>일반 전세자금대출 (연 ' + s.loanRate + '%)</strong> 심사'}).</div>
         <div>• <strong>자격 심사:</strong> ${incomeLabel}(${formatTenMan(s.annualIncome, false)}) 및 무주택 요건 심사를 거쳐 보증서 발급 승인을 확인합니다.</div>
+
+        <!-- 실전 전세대출 현장 접수 시기 팩트 비교 카드 -->
+        <div class="mt-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-[11px] space-y-1.5">
+          <div class="font-bold text-slate-800 flex items-center justify-between">
+            <span class="flex items-center gap-1">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-emerald-600"></i>
+              실전 전세대출 상품별 접수 골든타임 (은행 현장 실무 팩트)
+            </span>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded ${isJeonsePolicyLoan ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">
+              현재: ${isJeonsePolicyLoan ? '🏛️ 기금 정책전세 적용' : '🏦 시중은행 전세 적용'}
+            </span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5 text-slate-600 leading-relaxed">
+            <div class="p-2 rounded-lg border ${isJeonsePolicyLoan ? 'bg-emerald-50/90 border-emerald-300 ring-1 ring-emerald-400 font-medium' : 'bg-white/80 border-slate-200 opacity-70'}">
+              <div class="font-bold text-emerald-950 flex items-center gap-1">
+                <span>🏛️ 정부 버팀목·기금 전세대출</span>
+              </div>
+              <div class="text-[10px] text-emerald-900 mt-0.5">
+                • <strong>권장 접수:</strong> <strong class="text-emerald-700 underline">잔금 D-40~50일 전 (1.5개월 전)</strong><br>
+                • <strong>현장 팩트:</strong> 기금e든든 비대면 자격심사 및 HUG 자산심사(1~2주) ➔ 은행 수탁 심사(2주) 소요로 30일 이내 임박 신청 시 반려될 수 있습니다.
+              </div>
+            </div>
+            <div class="p-2 rounded-lg border ${!isJeonsePolicyLoan ? 'bg-blue-50/90 border-blue-300 ring-1 ring-blue-400 font-medium' : 'bg-white/80 border-slate-200 opacity-70'}">
+              <div class="font-bold text-blue-950 flex items-center gap-1">
+                <span>🏦 시중은행 일반 전세대출 (SGI/HF/HUG)</span>
+              </div>
+              <div class="text-[10px] text-blue-900 mt-0.5">
+                • <strong>권장 접수:</strong> <strong class="text-blue-700 underline">잔금 D-30일 전 (약 3~4주 전)</strong><br>
+                • <strong>현장 팩트:</strong> 대출 유효기간(1개월)으로 D-2개월 전에는 접수를 받지 않습니다. 잔금 30일 전에 접수하면 2~3주 내외로 충분히 승인 완료됩니다.
+              </div>
+            </div>
+          </div>
+        </div>
       `;
 
       timelineStep3Title.textContent = '3단계: 잔금 당일 전세대출 실행 및 대항력 확보 (D-Day)';
@@ -1763,11 +1881,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
       cardLblLoan.textContent = '필요 대출 금액';
       cardRequiredLoan.textContent = formatWon(s.requiredLoan);
-      cardLtvBadge.textContent = `LTV ${s.ltv}% (순수 취득 기준 ${formatWon(s.pureRequiredLoan)})`;
+      cardLtvBadge.textContent = `LTV ${s.ltv}% (매매 대금 기준 ${formatWon(s.requiredLoan)})`;
 
-      cardLblMonthly.textContent = '월 원리금 상환액';
+      if (s.repayType === 'equal-principal' || s.repayType === 'graduated') {
+        cardMonthlyPaymentDetail.textContent = `마지막 달: 약 ${formatTenMan(s.lastMonthlyPayment)}`;
+        cardMonthlyPaymentDetail.classList.remove('hidden');
+        cardLblMonthly.textContent = s.repayType === 'equal-principal' ? '첫 달 원리금 상환액 (체감식)' : '첫 달 원리금 상환액 (체증식)';
+      } else {
+        cardMonthlyPaymentDetail.classList.add('hidden');
+        cardLblMonthly.textContent = '월 원리금 상환액';
+      }
       cardMonthlyPayment.textContent = formatTenMan(s.monthlyPayment);
       cardHousingRatio.textContent = `실수령액의 ${s.housingRatio}% (${s.housingRatio <= 20 ? '최상급 안정' : '안정권'})`;
+
+      const extraCostTotal = (state.includeMandatory ? s.mandatoryExpense : 0) + (s.isMoveinIncluded ? s.optionalExpense : 0);
+      const extraCostDesc = (state.includeMandatory && s.isMoveinIncluded)
+        ? `법정 취득비용(${formatTenMan(s.mandatoryExpense, false)}) + 입주정비비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`
+        : (state.includeMandatory
+            ? `취득세·중개보수·등기비 등 법정 필수비용(${formatTenMan(s.mandatoryExpense, false)}) 별도 현금 준비 필요`
+            : `도배·장판·이사비 등 선택적 입주비용(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`);
 
       titleFundingSection.innerHTML = `<i data-lucide="pie-chart" class="w-5 h-5 text-blue-600"></i> 자금 조달 구조 및 핵심 재무 지표`;
       const taxDesc = `생애최초 취득세 감면(${formatTenMan(s.expenseData.taxInfo.finalTax, false)}) + 중개보수(${formatTenMan(s.expenseData.brokerageInfo.totalFee, false)}) + 법무사/등기/채권할인/인지세(${formatTenMan(s.expenseData.regFee, false)})`;
@@ -1781,32 +1913,30 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-4 py-3 text-right font-extrabold text-blue-600">${formatWon(s.price)}</td>
           <td class="px-4 py-3 text-slate-500">기준 실거래 매매 계약가</td>
         </tr>
+        ${state.includeMandatory ? `
         <tr class="bg-blue-50/30">
-          <td class="px-4 py-3 font-bold text-blue-900 flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-            2. [필수] 취득·거래비용
-          </td>
+          <td class="px-4 py-3 font-bold text-blue-900">2. [필수] 취득·거래비용</td>
           <td class="px-4 py-3 text-right font-extrabold text-blue-700 whitespace-nowrap">약 ${formatWon(s.mandatoryExpense)}</td>
           <td class="px-4 py-3 text-blue-950">${taxDesc}</td>
         </tr>
+        ${!s.isMoveinIncluded ? `
         <tr class="bg-blue-100/50 border-t border-b border-blue-200">
-          <td class="px-4 py-2.5 font-extrabold text-blue-900">➔ ${s.isMoveinIncluded ? '[소계] 순수 취득 필요 자금' : '[총계] 순수 취득 총 소요 자금'}</td>
+          <td class="px-4 py-2.5 font-extrabold text-blue-900">➔ [소계] 순수 취득 필요 자금</td>
           <td class="px-4 py-2.5 text-right font-black text-blue-900 whitespace-nowrap">${formatWon(s.pureTotalBudget)}</td>
-          <td class="px-4 py-2.5 text-blue-800 font-bold">매매 대금 + 법정 필수비용 (${s.isMoveinIncluded ? '실제 매수 최소 자금' : '법정 필수 정산 완비'})</td>
+          <td class="px-4 py-2.5 text-blue-800 font-bold">매매 대금 + 법정 필수비용 (실제 매수 최소 자금)</td>
         </tr>
+        ` : ''}
+        ` : ''}
         ${s.isMoveinIncluded ? `
         <tr class="bg-indigo-50/30">
-          <td class="px-4 py-3 font-bold text-indigo-900 flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-            3. [선택] 입주·정비비용
-          </td>
+          <td class="px-4 py-3 font-bold text-indigo-900">3. [선택] 입주·정비비용</td>
           <td class="px-4 py-3 text-right font-extrabold text-indigo-700 whitespace-nowrap">약 ${formatWon(s.optionalExpense)}</td>
           <td class="px-4 py-3 text-slate-600">${optionalDesc}</td>
         </tr>
         <tr class="bg-indigo-100/60 border-t border-b border-indigo-200">
-          <td class="px-4 py-2.5 font-extrabold text-indigo-950">➔ [총계] 입주 완료 총 소요 예산</td>
+          <td class="px-4 py-2.5 font-extrabold text-indigo-950">➔ ${state.includeMandatory ? '[총계] 입주 완료 총 소요 예산' : '[소계] 선택적 비용 포함시 예산'}</td>
           <td class="px-4 py-2.5 text-right font-black text-indigo-950 whitespace-nowrap">${formatWon(s.fullTotalBudget)}</td>
-          <td class="px-4 py-2.5 text-indigo-900 font-bold">매매 + 필수취득 + 선택입주 완비 종합 예산</td>
+          <td class="px-4 py-2.5 text-indigo-900 font-bold">${state.includeMandatory ? '매매 + 필수취득 + 선택입주 완비 종합 예산' : '매매 대금 + 선택적 입주·정비비용 합산'}</td>
         </tr>
         ` : ''}
         <tr>
@@ -1817,12 +1947,19 @@ document.addEventListener('DOMContentLoaded', () => {
         <tr class="bg-purple-50/40">
           <td class="px-4 py-3 font-bold text-purple-900">필요 주택담보대출</td>
           <td class="px-4 py-3 text-right font-extrabold text-purple-700">${formatWon(s.requiredLoan)}</td>
-          <td class="px-4 py-3 text-purple-700 font-medium">LTV 약 ${s.ltv}% (순수 취득 기준 ${formatWon(s.pureRequiredLoan)} / 입주 완료 기준 ${formatWon(s.fullRequiredLoan)})</td>
+          <td class="px-4 py-3 text-purple-700 font-medium">LTV 약 ${s.ltv}% (매매 대금 기준 ${formatWon(s.requiredLoan)})</td>
         </tr>
-        <tr>
-          <td class="px-4 py-3 font-semibold text-slate-700">월 원리금 상환액</td>
-          <td class="px-4 py-3 text-right font-bold text-slate-800">${formatTenMan(s.monthlyPayment)}</td>
-          <td class="px-4 py-3 text-slate-500">${s.loanYears}년 만기 원리금균등 (금리 연 ${s.loanRate}% 기준)</td>
+        ${extraCostTotal > 0 ? `
+        <tr class="bg-amber-50/50">
+          <td class="px-4 py-3 font-bold text-amber-950">준비해야 할 부가 비용</td>
+          <td class="px-4 py-3 text-right font-extrabold text-amber-700 whitespace-nowrap">약 ${formatWon(extraCostTotal)}</td>
+          <td class="px-4 py-3 text-amber-900 font-medium">${extraCostDesc}</td>
+        </tr>
+        ` : ''}
+        <tr class="border-t-2 border-slate-400">
+          <td class="px-4 py-3 pt-3.5 font-semibold text-slate-700 border-t-2 border-slate-400">월 원리금 상환액</td>
+          <td class="px-4 py-3 pt-3.5 text-right font-bold text-slate-800 border-t-2 border-slate-400">${formatTenMan(s.monthlyPayment)}</td>
+          <td class="px-4 py-3 pt-3.5 text-slate-500 border-t-2 border-slate-400">${s.loanYears}년 만기 원리금균등 (금리 연 ${s.loanRate}% 기준)</td>
         </tr>
         <tr>
           <td class="px-4 py-3 font-semibold text-slate-700">소득 대비 주거비 비중</td>
@@ -1840,9 +1977,9 @@ document.addEventListener('DOMContentLoaded', () => {
       txtCompareLoanAmount.textContent = `주담대 ${formatWon(s.requiredLoan)} 기준`;
       tbodyLoanComparison.innerHTML = s.comparisonMatrix.map(row => `
         <tr class="${row.rate === s.loanRate && row.years === s.loanYears ? 'bg-purple-50/60 font-bold' : ''}">
-          <td class="px-4 py-3 font-semibold text-slate-800">${row.label}</td>
-          <td class="px-4 py-3 text-right font-extrabold text-purple-700">약 ${row.monthlyPaymentTenThousand}만 원</td>
-          <td class="px-4 py-3 text-right font-bold text-slate-700">${row.ratio}%</td>
+          <td class="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">${row.label}</td>
+          <td class="px-4 py-3 text-right font-extrabold text-purple-700 whitespace-nowrap">약 ${row.monthlyPaymentTenThousand}만 원</td>
+          <td class="px-4 py-3 text-right font-bold text-slate-700 whitespace-nowrap">${row.ratio}%</td>
           <td class="px-4 py-3 text-slate-600">${row.desc}</td>
         </tr>
       `).join('');
@@ -1860,7 +1997,11 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
 
-      timelineStep2Title.textContent = '2단계: 주택담보대출 신청 및 소득 심사 (D-1~2개월)';
+      const isPolicyLoan = (s.loanRate === 3.0 || s.loanRate === 3.8);
+      timelineStep2Title.textContent = isPolicyLoan 
+        ? '2단계: 정부 정책대출 사전 자산심사 및 접수 (D-40~60일 전)' 
+        : '2단계: 시중은행 주택담보대출 정식 접수 및 본심사 (D-30일 전)';
+
       const auditBadgeHtml = isCouple 
         ? `<span class="inline-block px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 rounded">👫 ${s.auditInfo.householdLabel} (${s.auditInfo.auditMethodName})</span>`
         : `<span class="inline-block px-1.5 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 rounded">👤 ${s.auditInfo.householdLabel} (${s.auditInfo.auditMethodName})</span>`;
@@ -1885,8 +2026,42 @@ document.addEventListener('DOMContentLoaded', () => {
       timelineStep2.innerHTML = `
         <div class="mb-1">${auditBadgeHtml}</div>
         ${eligibilityBadges}
-        <div>• <strong>대출 신청:</strong> 필요 주택담보대출 <strong>${formatWon(s.requiredLoan)}</strong> 신청 (${s.eligibility && s.eligibility.didimdol.passed ? 'HUG/HF <strong>디딤돌대출 (연 3.0%)</strong> 최우선 실행' : (s.eligibility && s.eligibility.bogeumjari.passed ? 'HF <strong>보금자리론 (연 3.8%)</strong> 실행' : '시중 1금융권 <strong>일반 주택담보대출 (연 4.2%)</strong> 실행')}).</div>
+        <div>• <strong>대출 신청:</strong> 필요 주택담보대출 <strong>${formatWon(s.requiredLoan)}</strong> 신청 (${s.loanRate === 3.0 ? 'HUG/HF <strong>디딤돌대출 (연 3.0%)</strong> 최우선 실행' : (s.loanRate === 3.8 ? 'HF <strong>보금자리론 (연 3.8%)</strong> 실행' : `시중 1금융권 <strong>일반 주택담보대출 (연 ${s.loanRate}%)</strong> 실행`)}).</div>
         <div>• <strong>DSR 적격 심사:</strong> ${incomeLabel}(${formatTenMan(s.annualIncome, false)}) 기준 단독 DSR은 <strong>약 ${s.dsr}%</strong> 수준이며, 계약금 단기 신용대출(${formatWon(s.downPayment)})을 보유한 상태로 심사를 받더라도 합산 DSR은 약 ${s.combinedDSR}%로 법적 한도(40%)를 완벽히 충족하여 정상 승인됩니다.</div>
+        
+        <!-- 실전 은행 현장 접수 시기 팩트 비교 카드 -->
+        <div class="mt-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-[11px] space-y-1.5">
+          <div class="font-bold text-slate-800 flex items-center justify-between">
+            <span class="flex items-center gap-1">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-blue-600"></i>
+              실전 금융사별 대출 접수 골든타임 (은행 현장 실무 팩트)
+            </span>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded ${isPolicyLoan ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}">
+              현재: ${isPolicyLoan ? '🏛️ 정책대출 권장일정 적용' : '🏦 시중은행 권장일정 적용'}
+            </span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5 text-slate-600 leading-relaxed">
+            <div class="p-2 rounded-lg border ${isPolicyLoan ? 'bg-amber-50/90 border-amber-300 ring-1 ring-amber-400 font-medium' : 'bg-white/80 border-slate-200 opacity-70'}">
+              <div class="font-bold text-amber-950 flex items-center gap-1">
+                <span>🏛️ 정부 정책대출 (디딤돌·보금자리)</span>
+              </div>
+              <div class="text-[10px] text-amber-900 mt-0.5">
+                • <strong>권장 접수:</strong> <strong class="text-amber-700 underline">잔금 D-40~60일 전 (1.5~2개월 전)</strong><br>
+                • <strong>현장 팩트:</strong> 기금e든든/HF 사전자산심사(1~2주) ➔ 은행 본심사(2~3주) ➔ 사후심사 등 총 30~40일 이상 소요되므로, 잔금 30일 이내 임박 신청 시 기표 지연 위험이 발생합니다.
+              </div>
+            </div>
+            <div class="p-2 rounded-lg border ${!isPolicyLoan ? 'bg-blue-50/90 border-blue-300 ring-1 ring-blue-400 font-medium' : 'bg-white/80 border-slate-200 opacity-70'}">
+              <div class="font-bold text-blue-950 flex items-center gap-1">
+                <span>🏦 시중은행 일반 주담대 (1금융권)</span>
+              </div>
+              <div class="text-[10px] text-blue-900 mt-0.5">
+                • <strong>권장 접수:</strong> <strong class="text-blue-700 underline">잔금 D-30일 전 (약 3~4주 전)</strong><br>
+                • <strong>현장 팩트:</strong> 서류 유효기간(1개월) 및 승인 기한으로 인해 <strong>D-2개월 전에는 은행 접수 자체가 불가(반려)</strong>합니다. 통상 잔금 30일 전에 접수하면 2주 내외로 심사 및 약정(자서)이 신속 완료됩니다.
+              </div>
+            </div>
+          </div>
+        </div>
+
         ${s.strategyComparison && s.strategyComparison.totalInterestSaving > 0 && s.incomeType === 'double' ? `
         <div class="mt-1.5 p-2 bg-emerald-50 rounded-lg border border-emerald-200 text-emerald-900 text-[11px]">
           💡 <strong>외벌이 전환 전략 팁:</strong> 배우자 서류상 무직 처리 시 디딤돌(3.0%) 즉시 통과로 30년 총이자 <strong>약 ${formatWon(s.strategyComparison.totalInterestSaving)} 순절감</strong> (월 약 ${formatTenMan(s.strategyComparison.monthlySaving)} 절약) 가능! <span class="text-amber-800 font-semibold">(단, 국토부 관리방안에 따라 수도권 아파트는 방공제 5,500만 원 차감으로 생초 호당 한도 최대 1.85억 제한 사전 확인 필수)</span>
@@ -1974,11 +2149,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
       cardLblLoan.textContent = '필요 잔금 주담대';
       cardRequiredLoan.textContent = formatWon(s.requiredLoan);
-      cardLtvBadge.textContent = `LTV ${s.ltv}% (순수 취득 기준 ${formatWon(s.pureRequiredLoan)})`;
+      cardLtvBadge.textContent = `LTV ${s.ltv}% (분양가 기준 ${formatWon(s.requiredLoan)})`;
 
-      cardLblMonthly.textContent = '월 원리금 상환액';
+      if (s.repayType === 'equal-principal' || s.repayType === 'graduated') {
+        cardMonthlyPaymentDetail.textContent = `마지막 달: 약 ${formatTenMan(s.lastMonthlyPayment)}`;
+        cardMonthlyPaymentDetail.classList.remove('hidden');
+        cardLblMonthly.textContent = s.repayType === 'equal-principal' ? '첫 달 원리금 상환액 (체감식)' : '첫 달 원리금 상환액 (체증식)';
+      } else {
+        cardMonthlyPaymentDetail.classList.add('hidden');
+        cardLblMonthly.textContent = '월 원리금 상환액';
+      }
       cardMonthlyPayment.textContent = formatTenMan(s.monthlyPayment);
       cardHousingRatio.textContent = `실수령액의 ${s.housingRatio}%`;
+
+      const extraCostTotal = (state.includeMandatory ? s.mandatoryExpense : 0) + (s.isMoveinIncluded ? s.optionalExpense : 0);
+      const extraCostDesc = (state.includeMandatory && s.isMoveinIncluded)
+        ? `필수 취득세/등기비(${formatTenMan(s.mandatoryExpense, false)}) + 옵션/입주비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`
+        : (state.includeMandatory
+            ? `생애최초 취득세 및 소유권이전 등기비용(${formatTenMan(s.mandatoryExpense, false)}) 별도 현금 준비 필요`
+            : `발코니확장/옵션 및 가전이사비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`);
 
       titleFundingSection.innerHTML = `<i data-lucide="pie-chart" class="w-5 h-5 text-indigo-600"></i> 분양 자금 조달 구조 및 핵심 재무 지표`;
       tbodyFundingStructure.innerHTML = `
@@ -1987,32 +2176,30 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-4 py-3 text-right font-extrabold text-indigo-600">${formatWon(s.price)}</td>
           <td class="px-4 py-3 text-slate-500">단일 기준 공급가</td>
         </tr>
+        ${state.includeMandatory ? `
         <tr class="bg-indigo-50/30">
-          <td class="px-4 py-3 font-bold text-indigo-900 flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-            2. [필수] 취득·거래비용
-          </td>
+          <td class="px-4 py-3 font-bold text-indigo-900">2. [필수] 취득·거래비용</td>
           <td class="px-4 py-3 text-right font-extrabold text-indigo-700 whitespace-nowrap">약 ${formatWon(s.mandatoryExpense)}</td>
           <td class="px-4 py-3 text-slate-600">생애최초 취득세(${formatTenMan(s.expenseData.taxInfo.finalTax, false)}) + 소유권이전 등기/채권할인(${formatTenMan(s.expenseData.regFee, false)})</td>
         </tr>
+        ${!s.isMoveinIncluded ? `
         <tr class="bg-indigo-100/50 border-t border-b border-indigo-200">
-          <td class="px-4 py-2.5 font-extrabold text-indigo-900">➔ ${s.isMoveinIncluded ? '[소계] 순수 분양 필요 자금' : '[총계] 순수 분양 총 소요 자금'}</td>
+          <td class="px-4 py-2.5 font-extrabold text-indigo-900">➔ [소계] 순수 분양 필요 자금</td>
           <td class="px-4 py-2.5 text-right font-black text-indigo-900 whitespace-nowrap">${formatWon(s.pureTotalBudget)}</td>
-          <td class="px-4 py-2.5 text-indigo-800 font-bold">분양가 + 필수 취득세/등기비 (${s.isMoveinIncluded ? '옵션 제외 최소 자금' : '법정 필수 정산 완비'})</td>
+          <td class="px-4 py-2.5 text-indigo-800 font-bold">분양가 + 필수 취득세/등기비 (옵션 제외 최소 자금)</td>
         </tr>
+        ` : ''}
+        ` : ''}
         ${s.isMoveinIncluded ? `
         <tr class="bg-purple-50/30">
-          <td class="px-4 py-3 font-bold text-purple-900 flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
-            3. [선택] 옵션 및 입주비용
-          </td>
+          <td class="px-4 py-3 font-bold text-purple-900">3. [선택] 옵션 및 입주비용</td>
           <td class="px-4 py-3 text-right font-extrabold text-purple-700 whitespace-nowrap">약 ${formatWon(s.optionalExpense)}</td>
           <td class="px-4 py-3 text-slate-600">${s.isMoveinIncluded ? `발코니확장/시스템에어컨(${formatTenMan(s.expenseData.optionCost, false)})${s.expenseData.moveinCost > 0 ? ` + 가전/가구/이사비(${formatTenMan(s.expenseData.moveinCost, false)})` : ''}` : '선택 안 함'}</td>
         </tr>
         <tr class="bg-purple-100/60 border-t border-b border-purple-200">
-          <td class="px-4 py-2.5 font-extrabold text-purple-950">➔ [총계] 입주 완료 총 소요 자금</td>
+          <td class="px-4 py-2.5 font-extrabold text-purple-950">➔ ${state.includeMandatory ? '[총계] 입주 완료 총 소요 자금' : '[소계] 선택적 비용 포함시 예산'}</td>
           <td class="px-4 py-2.5 text-right font-black text-purple-950 whitespace-nowrap">${formatWon(s.fullTotalBudget)}</td>
-          <td class="px-4 py-2.5 text-purple-900 font-bold">분양가 + 취득세 + 발코니확장/옵션 + 입주비용</td>
+          <td class="px-4 py-2.5 text-purple-900 font-bold">${state.includeMandatory ? '분양가 + 취득세 + 발코니확장/옵션 + 입주비용' : '분양가 + 발코니확장/옵션 + 입주비용'}</td>
         </tr>
         ` : ''}
         <tr>
@@ -2023,12 +2210,19 @@ document.addEventListener('DOMContentLoaded', () => {
         <tr class="bg-purple-50/40">
           <td class="px-4 py-3 font-bold text-purple-900">필요 잔금 주택담보대출</td>
           <td class="px-4 py-3 text-right font-extrabold text-purple-700">${formatWon(s.requiredLoan)}</td>
-          <td class="px-4 py-3 text-purple-700 font-medium">LTV 약 ${s.ltv}% (순수 분양 기준 ${formatWon(s.pureRequiredLoan)} / 완비 기준 ${formatWon(s.fullRequiredLoan)})</td>
+          <td class="px-4 py-3 text-purple-700 font-medium">LTV 약 ${s.ltv}% (분양가 기준 ${formatWon(s.requiredLoan)})</td>
         </tr>
-        <tr>
-          <td class="px-4 py-3 font-semibold text-slate-700">월 원리금 상환액</td>
-          <td class="px-4 py-3 text-right font-bold text-slate-800">${formatTenMan(s.monthlyPayment)}</td>
-          <td class="px-4 py-3 text-slate-500">${s.loanYears}년 만기 원리금균등 (금리 연 ${s.loanRate}% 기준)</td>
+        ${extraCostTotal > 0 ? `
+        <tr class="bg-amber-50/50">
+          <td class="px-4 py-3 font-bold text-amber-950">준비해야 할 부가 비용</td>
+          <td class="px-4 py-3 text-right font-extrabold text-amber-700 whitespace-nowrap">약 ${formatWon(extraCostTotal)}</td>
+          <td class="px-4 py-3 text-amber-900 font-medium">${extraCostDesc}</td>
+        </tr>
+        ` : ''}
+        <tr class="border-t-2 border-slate-400">
+          <td class="px-4 py-3 pt-3.5 font-semibold text-slate-700 border-t-2 border-slate-400">월 원리금 상환액</td>
+          <td class="px-4 py-3 pt-3.5 text-right font-bold text-slate-800 border-t-2 border-slate-400">${formatTenMan(s.monthlyPayment)}</td>
+          <td class="px-4 py-3 pt-3.5 text-slate-500 border-t-2 border-slate-400">${s.loanYears}년 만기 원리금균등 (금리 연 ${s.loanRate}% 기준)</td>
         </tr>
         <tr>
           <td class="px-4 py-3 font-semibold text-slate-700">소득 대비 주거비 비중</td>
@@ -2046,9 +2240,9 @@ document.addEventListener('DOMContentLoaded', () => {
       txtCompareLoanAmount.textContent = `잔금 주담대 ${formatWon(s.requiredLoan)} 기준`;
       tbodyLoanComparison.innerHTML = s.comparisonMatrix.map(row => `
         <tr class="${row.rate === s.loanRate && row.years === s.loanYears ? 'bg-purple-50/60 font-bold' : ''}">
-          <td class="px-4 py-3 font-semibold text-slate-800">${row.label}</td>
-          <td class="px-4 py-3 text-right font-extrabold text-purple-700">약 ${row.monthlyPaymentTenThousand}만 원</td>
-          <td class="px-4 py-3 text-right font-bold text-slate-700">${row.ratio}%</td>
+          <td class="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">${row.label}</td>
+          <td class="px-4 py-3 text-right font-extrabold text-purple-700 whitespace-nowrap">약 ${row.monthlyPaymentTenThousand}만 원</td>
+          <td class="px-4 py-3 text-right font-bold text-slate-700 whitespace-nowrap">${row.ratio}%</td>
           <td class="px-4 py-3 text-slate-600">${row.desc}</td>
         </tr>
       `).join('');
@@ -2274,6 +2468,80 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         let total = principal + interest;
+        balance -= principal;
+        if (balance < 0) balance = 0;
+        prevDate = currentDate;
+        
+        html += `
+          <tr class="${i % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}">
+            <td class="px-3 py-2 text-center text-slate-500">${i}</td>
+            <td class="px-3 py-2 text-center text-slate-700">${dateStr}</td>
+            <td class="px-3 py-2 text-slate-800">${principal.toLocaleString()}</td>
+            <td class="px-3 py-2 text-slate-800">${interest.toLocaleString()}</td>
+            <td class="px-3 py-2 font-bold text-indigo-700">${total.toLocaleString()}</td>
+            <td class="px-3 py-2 font-semibold text-slate-600">${Math.round(balance).toLocaleString()}</td>
+          </tr>
+        `;
+      }
+    } else if (type === 'graduated') {
+      // 체증식 분할상환
+      const paymentTerm = term - grace;
+      const annualRate = rate * 12;
+      const g = 0.002; // 월 0.2% 체증
+      let pmt1 = 0;
+      
+      if (paymentTerm > 0) {
+        if (rate === g) {
+          pmt1 = amount * (1 + rate) / paymentTerm;
+        } else {
+          const q = (1 + g) / (1 + rate);
+          pmt1 = amount * (1 + rate) * (1 - q) / (1 - Math.pow(q, paymentTerm));
+        }
+      }
+      
+      let prevDate = startDate;
+      for (let i = 1; i <= term; i++) {
+        let currentDate;
+        if (i === term) {
+          currentDate = new Date(startDate);
+          currentDate.setMonth(currentDate.getMonth() + term);
+        } else {
+          currentDate = new Date(firstPaymentDate);
+          currentDate.setMonth(currentDate.getMonth() + (i - 1));
+        }
+        const dateStr = currentDate.toISOString().split('T')[0];
+        
+        // 이자 계산 (1/12th rate for normal months logic to match equal-payment's zeroing fix if any, but let's use the standard actual days logic matching the rest of the file)
+        const days = Math.round((currentDate - prevDate) / (1000 * 60 * 60 * 24));
+        const isLeapYear = (year) => (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+        const daysInYear = isLeapYear(prevDate.getFullYear()) ? 366 : 365;
+        let interest = Math.floor(balance * (annualRate * days / daysInYear));
+        let principal = 0;
+        let total = interest;
+        
+        if (i > grace) {
+          const currentPmt = pmt1 * Math.pow(1 + g, i - 1 - grace);
+          
+          // 실일수 기준 이자를 차감하되 첫달 예외처리 (equal-payment 로직 참조)
+          if (i === 1) {
+            const standardPrevDate = new Date(currentDate);
+            standardPrevDate.setMonth(standardPrevDate.getMonth() - 1);
+            const standardDays = Math.round((currentDate - standardPrevDate) / (1000 * 60 * 60 * 24));
+            const standardDaysInYear = isLeapYear(standardPrevDate.getFullYear()) ? 366 : 365;
+            const standardInterest = Math.floor(balance * (annualRate * standardDays / standardDaysInYear));
+            principal = Math.round(currentPmt) - standardInterest;
+            total = principal + interest;
+          } else {
+            total = Math.round(currentPmt);
+            principal = total - interest;
+          }
+          
+          if (i === term || balance < principal) {
+            principal = Math.round(balance);
+            total = principal + interest;
+          }
+        }
+        
         balance -= principal;
         if (balance < 0) balance = 0;
         prevDate = currentDate;
@@ -2634,11 +2902,12 @@ document.addEventListener('DOMContentLoaded', () => {
     bindMoneyInput(inpMoveinExtra, () => recalculate());
   }
 
-  // 5-7) 입주/정비비용 포함 여부 토글 체크박스
+  // 5-7) 필수/선택 비용 포함 여부 토글 체크박스
+  if (chkIncludeMandatory) {
+    chkIncludeMandatory.addEventListener('change', () => recalculate());
+  }
   if (chkIncludeMovein) {
-    chkIncludeMovein.addEventListener('change', () => {
-      recalculate();
-    });
+    chkIncludeMovein.addEventListener('change', () => recalculate());
   }
 
   // 6) 일반 입력 및 선택 필드 변경 리스너
@@ -2655,12 +2924,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // 7) 금리 슬라이더 및 인풋 동기화
-  rngRate.addEventListener('input', () => {
-    inpRate.value = rngRate.value;
-    syncRateToRadios(Number(rngRate.value));
-    recalculate();
-  });
-
   inpRate.addEventListener('input', () => {
     rngRate.value = inpRate.value;
     syncRateToRadios(Number(inpRate.value));
