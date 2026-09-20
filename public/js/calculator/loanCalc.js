@@ -129,7 +129,7 @@ const LoanCalculator = {
    */
   generateComparisonMatrix: function(loanAmount, monthlyNetIncome, housePrice) {
     const conditions = [
-      { rate: 4.2, years: 30, desc: '시중 1금융권 일반 주택담보대출 기본 모델' },
+      { rate: 4.8, years: 30, desc: '시중 1금융권 일반 주택담보대출 기본 모델' },
       { rate: 3.8, years: 30, desc: 'HF 한국주택금융공사 일반 보금자리론 또는 우대금리 적용 시' },
       { 
         rate: 3.0, 
@@ -138,8 +138,8 @@ const LoanCalculator = {
           ? '주택가격 5억 이하 생애최초 디딤돌대출 최우선 적격' 
           : '생애최초 디딤돌/신생아 특례 등 정책모기지 최저금리 적용 시' 
       },
-      { rate: 4.2, years: 20, desc: '원금 상환 속도를 높여 총 이자 비용을 대폭 절감하는 공격적 상환 모델' },
-      { rate: 4.2, years: 35, desc: '만기 연장을 통해 월 고정 지출을 추가 경감하는 모델' }
+      { rate: 4.8, years: 20, desc: '원금 상환 속도를 높여 총 이자 비용을 대폭 절감하는 공격적 상환 모델' },
+      { rate: 4.8, years: 35, desc: '만기 연장을 통해 월 고정 지출을 추가 경감하는 모델' }
     ];
 
     return conditions.map(cond => {

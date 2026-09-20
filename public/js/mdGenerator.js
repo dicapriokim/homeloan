@@ -92,7 +92,16 @@ const MarkdownGenerator = {
         md += `| **➔ [소계] 선택적 비용 포함시 예산** | **${budgetWon}** | **매매 대금 \\+ 선택적 입주·정비비용 합산** |\n`;
       }
     }
-    md += `| **보유 순자산 (전세보증금)** | ${equityWon} | 이사 당일 임대인으로부터 전액 반환 |\n`;
+    let resaleEquityNote = '이사 당일 임대인으로부터 전액 반환';
+    if (s.equityBreakdown) {
+      const b = s.equityBreakdown;
+      const parts = [];
+      if (b.deposit > 0) parts.push(`보증금 ${formatWon(b.deposit).replace(/ 원$/, '')}`);
+      if (b.savings > 0) parts.push(`예적금 ${formatWon(b.savings).replace(/ 원$/, '')}`);
+      if (b.gift > 0) parts.push(`증여 ${formatWon(b.gift).replace(/ 원$/, '')}`);
+      if (parts.length > 0) resaleEquityNote = parts.join(' \\+ ');
+    }
+    md += `| **보유 순자산 (전세보증금/현금)** | ${equityWon} | ${resaleEquityNote} |\n`;
     md += `| **필요 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (매매 대금 기준 ${loanWon}) |\n`;
     if (extraCostTotal > 0) {
       const extraDesc = (s.includeMandatory && s.expenseData.isMoveinIncluded)
@@ -257,7 +266,16 @@ const MarkdownGenerator = {
         md += `| **➔ [소계] 선택적 비용 포함시 예산** | **${budgetWon}** | **분양가 \\+ 발코니확장/옵션 \\+ 입주비용 합산** |\n`;
       }
     }
-    md += `| **보유 순자산 (전세보증금)** | ${equityWon} | 입주 당일 기존 임대인으로부터 전액 반환 |\n`;
+    let presaleEquityNote = '입주 당일 기존 임대인으로부터 전액 반환';
+    if (s.equityBreakdown) {
+      const b = s.equityBreakdown;
+      const parts = [];
+      if (b.deposit > 0) parts.push(`보증금 ${formatWon(b.deposit).replace(/ 원$/, '')}`);
+      if (b.savings > 0) parts.push(`예적금 ${formatWon(b.savings).replace(/ 원$/, '')}`);
+      if (b.gift > 0) parts.push(`증여 ${formatWon(b.gift).replace(/ 원$/, '')}`);
+      if (parts.length > 0) presaleEquityNote = parts.join(' \\+ ');
+    }
+    md += `| **보유 순자산 (전세보증금/현금)** | ${equityWon} | ${presaleEquityNote} |\n`;
     md += `| **필요 잔금 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (분양가 기준 ${loanWon}) |\n`;
     if (presaleExtraCostTotal > 0) {
       const presaleExtraDesc = (s.includeMandatory && s.expenseData.isMoveinIncluded)
@@ -400,7 +418,16 @@ const MarkdownGenerator = {
         md += `| **➔ [소계] 선택적 비용 포함시 예산** | **${budgetWon}** | **전세보증금 \\+ 선택적 입주·이사비용 합산** |\n`;
       }
     }
-    md += `| **보유 자기자본 (현금)** | ${equityWon} | 본인 보유 가용 자본 |\n`;
+    let jeonseEquityNote = '본인 보유 가용 자본';
+    if (s.equityBreakdown) {
+      const b = s.equityBreakdown;
+      const parts = [];
+      if (b.deposit > 0) parts.push(`보증금 ${formatWon(b.deposit).replace(/ 원$/, '')}`);
+      if (b.savings > 0) parts.push(`예적금 ${formatWon(b.savings).replace(/ 원$/, '')}`);
+      if (b.gift > 0) parts.push(`증여 ${formatWon(b.gift).replace(/ 원$/, '')}`);
+      if (parts.length > 0) jeonseEquityNote = parts.join(' \\+ ');
+    }
+    md += `| **보유 자기자본 (순자산)** | ${equityWon} | ${jeonseEquityNote} |\n`;
     md += `| **필요 전세자금대출** | **${loanWon}** | 보증금 대비 대출비율 약 ${s.loanRatio}% (한도 80% 이내 적격) |\n`;
     if (jeonseExtraCostTotal > 0) {
       const jeonseExtraDesc = (s.includeMandatory && s.isMoveinIncluded)

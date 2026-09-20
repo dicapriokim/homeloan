@@ -13,8 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
     activeProfile: 'couple-double', // 'couple-double' | 'couple-single-earner' | 'couple-child1' | 'newlywed' | 'single'
     viewMode: 'dashboard', // 'dashboard' | 'markdown'
     price: 450000000,
-    equity: 250000000,
-    loanRate: 4.2,
+    equity: 370000000,
+    equityDeposit: 200000000,
+    equitySavings: 60000000,
+    equityGift: 110000000,
+    loanRate: 4.8,
     loanYears: 30,
     repayType: 'equal-payment', // 'equal-payment' | 'interest-only'
     annualIncome: 77000000,
@@ -104,6 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const lblEquity = document.getElementById('lbl-equity');
   const txtEquityDisplay = document.getElementById('txt-equity-display');
   const inpEquity = document.getElementById('inp-equity');
+  const detailsEquityBreakdown = document.getElementById('details-equity-breakdown');
+  const inpEquityDeposit = document.getElementById('inp-equity-deposit');
+  const inpEquitySavings = document.getElementById('inp-equity-savings');
+  const inpEquityGift = document.getElementById('inp-equity-gift');
 
   const lblRateTitle = document.getElementById('lbl-rate-title');
   const txtRateDisplay = document.getElementById('txt-rate-display');
@@ -196,11 +203,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 3-2. 금액 파싱 및 실시간 콤마 포맷팅 유틸리티
+  // 만 원 단위 간편 입력(100만 미만 양수 입력 시 자동으로 x 10,000 변환하여 '0' 입력 피로도 대폭 경감)
   function parseMoney(val) {
     if (val === null || val === undefined) return 0;
-    if (typeof val === 'number') return val;
+    if (typeof val === 'number') {
+      if (val > 0 && val < 1000000) return val * 10000;
+      return val;
+    }
     const cleaned = String(val).replace(/[^0-9]/g, '');
-    return cleaned === '' ? 0 : Number(cleaned);
+    if (cleaned === '') return 0;
+    const num = Number(cleaned);
+    // 100만 미만의 양수(예: 4,700 ➔ 47,000,000원, 47,000 ➔ 470,000,000원) 입력 시 '만 원' 단위 자동 변환
+    if (num > 0 && num < 1000000) {
+      return num * 10000;
+    }
+    return num;
   }
 
   function formatMoney(val) {
@@ -211,6 +228,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function bindMoneyInput(inputElem, onUpdate) {
     if (!inputElem) return;
+
+    // 1) 포커스 시 빠른 수정을 위한 전체 텍스트 자동 선택
+    inputElem.addEventListener('focus', () => {
+      setTimeout(() => {
+        try {
+          inputElem.select();
+        } catch (e) {}
+      }, 30);
+    });
+
+    // 2) 타이핑 중: 천단위 콤마 서식 실시간 적용 및 상태 연동
     inputElem.addEventListener('input', () => {
       const raw = inputElem.value.replace(/[^0-9]/g, '');
       if (raw === '') {
@@ -221,6 +249,95 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (onUpdate) onUpdate();
     });
+
+    // 3) 입력 완료(blur 및 Enter 키): 100만 미만 입력값을 원 단위로 자동 확장 (예: 4,700 ➔ 47,000,000)
+    const handleAutoExpand = () => {
+      const raw = inputElem.value.replace(/[^0-9]/g, '');
+      if (raw === '') return;
+      const num = Number(raw);
+      if (num > 0 && num < 1000000) {
+        const expanded = num * 10000;
+        inputElem.value = expanded.toLocaleString();
+        if (typeof showToast === 'function') {
+          const unitText = (typeof ScenarioEngine !== 'undefined' && ScenarioEngine.formatKoreanMoney)
+            ? ScenarioEngine.formatKoreanMoney(expanded)
+            : `${expanded.toLocaleString()}원`;
+          showToast(`💡 입력값 [${num.toLocaleString()}]이(가) [${unitText}](${expanded.toLocaleString()}원)으로 자동 변환되었습니다.`);
+        }
+        if (onUpdate) onUpdate();
+      }
+    };
+
+    inputElem.addEventListener('blur', handleAutoExpand);
+    inputElem.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        handleAutoExpand();
+        inputElem.blur();
+      }
+    });
+  }
+
+  // 3-3. 보유 순자산 세부 분할(보증금/예적금/증여) 양방향 동기화 및 요약 유틸리티
+  function syncSubEquityToMain() {
+    if (!inpEquityDeposit || !inpEquitySavings || !inpEquityGift) return;
+    const dep = parseMoney(inpEquityDeposit.value);
+    const sav = parseMoney(inpEquitySavings.value);
+    const gift = parseMoney(inpEquityGift.value);
+    const total = dep + sav + gift;
+    inpEquity.value = formatMoney(total);
+    state.equity = total;
+    state.equityDeposit = dep;
+    state.equitySavings = sav;
+    state.equityGift = gift;
+    if (txtEquityDisplay && typeof ScenarioEngine !== 'undefined') {
+      txtEquityDisplay.textContent = ScenarioEngine.formatKoreanMoney(total);
+    }
+    recalculate();
+  }
+
+  function syncMainEquityToSub() {
+    if (!inpEquityDeposit || !inpEquitySavings || !inpEquityGift) return;
+    const total = parseMoney(inpEquity.value);
+    const dep = parseMoney(inpEquityDeposit.value);
+    const sav = parseMoney(inpEquitySavings.value);
+    const gift = parseMoney(inpEquityGift.value);
+
+    if (dep === 0 && sav === 0 && gift === 0 && total > 0) {
+      const autoDep = Math.round(total * 0.6 / 10000000) * 10000000;
+      inpEquityDeposit.value = formatMoney(autoDep);
+      inpEquitySavings.value = formatMoney(total - autoDep);
+      inpEquityGift.value = '0';
+    } else if (total >= (dep + gift)) {
+      inpEquitySavings.value = formatMoney(total - dep - gift);
+    } else if (total >= gift) {
+      inpEquityDeposit.value = formatMoney(total - gift);
+      inpEquitySavings.value = '0';
+    } else {
+      inpEquityDeposit.value = '0';
+      inpEquitySavings.value = '0';
+      inpEquityGift.value = formatMoney(total);
+    }
+    state.equity = total;
+    state.equityDeposit = parseMoney(inpEquityDeposit.value);
+    state.equitySavings = parseMoney(inpEquitySavings.value);
+    state.equityGift = parseMoney(inpEquityGift.value);
+  }
+
+  function getEquityBreakdownSummary(defaultNote = '이사 당일 임대인으로부터 전액 반환') {
+    const dep = parseMoney(inpEquityDeposit ? inpEquityDeposit.value : 0);
+    const sav = parseMoney(inpEquitySavings ? inpEquitySavings.value : 0);
+    const gift = parseMoney(inpEquityGift ? inpEquityGift.value : 0);
+    const parts = [];
+    const fmt = (typeof ScenarioEngine !== 'undefined' && ScenarioEngine.formatKoreanMoney) 
+      ? (val => ScenarioEngine.formatKoreanMoney(val).replace(/ 원$/, ''))
+      : (val => val.toLocaleString() + '원');
+    if (dep > 0) parts.push(`보증금 ${fmt(dep)}`);
+    if (sav > 0) parts.push(`예적금 ${fmt(sav)}`);
+    if (gift > 0) parts.push(`증여 ${fmt(gift)}`);
+    if (parts.length > 0) {
+      return parts.join(' + ');
+    }
+    return defaultNote;
   }
 
   // 4. 토스트 알림 표시
@@ -541,8 +658,8 @@ document.addEventListener('DOMContentLoaded', () => {
           if (Math.abs(rateVal - 3.0) < 0.05) {
             // 디딤돌(3.0)의 경우 단독 세대주 주택가격 3억 이하 심사
             if (el && el.didimdol && !el.didimdol.passed) {
-              const fallbackRate = (el.bogeumjari && el.bogeumjari.passed) ? 3.8 : 4.2;
-              const fallbackName = fallbackRate === 3.8 ? '보금자리론 (연 3.8%)' : '시중은행 주담대 (연 4.2%)';
+              const fallbackRate = (el.bogeumjari && el.bogeumjari.passed) ? 3.8 : 4.8;
+              const fallbackName = fallbackRate === 3.8 ? '보금자리론 (연 3.8%)' : '시중은행 주담대 (연 4.8%)';
               state.loanRate = fallbackRate;
               inpRate.value = fallbackRate;
               rngRate.value = fallbackRate;
@@ -553,11 +670,11 @@ document.addEventListener('DOMContentLoaded', () => {
           } else if (Math.abs(rateVal - 3.8) < 0.05) {
             // 보금자리론(3.8)의 경우 1인 단독(7천만 이하, 6억 이하) 심사
             if (el && el.bogeumjari && !el.bogeumjari.passed) {
-              state.loanRate = 4.2;
-              inpRate.value = 4.2;
-              rngRate.value = 4.2;
-              syncRateToRadios(4.2);
-              showToast(`⚠️ 보금자리론 심사 미충족(${el.bogeumjari.reason})으로 [시중은행 주담대 (연 4.2%)]로 자동 보정되었습니다.`);
+              state.loanRate = 4.8;
+              inpRate.value = 4.8;
+              rngRate.value = 4.8;
+              syncRateToRadios(4.8);
+              showToast(`⚠️ 보금자리론 심사 미충족(${el.bogeumjari.reason})으로 [시중은행 주담대 (연 4.8%)]로 자동 보정되었습니다.`);
               corrected = true;
             }
           }
@@ -610,21 +727,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (selectedRate === 3.0) {
         if (el && el.didimdol && !el.didimdol.passed) {
-          const fallbackRate = (el.bogeumjari && el.bogeumjari.passed) ? 3.8 : 4.2;
+          const fallbackRate = (el.bogeumjari && el.bogeumjari.passed) ? 3.8 : 4.8;
           state.loanRate = fallbackRate;
           inpRate.value = fallbackRate;
           rngRate.value = fallbackRate;
           syncRateToRadios(fallbackRate);
-          showToast(`⚠️ 디딤돌대출 심사 미충족(${el.didimdol.reason})으로 [${fallbackRate === 3.8 ? '보금자리론 (연 3.8%)' : '시중은행 주담대 (연 4.2%)'}]로 자동 적용되었습니다.`);
+          showToast(`⚠️ 디딤돌대출 심사 미충족(${el.didimdol.reason})으로 [${fallbackRate === 3.8 ? '보금자리론 (연 3.8%)' : '시중은행 주담대 (연 4.8%)'}]로 자동 적용되었습니다.`);
           return true;
         }
       } else if (selectedRate === 3.8) {
         if (el && el.bogeumjari && !el.bogeumjari.passed) {
-          state.loanRate = 4.2;
-          inpRate.value = 4.2;
-          rngRate.value = 4.2;
-          syncRateToRadios(4.2);
-          showToast(`⚠️ 보금자리론 심사 미충족(${el.bogeumjari.reason})으로 [시중은행 일반 주담대 (연 4.2%)]로 자동 적용되었습니다.`);
+          state.loanRate = 4.8;
+          inpRate.value = 4.8;
+          rngRate.value = 4.8;
+          syncRateToRadios(4.8);
+          showToast(`⚠️ 보금자리론 심사 미충족(${el.bogeumjari.reason})으로 [시중은행 일반 주담대 (연 4.8%)]로 자동 적용되었습니다.`);
           return true;
         }
       }
@@ -669,13 +786,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4) 가격/보증금 변경 트리거 (price)
     if (triggerSource === 'price') {
       if (isResaleOrPresale) {
-        // 6억 초과 주택인데 디딤돌(3.0)이나 보금자리(3.8)가 선택되어 있는 경우 ➔ 시중은행(4.2)으로 자동 보정
+        // 6억 초과 주택인데 디딤돌(3.0)이나 보금자리(3.8)가 선택되어 있는 경우 ➔ 시중은행(4.8)으로 자동 보정
         if (priceVal > 600000000 && (Math.abs(rateVal - 3.0) < 0.05 || Math.abs(rateVal - 3.8) < 0.05)) {
-          state.loanRate = 4.2;
-          inpRate.value = 4.2;
-          rngRate.value = 4.2;
-          syncRateToRadios(4.2);
-          showToast('⚠️ 매매가 6억 초과 주택은 정책대출 한도 초과로 [시중은행 일반 주담대 (연 4.2%)]로 자동 보정되었습니다.');
+          state.loanRate = 4.8;
+          inpRate.value = 4.8;
+          rngRate.value = 4.8;
+          syncRateToRadios(4.8);
+          showToast('⚠️ 매매가 6억 초과 주택은 정책대출 한도 초과로 [시중은행 일반 주담대 (연 4.8%)]로 자동 보정되었습니다.');
           corrected = true;
         }
       } else if (isJeonse) {
@@ -702,8 +819,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const isBogeumjariPassed = el.bogeumjari ? el.bogeumjari.passed : true;
 
         if (Math.abs(rateVal - 3.0) < 0.05 && !isDidimdolPassed) {
-          const fallbackRate = isBogeumjariPassed ? 3.8 : 4.2;
-          const fallbackName = isBogeumjariPassed ? '보금자리론 (연 3.8%)' : '시중은행 주담대 (연 4.2%)';
+          const fallbackRate = isBogeumjariPassed ? 3.8 : 4.8;
+          const fallbackName = isBogeumjariPassed ? '보금자리론 (연 3.8%)' : '시중은행 주담대 (연 4.8%)';
           state.loanRate = fallbackRate;
           inpRate.value = fallbackRate;
           rngRate.value = fallbackRate;
@@ -711,11 +828,11 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast(`⚠️ 디딤돌 심사 미충족(${el.didimdol.reason})으로 인해 [${fallbackName}]로 안전 자동 전환되었습니다. 🛡️`);
           corrected = true;
         } else if (Math.abs(rateVal - 3.8) < 0.05 && !isBogeumjariPassed) {
-          state.loanRate = 4.2;
-          inpRate.value = 4.2;
-          rngRate.value = 4.2;
-          syncRateToRadios(4.2);
-          showToast(`⚠️ 보금자리론 심사 미충족(${el.bogeumjari.reason})으로 인해 [시중은행 주담대 (연 4.2%)]로 안전 자동 전환되었습니다. 🛡️`);
+          state.loanRate = 4.8;
+          inpRate.value = 4.8;
+          rngRate.value = 4.8;
+          syncRateToRadios(4.8);
+          showToast(`⚠️ 보금자리론 심사 미충족(${el.bogeumjari.reason})으로 인해 [시중은행 주담대 (연 4.8%)]로 안전 자동 전환되었습니다. 🛡️`);
           corrected = true;
         }
       }
@@ -857,10 +974,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       selRepayType.value = 'equal-payment';
       state.price = state.price || 450000000;
-      state.equity = state.equity || 250000000;
-      // 사용자가 이전에 선택한 매매 유효 금리(디딤돌 3.0, 보금자리 3.8 등)가 있으면 보존, 없으면 4.2
+      state.equity = state.equity || 370000000;
+      // 사용자가 이전에 선택한 매매 유효 금리(디딤돌 3.0, 보금자리 3.8 등)가 있으면 보존, 없으면 4.8
       const isCustomValidRate = (state.loanRate && state.loanRate >= 1.5 && state.loanRate <= 8.0 && state.loanRate !== 3.6 && state.loanRate !== 2.4 && state.loanRate !== 2.1);
-      state.loanRate = isCustomValidRate ? state.loanRate : 4.2;
+      state.loanRate = isCustomValidRate ? state.loanRate : 4.8;
       inpPrice.value = (state.price).toLocaleString();
       inpEquity.value = (state.equity).toLocaleString();
       inpRate.value = state.loanRate;
@@ -893,9 +1010,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       selRepayType.value = 'equal-payment';
       state.price = state.price || 450000000;
-      state.equity = state.equity || 250000000;
+      state.equity = state.equity || 370000000;
       const isCustomValidPresaleRate = (state.loanRate && state.loanRate >= 1.5 && state.loanRate <= 8.0 && state.loanRate !== 3.6 && state.loanRate !== 2.4 && state.loanRate !== 2.1);
-      state.loanRate = isCustomValidPresaleRate ? state.loanRate : 4.2;
+      state.loanRate = isCustomValidPresaleRate ? state.loanRate : 4.8;
       inpPrice.value = (state.price).toLocaleString();
       inpEquity.value = (state.equity).toLocaleString();
       inpRate.value = state.loanRate;
@@ -973,14 +1090,14 @@ document.addEventListener('DOMContentLoaded', () => {
         let loanAmt = 100000000;
         if (state.simMode) {
           const simPrice = state.price || 450000000;
-          const simEquity = state.equity || 250000000;
+          const simEquity = state.equity || 370000000;
           if (simPrice > simEquity) {
             loanAmt = simPrice - simEquity;
           }
         }
         amortAmount.value = loanAmt.toLocaleString();
       }
-      if (amortRate) amortRate.value = state.loanRate || 4.2;
+      if (amortRate) amortRate.value = state.loanRate || 4.8;
       if (amortType && selRepayType) amortType.value = selRepayType.value;
       if (amortTerm) amortTerm.value = state.loanYears || 10;
       if (amortDate && !amortDate.value) {
@@ -1205,7 +1322,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sidebarHouseholdDiagnosisBadge.textContent = '보금자리 3.8% 승인';
         sidebarHouseholdDiagnosisBadge.className = 'flex-shrink-0 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800';
       } else {
-        sidebarHouseholdDiagnosisBadge.textContent = '시중은행 4.2% 대상';
+        sidebarHouseholdDiagnosisBadge.textContent = '시중은행 4.8% 대상';
         sidebarHouseholdDiagnosisBadge.className = 'flex-shrink-0 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700';
       }
     }
@@ -1237,7 +1354,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isDidimdol = Math.abs(rate - 3.0) < 0.05;
     const isBogeumjari = Math.abs(rate - 3.8) < 0.05;
-    const isCommercial = Math.abs(rate - 4.2) < 0.05;
+    const isCommercial = Math.abs(rate - 4.8) < 0.05;
     const isBeotimmokRate = (Math.abs(rate - 2.4) < 0.05 || Math.abs(rate - 2.1) < 0.05);
     const isJeonseActive = (state.mode === 'jeonse' || (state.mode === 'household' && state.simMode === 'jeonse'));
 
@@ -1297,14 +1414,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cardCommercial) {
       if (isCommercial) {
         cardCommercial.className = 'p-4 rounded-xl bg-blue-50/80 border-2 border-blue-500 ring-2 ring-blue-200 shadow-md transition cursor-pointer flex flex-col justify-between';
-        cardCommercial.title = '클릭 시 시중은행 주담대(연 4.2%)로 매매 시뮬레이터 즉시 이동';
+        cardCommercial.title = '클릭 시 시중은행 주담대(연 4.8%)로 매매 시뮬레이터 즉시 이동';
         if (txtCommercialApply) {
           txtCommercialApply.className = 'text-blue-800 font-black flex items-center gap-1';
-          txtCommercialApply.innerHTML = '✓ 적용 중 (연 4.2%) <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>';
+          txtCommercialApply.innerHTML = '✓ 적용 중 (연 4.8%) <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>';
         }
       } else {
         cardCommercial.className = 'p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-blue-300 hover:bg-blue-50/40 transition cursor-pointer flex flex-col justify-between';
-        cardCommercial.title = '클릭 시 시중은행 주담대(연 4.2%)로 매매 시뮬레이터 즉시 이동';
+        cardCommercial.title = '클릭 시 시중은행 주담대(연 4.8%)로 매매 시뮬레이터 즉시 이동';
         if (txtCommercialApply) {
           txtCommercialApply.className = 'text-blue-700 font-bold transition';
           txtCommercialApply.textContent = '매매 분석 ➔';
@@ -1502,7 +1619,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1) 폼 입력값 상태 동기화 (천단위 콤마 제거 파싱)
     state.price = parseMoney(inpPrice.value);
     state.equity = parseMoney(inpEquity.value);
-    state.loanRate = Number(inpRate.value) || 4.2;
+    state.equityDeposit = inpEquityDeposit ? parseMoney(inpEquityDeposit.value) : 0;
+    state.equitySavings = inpEquitySavings ? parseMoney(inpEquitySavings.value) : 0;
+    state.equityGift = inpEquityGift ? parseMoney(inpEquityGift.value) : 0;
+    state.loanRate = Number(inpRate.value) || 4.8;
     state.loanYears = Number(selLoanYears.value) || 30;
     state.repayType = selRepayType.value;
     const defaultAnnual = (state.householdType === 'single') ? 50000000 : 77000000;
@@ -1548,6 +1668,12 @@ document.addEventListener('DOMContentLoaded', () => {
       ? (state.simMode || 'resale')
       : state.mode;
 
+    const equityBreakdownParam = {
+      deposit: state.equityDeposit,
+      savings: state.equitySavings,
+      gift: state.equityGift
+    };
+
     if (calcMode === 'resale') {
       scenario = ScenarioEngine.generateResaleScenario({
         householdType: state.householdType,
@@ -1556,6 +1682,7 @@ document.addEventListener('DOMContentLoaded', () => {
         incomeType: state.incomeType,
         price: state.price,
         equity: state.equity,
+        equityBreakdown: equityBreakdownParam,
         annualIncome: state.annualIncome,
         monthlyNetIncome: state.monthlyNetIncome,
         loanRate: state.loanRate,
@@ -1578,6 +1705,7 @@ document.addEventListener('DOMContentLoaded', () => {
         incomeType: state.incomeType,
         price: state.price,
         equity: state.equity,
+        equityBreakdown: equityBreakdownParam,
         annualIncome: state.annualIncome,
         monthlyNetIncome: state.monthlyNetIncome,
         loanRate: state.loanRate,
@@ -1600,6 +1728,7 @@ document.addEventListener('DOMContentLoaded', () => {
         incomeType: state.incomeType,
         deposit: state.price,
         equity: state.equity,
+        equityBreakdown: equityBreakdownParam,
         annualIncome: state.annualIncome,
         monthlyNetIncome: state.monthlyNetIncome,
         loanRate: state.loanRate,
@@ -1940,9 +2069,9 @@ document.addEventListener('DOMContentLoaded', () => {
         </tr>
         ` : ''}
         <tr>
-          <td class="px-4 py-3 font-semibold text-slate-700">보유 순자산 (전세보증금)</td>
+          <td class="px-4 py-3 font-semibold text-slate-700">보유 순자산 (전세보증금/현금)</td>
           <td class="px-4 py-3 text-right font-bold text-emerald-600">${formatWon(s.equity)}</td>
-          <td class="px-4 py-3 text-slate-500">이사 당일 임대인으로부터 전액 반환</td>
+          <td class="px-4 py-3 text-slate-500">${getEquityBreakdownSummary('이사 당일 임대인으로부터 전액 반환')}</td>
         </tr>
         <tr class="bg-purple-50/40">
           <td class="px-4 py-3 font-bold text-purple-900">필요 주택담보대출</td>
@@ -2203,9 +2332,9 @@ document.addEventListener('DOMContentLoaded', () => {
         </tr>
         ` : ''}
         <tr>
-          <td class="px-4 py-3 font-semibold text-slate-700">보유 순자산 (전세보증금)</td>
+          <td class="px-4 py-3 font-semibold text-slate-700">보유 순자산 (전세보증금/현금)</td>
           <td class="px-4 py-3 text-right font-bold text-emerald-600">${formatWon(s.equity)}</td>
-          <td class="px-4 py-3 text-slate-500">퇴거 시 전액 회수</td>
+          <td class="px-4 py-3 text-slate-500">${getEquityBreakdownSummary('퇴거 시 전액 회수')}</td>
         </tr>
         <tr class="bg-purple-50/40">
           <td class="px-4 py-3 font-bold text-purple-900">필요 잔금 주택담보대출</td>
@@ -2751,14 +2880,14 @@ document.addEventListener('DOMContentLoaded', () => {
       // 주택담보대출(시중은행 주담대) ➔ 구축 매매(또는 신축 분양) 시뮬레이터로 이동
       const targetMode = (state.simMode === 'presale') ? 'presale' : 'resale';
       const modeLabel = (targetMode === 'presale') ? '신축 분양' : '구축 매매';
-      state.loanRate = 4.2;
-      inpRate.value = 4.2;
-      rngRate.value = 4.2;
-      validateAndAutoCorrectLoanRules('rate-preset', { selectedRate: 4.2 });
-      syncRateToRadios(4.2);
-      highlightSelectedLoanCard(4.2);
+      state.loanRate = 4.8;
+      inpRate.value = 4.8;
+      rngRate.value = 4.8;
+      validateAndAutoCorrectLoanRules('rate-preset', { selectedRate: 4.8 });
+      syncRateToRadios(4.8);
+      highlightSelectedLoanCard(4.8);
       recalculate();
-      showToast(`시중은행 주담대 금리(연 4.2%)가 [${modeLabel} 시뮬레이터]에 즉시 적용되었습니다! ⚡`);
+      showToast(`시중은행 주담대 금리(연 4.8%)가 [${modeLabel} 시뮬레이터]에 즉시 적용되었습니다! ⚡`);
       setTimeout(() => {
         setMode(targetMode);
       }, 350);
@@ -2812,7 +2941,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const e = Number(btn.dataset.equity);
       const r = Number(btn.dataset.rate);
       if (p) inpPrice.value = p.toLocaleString();
-      if (e) inpEquity.value = e.toLocaleString();
+      // 사용자가 이미 설정한 순자산(세부 구성 포함)이 있으면 무단 초기화하지 않고 그대로 보존!
+      const currentEquity = parseMoney(inpEquity.value);
+      if (!currentEquity || currentEquity <= 0) {
+        if (e) {
+          inpEquity.value = e.toLocaleString();
+          syncMainEquityToSub();
+        }
+      }
       if (r) {
         inpRate.value = r;
         rngRate.value = r;
@@ -2842,6 +2978,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let currentEquity = parseMoney(inpEquity.value) || 0;
       currentEquity = Math.max(0, currentEquity + delta);
       inpEquity.value = currentEquity.toLocaleString();
+      syncMainEquityToSub();
       recalculate();
     });
   });
@@ -2894,7 +3031,13 @@ document.addEventListener('DOMContentLoaded', () => {
     validateAndAutoCorrectLoanRules('price');
     recalculate();
   });
-  bindMoneyInput(inpEquity, () => recalculate());
+  bindMoneyInput(inpEquity, () => {
+    syncMainEquityToSub();
+    recalculate();
+  });
+  if (inpEquityDeposit) bindMoneyInput(inpEquityDeposit, syncSubEquityToMain);
+  if (inpEquitySavings) bindMoneyInput(inpEquitySavings, syncSubEquityToMain);
+  if (inpEquityGift) bindMoneyInput(inpEquityGift, syncSubEquityToMain);
   bindMoneyInput(inpAnnualIncome, () => recalculate());
   bindMoneyInput(inpMonthlyIncome, () => recalculate());
   bindMoneyInput(inpCustomExtra, () => recalculate());
@@ -2923,7 +3066,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 7) 금리 슬라이더 및 인풋 동기화
+  // 7) 금리 슬라이더 및 인풋 양방향 동기화
+  function handleRateSliderChange() {
+    inpRate.value = rngRate.value;
+    syncRateToRadios(Number(rngRate.value));
+    recalculate();
+  }
+  rngRate.addEventListener('input', handleRateSliderChange);
+  rngRate.addEventListener('change', handleRateSliderChange);
+
   inpRate.addEventListener('input', () => {
     rngRate.value = inpRate.value;
     syncRateToRadios(Number(inpRate.value));
@@ -3043,14 +3194,14 @@ document.addEventListener('DOMContentLoaded', () => {
           syncRateToRadios(3.0);
           showToast(`연 3.0% 디딤돌대출 금리가 [${modeLabel} 시뮬레이터]에 정상 승인·적용되었습니다! 🚀`);
         } else {
-          // 부적격 시: 억지로 가구 조건을 조작하지 않고 정직하게 부적격 고지 및 적격 상품(보금자리 3.8% 또는 시중 4.2%) 적용
-          const fallbackRate = (el && el.bogeumjari && el.bogeumjari.passed) ? 3.8 : 4.2;
+          // 부적격 시: 억지로 가구 조건을 조작하지 않고 정직하게 부적격 고지 및 적격 상품(보금자리 3.8% 또는 시중 4.8%) 적용
+          const fallbackRate = (el && el.bogeumjari && el.bogeumjari.passed) ? 3.8 : 4.8;
           state.loanRate = fallbackRate;
           inpRate.value = fallbackRate;
           rngRate.value = fallbackRate;
           syncRateToRadios(fallbackRate);
           const reason = el && el.didimdol ? el.didimdol.reason : '자격 요건 미달';
-          showToast(`⚠️ 현재 가구 조건은 디딤돌대출 요건(${reason})을 충족하지 못하여 신청 불가입니다. 적격 상품인 [${fallbackRate === 3.8 ? '보금자리론 (연 3.8%)' : '시중은행 주담대 (연 4.2%)'}]가 적용되었습니다.`);
+          showToast(`⚠️ 현재 가구 조건은 디딤돌대출 요건(${reason})을 충족하지 못하여 신청 불가입니다. 적격 상품인 [${fallbackRate === 3.8 ? '보금자리론 (연 3.8%)' : '시중은행 주담대 (연 4.8%)'}]가 적용되었습니다.`);
         }
       }
       // 2) 보금자리론 (연 3.8%) 클릭 시
@@ -3063,12 +3214,12 @@ document.addEventListener('DOMContentLoaded', () => {
           syncRateToRadios(3.8);
           showToast(`연 3.8% 보금자리론 금리가 [${modeLabel} 시뮬레이터]에 정상 승인·적용되었습니다! 🚀`);
         } else {
-          state.loanRate = 4.2;
-          inpRate.value = 4.2;
-          rngRate.value = 4.2;
-          syncRateToRadios(4.2);
+          state.loanRate = 4.8;
+          inpRate.value = 4.8;
+          rngRate.value = 4.8;
+          syncRateToRadios(4.8);
           const reason = el && el.bogeumjari ? el.bogeumjari.reason : '자격 요건 미달';
-          showToast(`⚠️ 현재 가구 조건은 보금자리론 요건(${reason})을 충족하지 못하여 신청 불가입니다. [시중은행 일반 주담대 (연 4.2%)]가 적용되었습니다.`);
+          showToast(`⚠️ 현재 가구 조건은 보금자리론 요건(${reason})을 충족하지 못하여 신청 불가입니다. [시중은행 일반 주담대 (연 4.8%)]가 적용되었습니다.`);
         }
       }
       // 3) 청년 버팀목 (연 2.1%) 클릭 시
@@ -3107,7 +3258,7 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast(`⚠️ 신혼 버팀목은 혼인 7년 이내 신혼부부(합산소득 7.5천 이하) 전용 상품입니다. 현재 조건에서 이용 가능한 [HUG 안심전세대출 (연 3.6%)]가 적용되었습니다.`);
         }
       }
-      // 5) 시중은행 일반 주담대 (연 4.2%), 안심전세 (연 3.6%), 일반전세 (연 4.1%)
+      // 5) 시중은행 일반 주담대 (연 4.8%), 안심전세 (연 3.6%), 일반전세 (연 4.1%)
       else {
         state.loanRate = rate;
         inpRate.value = rate;

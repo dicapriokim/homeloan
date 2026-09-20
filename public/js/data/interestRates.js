@@ -79,8 +79,8 @@ const INTEREST_RATES_DATA = {
       maxLTV: 70,
       firstHomeMaxLTV: 80
     },
-    rateRange: { min: 3.85, max: 4.55 },
-    defaultRate: 4.2,
+    rateRange: { min: 4.20, max: 5.20 },
+    defaultRate: 4.8,
     badge: '1금융권 일반'
   },
 
@@ -333,7 +333,7 @@ const INTEREST_RATES_DATA = {
         reason: commercialReason,
         failReasons: commercialReason ? [commercialReason] : [],
         auditType: isCouple ? 'couple' : 'single',
-        recommendedRate: 4.2,
+        recommendedRate: 4.8,
         badge: '✅ 신청 가능 (표준)'
       },
       beotimmok: {
@@ -361,7 +361,7 @@ const HOUSEHOLD_PROFILES = {
     name: '맞벌이 (기본)',
     label: '기본형: 맞벌이 7년차·무자녀',
     badge: '👫 맞벌이',
-    description: '결혼 7년 이상 생애최초 무주택, 맞벌이 합산 7,700만 원 (디딤돌/보금자리 7천만 초과로 시중은행 주담대 4.2% 적격)',
+    description: '결혼 7년 이상 생애최초 무주택, 맞벌이 합산 7,700만 원 (디딤돌/보금자리 7천만 초과로 시중은행 주담대 4.8% 적격)',
     householdType: 'couple',
     marriagePeriod: 'over7',
     childCount: 0,
@@ -370,7 +370,7 @@ const HOUSEHOLD_PROFILES = {
     isFirstHome: true,
     isHomeless: true,
     incomeType: 'double',
-    recommendedRate: 4.2,
+    recommendedRate: 4.8,
     recommendedLoanType: 'commercial',
     recommendedJeonseRate: 3.6,
     recommendedJeonseType: 'hug',
@@ -441,7 +441,7 @@ const HOUSEHOLD_PROFILES = {
     name: '1인 단독 세대주',
     label: '단독형: 1인 단독 세대주',
     badge: '👤 1인 세대주 5천만',
-    description: '차주 본인 단독 심사: 보금자리론(연 3.8%·6억이하 단독신청) 및 생애최초 시중 주담대(연 4.2%), 청년 전용 버팀목 전세대출(연 2.1%) 적격',
+    description: '차주 본인 단독 심사: 보금자리론(연 3.8%·6억이하 단독신청) 및 생애최초 시중 주담대(연 4.8%), 청년 전용 버팀목 전세대출(연 2.1%) 적격',
     householdType: 'single',
     marriagePeriod: 'single',
     childCount: 0,
