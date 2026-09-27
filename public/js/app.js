@@ -129,11 +129,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalFpTxtSelfTotalMapping = document.getElementById('modal-fp-txt-self-total-mapping');
   const modalFpTxtMortgageMapping = document.getElementById('modal-fp-txt-mortgage-mapping');
 
-  // 자금조달계획서 공식 서식 인쇄 버튼들
-  const btnFpPrintOfficial = document.getElementById('btn-fp-print-official');
-  const btnFpPrintBottom = document.getElementById('btn-fp-print-bottom');
-  const btnModalFpPrintOfficial = document.getElementById('btn-modal-fp-print-official');
-  const btnModalFpPrintBottom = document.getElementById('btn-modal-fp-print-bottom');
+  // 자금조달계획서 공식 서식 인쇄 버튼들 (공란 서식 vs 완성본 2가지 모드)
+  const btnFpPrintBlank = document.getElementById('btn-fp-print-blank');
+  const btnFpPrintComplete = document.getElementById('btn-fp-print-complete');
+  const btnFpPrintBlankBottom = document.getElementById('btn-fp-print-blank-bottom');
+  const btnFpPrintCompleteBottom = document.getElementById('btn-fp-print-complete-bottom');
+  const btnModalFpPrintBlank = document.getElementById('btn-modal-fp-print-blank');
+  const btnModalFpPrintComplete = document.getElementById('btn-modal-fp-print-complete');
+  const btnModalFpPrintBlankBottom = document.getElementById('btn-modal-fp-print-blank-bottom');
+  const btnModalFpPrintCompleteBottom = document.getElementById('btn-modal-fp-print-complete-bottom');
+
+  // 제출인(매수인) 및 대상주택 정보 전용 모달 DOMs
+  const modalBuyerInfo = document.getElementById('modal-buyer-info');
+  const btnCloseBuyerInfoModal = document.getElementById('btn-close-buyer-info-modal');
+  const btnModalBiCancel = document.getElementById('btn-modal-bi-cancel');
+  const btnModalBiSubmitPrint = document.getElementById('btn-modal-bi-submit-print');
+  const btnBiLoadPreset = document.getElementById('btn-bi-load-preset');
+
+  const modalBiInpName = document.getElementById('modal-bi-inp-name');
+  const modalBiInpSsn = document.getElementById('modal-bi-inp-ssn');
+  const modalBiErrSsn = document.getElementById('modal-bi-err-ssn');
+  const modalBiInpPhone = document.getElementById('modal-bi-inp-phone');
+  const modalBiErrPhone = document.getElementById('modal-bi-err-phone');
+  const modalBiInpDate = document.getElementById('modal-bi-inp-date');
+  const modalBiInpAddr = document.getElementById('modal-bi-inp-addr');
+  const modalBiInpTarget = document.getElementById('modal-bi-inp-target');
   
   const amortAmount = document.getElementById('amort-amount');
   const amortType = document.getElementById('amort-type');
@@ -3252,6 +3272,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fpChkIncludeOptional) fpChkIncludeOptional.checked = true;
     if (modalFpChkIncludeOptional) modalFpChkIncludeOptional.checked = true;
 
+    // 제출인(매수인) 및 대상주택 정보 기본 예시값 셋팅
+    const defaultBuyerName = '홍길동';
+    const defaultBuyerSsn = '900101-1234567';
+    const defaultBuyerPhone = '010-1234-5678';
+    const defaultBuyerAddr = '서울특별시 마포구 백범로 123, 101동 1001호';
+    const defaultTargetHouse = '서울특별시 영등포구 여의도동 OO아파트 102동 1502호';
+    const todayStr = getTodayDateString();
+
+    if (modalBiInpName) modalBiInpName.value = defaultBuyerName;
+    if (modalBiInpSsn) modalBiInpSsn.value = defaultBuyerSsn;
+    if (modalBiInpPhone) modalBiInpPhone.value = defaultBuyerPhone;
+    if (modalBiInpAddr) modalBiInpAddr.value = defaultBuyerAddr;
+    if (modalBiInpTarget) modalBiInpTarget.value = defaultTargetHouse;
+    if (modalBiInpDate) modalBiInpDate.value = todayStr;
+    if (modalBiErrSsn) modalBiErrSsn.classList.add('hidden');
+    if (modalBiErrPhone) modalBiErrPhone.classList.add('hidden');
+
     calculateFundPlanTotals(false);
     showToast('✨ 표준 자금조달계획서 기본값이 입력되었습니다.');
   }
@@ -3388,9 +3425,262 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ========================================================
   // [공식 서식 인쇄/PDF] 국토교통부 별지 제1호의2서식 공식 규격 출력 실행
+  // isCompleted: false(공란 서식 - 수기 작성용), true(완성본 서식 - 인적사항/오늘날짜 자동 세팅)
   // ========================================================
-  function printOfficialFundPlan() {
-    // 1. 최신 입력 데이터 추출
+
+  // 1. 날짜 및 번호 포맷팅/검증 유틸리티
+  function getTodayDateString() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  // 주민등록번호 하이픈 자동 포맷팅 (숫자만 최대 13자리 ➔ XXXXXX-XXXXXXX)
+  function formatRRN(val) {
+    if (!val) return '';
+    const clean = String(val).replace(/[^0-9]/g, '').slice(0, 13);
+    if (clean.length <= 6) return clean;
+    return `${clean.slice(0, 6)}-${clean.slice(6)}`;
+  }
+
+  // 주민등록번호 유효성 검사 (앞자리 생년월일 + 뒷자리 성별코드)
+  function validateRRN(val) {
+    if (!val || !val.trim()) {
+      return { valid: false, message: '주민등록번호를 입력해 주세요.' };
+    }
+    const clean = String(val).replace(/[^0-9]/g, '');
+    if (clean.length !== 13) {
+      return { valid: false, message: '주민등록번호 13자리를 모두 입력해 주세요.' };
+    }
+    const mm = parseInt(clean.slice(2, 4), 10);
+    const dd = parseInt(clean.slice(4, 6), 10);
+    const gender = parseInt(clean.charAt(6), 10);
+
+    if (mm < 1 || mm > 12) {
+      return { valid: false, message: '생년월일의 월(01~12)이 올바르지 않습니다.' };
+    }
+    if (dd < 1 || dd > 31) {
+      return { valid: false, message: '생년월일의 일(01~31)이 올바르지 않습니다.' };
+    }
+    if (gender < 1 || gender > 8) {
+      return { valid: false, message: '주민등록번호 뒷자리(성별 코드)가 올바르지 않습니다.' };
+    }
+    return { valid: true, message: '' };
+  }
+
+  // 전화번호 하이픈 자동 포맷팅 (서울 02 및 전국/휴대폰 국번 정밀 대응)
+  function formatPhoneNumber(val) {
+    if (!val) return '';
+    const clean = String(val).replace(/[^0-9]/g, '').slice(0, 11);
+    if (!clean) return '';
+
+    if (clean.startsWith('02')) {
+      // 서울 (02)
+      if (clean.length <= 2) return clean;
+      if (clean.length <= 5) return `${clean.slice(0, 2)}-${clean.slice(2)}`;
+      if (clean.length <= 9) return `${clean.slice(0, 2)}-${clean.slice(2, clean.length - 4)}-${clean.slice(clean.length - 4)}`;
+      return `${clean.slice(0, 2)}-${clean.slice(2, 6)}-${clean.slice(6, 10)}`;
+    } else {
+      // 휴대폰(010, 011 등) 및 지방 국번(031, 051 등)
+      if (clean.length <= 3) return clean;
+      if (clean.length <= 6) return `${clean.slice(0, 3)}-${clean.slice(3)}`;
+      if (clean.length <= 10) return `${clean.slice(0, 3)}-${clean.slice(3, clean.length - 4)}-${clean.slice(clean.length - 4)}`;
+      return `${clean.slice(0, 3)}-${clean.slice(3, 7)}-${clean.slice(7, 11)}`;
+    }
+  }
+
+  // 전화번호 유효성 검사
+  function validatePhoneNumber(val) {
+    if (!val || !val.trim()) {
+      return { valid: false, message: '전화번호를 입력해 주세요.' };
+    }
+    const clean = String(val).replace(/[^0-9]/g, '');
+    if (clean.length < 9 || clean.length > 11) {
+      return { valid: false, message: '전화번호 9~11자리를 정확히 입력해 주세요.' };
+    }
+    const phoneRegex = /^(01[016789]{1}|02|0[3-9]{1}[0-9]{1})-[0-9]{3,4}-[0-9]{4}$/;
+    if (!phoneRegex.test(val)) {
+      return { valid: false, message: '올바른 전화번호 형식(예: 010-1234-5678 또는 02-1234-5678)이 아닙니다.' };
+    }
+    return { valid: true, message: '' };
+  }
+
+  // 2. 제출인 및 대상주택 정보 전용 모달 제어
+  function resetBuyerInfoInputs() {
+    if (modalBiInpName) modalBiInpName.value = '';
+    if (modalBiInpSsn) modalBiInpSsn.value = '';
+    if (modalBiInpPhone) modalBiInpPhone.value = '';
+    if (modalBiInpAddr) modalBiInpAddr.value = '';
+    if (modalBiInpTarget) modalBiInpTarget.value = '';
+    if (modalBiInpDate) modalBiInpDate.value = getTodayDateString();
+
+    // 에러 라벨 및 테두리 초기화
+    if (modalBiErrSsn) modalBiErrSsn.classList.add('hidden');
+    if (modalBiErrPhone) modalBiErrPhone.classList.add('hidden');
+    if (modalBiInpSsn) modalBiInpSsn.classList.remove('border-red-500', 'focus:ring-red-500');
+    if (modalBiInpPhone) modalBiInpPhone.classList.remove('border-red-500', 'focus:ring-red-500');
+  }
+
+  function openBuyerInfoModal() {
+    if (!modalBuyerInfo) return;
+    
+    // 예시값 채우기는 1회성이므로 모달을 다시 열 때는 항상 공란으로 초기화
+    resetBuyerInfoInputs();
+
+    modalBuyerInfo.classList.remove('hidden');
+    if (window.lucide) window.lucide.createIcons();
+    if (modalBiInpName) modalBiInpName.focus();
+  }
+
+  function closeBuyerInfoModal() {
+    if (modalBuyerInfo) modalBuyerInfo.classList.add('hidden');
+  }
+
+  // 모달 내 원클릭 예시값 채우기
+  function loadBuyerInfoPreset() {
+    if (modalBiInpName) modalBiInpName.value = '홍길동';
+    if (modalBiInpSsn) modalBiInpSsn.value = '900101-1234567';
+    if (modalBiInpPhone) modalBiInpPhone.value = '010-1234-5678';
+    if (modalBiInpAddr) modalBiInpAddr.value = '서울특별시 마포구 백범로 123, 101동 1001호';
+    if (modalBiInpTarget) modalBiInpTarget.value = '서울특별시 영등포구 여의도동 OO아파트 102동 1502호';
+    if (modalBiInpDate) modalBiInpDate.value = getTodayDateString();
+
+    if (modalBiErrSsn) modalBiErrSsn.classList.add('hidden');
+    if (modalBiErrPhone) modalBiErrPhone.classList.add('hidden');
+    if (modalBiInpSsn) modalBiInpSsn.classList.remove('border-red-500');
+    if (modalBiInpPhone) modalBiInpPhone.classList.remove('border-red-500');
+    showToast('✨ 제출인 및 주택 정보 예시값이 입력되었습니다.');
+  }
+
+  // 3. 인적사항 입력 필드 이벤트 바인딩 (실시간 하이픈 & 검증)
+  if (modalBiInpSsn) {
+    modalBiInpSsn.addEventListener('input', () => {
+      modalBiInpSsn.value = formatRRN(modalBiInpSsn.value);
+      if (modalBiInpSsn.value.length === 14) {
+        const rrnCheck = validateRRN(modalBiInpSsn.value);
+        if (!rrnCheck.valid) {
+          modalBiErrSsn.textContent = `* ${rrnCheck.message}`;
+          modalBiErrSsn.classList.remove('hidden');
+          modalBiInpSsn.classList.add('border-red-500');
+        } else {
+          modalBiErrSsn.classList.add('hidden');
+          modalBiInpSsn.classList.remove('border-red-500');
+        }
+      }
+    });
+
+    modalBiInpSsn.addEventListener('blur', () => {
+      if (modalBiInpSsn.value.trim()) {
+        const rrnCheck = validateRRN(modalBiInpSsn.value);
+        if (!rrnCheck.valid) {
+          modalBiErrSsn.textContent = `* ${rrnCheck.message}`;
+          modalBiErrSsn.classList.remove('hidden');
+          modalBiInpSsn.classList.add('border-red-500');
+        } else {
+          modalBiErrSsn.classList.add('hidden');
+          modalBiInpSsn.classList.remove('border-red-500');
+        }
+      } else {
+        modalBiErrSsn.classList.add('hidden');
+        modalBiInpSsn.classList.remove('border-red-500');
+      }
+    });
+  }
+
+  if (modalBiInpPhone) {
+    modalBiInpPhone.addEventListener('input', () => {
+      modalBiInpPhone.value = formatPhoneNumber(modalBiInpPhone.value);
+      if (modalBiInpPhone.value.length >= 12) {
+        const phoneCheck = validatePhoneNumber(modalBiInpPhone.value);
+        if (!phoneCheck.valid) {
+          modalBiErrPhone.textContent = `* ${phoneCheck.message}`;
+          modalBiErrPhone.classList.remove('hidden');
+          modalBiInpPhone.classList.add('border-red-500');
+        } else {
+          modalBiErrPhone.classList.add('hidden');
+          modalBiInpPhone.classList.remove('border-red-500');
+        }
+      }
+    });
+
+    modalBiInpPhone.addEventListener('blur', () => {
+      if (modalBiInpPhone.value.trim()) {
+        const phoneCheck = validatePhoneNumber(modalBiInpPhone.value);
+        if (!phoneCheck.valid) {
+          modalBiErrPhone.textContent = `* ${phoneCheck.message}`;
+          modalBiErrPhone.classList.remove('hidden');
+          modalBiInpPhone.classList.add('border-red-500');
+        } else {
+          modalBiErrPhone.classList.add('hidden');
+          modalBiInpPhone.classList.remove('border-red-500');
+        }
+      } else {
+        modalBiErrPhone.classList.add('hidden');
+        modalBiInpPhone.classList.remove('border-red-500');
+      }
+    });
+  }
+
+  // 모달 버튼 리스너 바인딩
+  if (btnBiLoadPreset) btnBiLoadPreset.addEventListener('click', loadBuyerInfoPreset);
+  if (btnCloseBuyerInfoModal) btnCloseBuyerInfoModal.addEventListener('click', closeBuyerInfoModal);
+  if (btnModalBiCancel) btnModalBiCancel.addEventListener('click', closeBuyerInfoModal);
+
+  if (modalBuyerInfo) {
+    modalBuyerInfo.addEventListener('click', (e) => {
+      if (e.target === modalBuyerInfo) closeBuyerInfoModal();
+    });
+  }
+
+  // 완성본 인쇄 실행 버튼 클릭 시: 유효성 검증 통과 후 출력
+  if (btnModalBiSubmitPrint) {
+    btnModalBiSubmitPrint.addEventListener('click', () => {
+      const name = (modalBiInpName?.value || '').trim();
+      if (!name) {
+        showToast('⚠️ 성명(법인명)을 입력해 주세요.');
+        if (modalBiInpName) modalBiInpName.focus();
+        return;
+      }
+
+      const ssnCheck = validateRRN(modalBiInpSsn?.value || '');
+      if (!ssnCheck.valid) {
+        if (modalBiErrSsn) {
+          modalBiErrSsn.textContent = `* ${ssnCheck.message}`;
+          modalBiErrSsn.classList.remove('hidden');
+        }
+        if (modalBiInpSsn) {
+          modalBiInpSsn.classList.add('border-red-500');
+          modalBiInpSsn.focus();
+        }
+        showToast(`⚠️ ${ssnCheck.message}`);
+        return;
+      }
+
+      const phoneCheck = validatePhoneNumber(modalBiInpPhone?.value || '');
+      if (!phoneCheck.valid) {
+        if (modalBiErrPhone) {
+          modalBiErrPhone.textContent = `* ${phoneCheck.message}`;
+          modalBiErrPhone.classList.remove('hidden');
+        }
+        if (modalBiInpPhone) {
+          modalBiInpPhone.classList.add('border-red-500');
+          modalBiInpPhone.focus();
+        }
+        showToast(`⚠️ ${phoneCheck.message}`);
+        return;
+      }
+
+      // 검증 통과 ➔ 모달 닫고 완성본 인쇄 실행
+      closeBuyerInfoModal();
+      printOfficialFundPlan(true);
+    });
+  }
+
+  // 4. 공식 서식 인쇄 실행 코어 함수
+  function printOfficialFundPlan(isCompleted = false) {
+    // 1) 최신 자금조달 데이터 추출
     const depSavings = parseMoney(fpInpDepositSavings ? fpInpDepositSavings.value : (modalFpInpDepositSavings?.value || 0));
     const stockCrypto = parseMoney(fpInpStockCrypto ? fpInpStockCrypto.value : (modalFpInpStockCrypto?.value || 0));
     const gift = parseMoney(fpInpGift ? fpInpGift.value : (modalFpInpGift?.value || 0));
@@ -3416,10 +3706,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const cashPay = parseMoney(fpInpCashPay?.value || 0);
     const accountTransfer = parseMoney(fpInpAccountTransfer?.value || Math.max(0, totalDeal - takeoverLoan - cashPay));
 
-    // 2. 인쇄 전용 공식 서식 DOM에 데이터 주입
+    // 2) 인쇄 전용 공식 서식 DOM에 데이터 주입
     const setTxt = (id, val) => {
       const el = document.getElementById(id);
       if (el) el.textContent = val;
+    };
+    const setHtml = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = val;
     };
 
     setTxt('print-fp-deposit-savings', `${formatMoney(depSavings)} 원`);
@@ -3446,29 +3740,73 @@ document.addEventListener('DOMContentLoaded', () => {
     setTxt('print-fp-takeover-loan', `${formatMoney(takeoverLoan)} 원`);
     setTxt('print-fp-cash-pay', `${formatMoney(cashPay)} 원`);
 
-    // 제출 날짜: 연도만 표시하고 월과 일은 공란으로 처리
+    // 3) 인적사항 및 제출일자 분기 처리 (공란 vs 완성본)
     const now = new Date();
-    const y = now.getFullYear();
-    setTxt('print-fp-today-date', `${y}년       월       일`);
+    const currYear = now.getFullYear();
+    const currMonth = now.getMonth() + 1;
+    const currDay = now.getDate();
 
-    // 3. 인쇄 모드 진입 및 다이얼로그 호출
+    if (isCompleted) {
+      // [완성본 서식]: 입력된 인적사항과 오늘 날짜 자동 셋팅
+      const buyerName = (modalBiInpName?.value || '').trim();
+      const buyerSsn = (modalBiInpSsn?.value || '').trim();
+      const buyerPhone = (modalBiInpPhone?.value || '').trim();
+      const buyerAddr = (modalBiInpAddr?.value || '').trim();
+      const targetHouse = (modalBiInpTarget?.value || '').trim();
+
+      const submitDateVal = modalBiInpDate?.value;
+      let dateStr = `${currYear}년 ${currMonth}월 ${currDay}일`;
+      if (submitDateVal) {
+        const parts = submitDateVal.split('-');
+        if (parts.length === 3) {
+          dateStr = `${parts[0]}년 ${parseInt(parts[1], 10)}월 ${parseInt(parts[2], 10)}일`;
+        }
+      }
+
+      setHtml('print-fp-buyer-name', buyerName || '&nbsp;');
+      setHtml('print-fp-buyer-ssn', buyerSsn || '&nbsp;');
+      setHtml('print-fp-buyer-phone', buyerPhone || '&nbsp;');
+      setHtml('print-fp-buyer-addr', buyerAddr || '&nbsp;');
+      setHtml('print-fp-target-house', targetHouse || '&nbsp;');
+      setHtml('print-fp-sign-buyer-name', buyerName || '&nbsp;');
+      setTxt('print-fp-today-date', dateStr);
+    } else {
+      // [공란 서식]: 수기 작성을 위해 인적사항 및 날짜 월/일 공란 처리
+      setHtml('print-fp-buyer-name', '&nbsp;');
+      setHtml('print-fp-buyer-ssn', '&nbsp;');
+      setHtml('print-fp-buyer-phone', '&nbsp;');
+      setHtml('print-fp-buyer-addr', '&nbsp;');
+      setHtml('print-fp-target-house', '&nbsp;');
+      setHtml('print-fp-sign-buyer-name', '&nbsp;');
+      setHtml('print-fp-today-date', `${currYear}년 &nbsp; &nbsp; &nbsp; &nbsp; 월 &nbsp; &nbsp; &nbsp; &nbsp; 일`);
+    }
+
+    // 4) 인쇄 모드 진입 및 다이얼로그 호출
     document.body.classList.add('printing-official-fund-plan');
     const printSheet = document.getElementById('official-fund-plan-print-sheet');
     if (printSheet) printSheet.classList.remove('hidden');
 
     window.print();
 
-    // 인쇄 종료 시 원상 복구
+    // 인쇄 종료 시 원상 복구 및 폼 초기화 (1회성 입력 보장)
     const cleanup = () => {
       document.body.classList.remove('printing-official-fund-plan');
       if (printSheet) printSheet.classList.add('hidden');
+      resetBuyerInfoInputs();
     };
     window.addEventListener('afterprint', cleanup, { once: true });
     setTimeout(cleanup, 1000);
   }
 
-  [btnFpPrintOfficial, btnFpPrintBottom, btnModalFpPrintOfficial, btnModalFpPrintBottom].forEach(btn => {
-    if (btn) btn.addEventListener('click', printOfficialFundPlan);
+  // 5. 버튼 이벤트 바인딩
+  // 1) 공란 서식 인쇄 버튼 4종: 모달 없이 수기용 공란 공식 서식 즉시 인쇄
+  [btnFpPrintBlank, btnFpPrintBlankBottom, btnModalFpPrintBlank, btnModalFpPrintBlankBottom].forEach(btn => {
+    if (btn) btn.addEventListener('click', () => printOfficialFundPlan(false));
+  });
+
+  // 2) 완성본 서식 인쇄 버튼 4종: 1회성 인적사항 입력 모달(modal-buyer-info) 오픈
+  [btnFpPrintComplete, btnFpPrintCompleteBottom, btnModalFpPrintComplete, btnModalFpPrintCompleteBottom].forEach(btn => {
+    if (btn) btn.addEventListener('click', openBuyerInfoModal);
   });
 
   // 초기 자금조달계획서 자동 계산 실행 (선택비용 기본값 1,000만 원 반영)

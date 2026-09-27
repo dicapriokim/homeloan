@@ -1578,11 +1578,15 @@
               <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-600"></i>
               <span>기본값</span>
             </button>
-            <button type="button" id="btn-fp-print-official" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
-              <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-              <span>공식 서식 인쇄 / PDF</span>
+            <button type="button" id="btn-fp-print-blank" class="px-3 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap" title="인적사항과 날짜가 공란인 수기 작성용 공식 서식 인쇄">
+              <i data-lucide="printer" class="w-3.5 h-3.5 text-slate-300"></i>
+              <span>공란 서식 인쇄</span>
             </button>
-            <button type="button" id="btn-fp-apply-to-equity" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
+            <button type="button" id="btn-fp-print-complete" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap" title="입력된 인적사항과 오늘 날짜가 자동 채워진 완성본 공식 서식 인쇄">
+              <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-blue-200"></i>
+              <span>완성본 인쇄</span>
+            </button>
+            <button type="button" id="btn-fp-apply-to-equity" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
               <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
               <span>시뮬레이션 실행</span>
             </button>
@@ -1603,73 +1607,6 @@
             <div class="text-[11px] text-blue-900 leading-normal pl-5">
               • <b>시뮬레이터(사이드바)</b>: 총 소요예산(5.38억)에서 <b>보유 총 순자산(3.7억)</b>을 차감하여 필요 대출(1억 6,832만 원)을 산출합니다.<br>
               • <b>자금조달계획서(공적 서식)</b>: 순수 매매가(5.2억) 기준 서식이므로, 예금에서 부대비용을 뺀 금액만 기재되어 ⑦ 자기자금이 3억 5,168만 원으로 표시되며, <b>필요 대출(1억 6,832만 원)은 사이드바와 1원까지 완벽히 일치</b>합니다.
-            </div>
-          </div>
-        </div>
-
-        <!-- ⑧ 금융기관 대출액 부대비용 및 선택비용(인테리어) 설정 컨트롤 바 -->
-        <div class="p-3.5 bg-purple-50/70 border border-purple-200 rounded-xl space-y-2.5">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-purple-200/60 pb-2">
-            <div class="flex items-center gap-1.5 text-xs font-extrabold text-purple-950">
-              <i data-lucide="sliders" class="w-4 h-4 text-purple-600"></i>
-              <span>부대비용 시뮬레이션 (체크 시 ② 예금액 차감 ➔ ⑧ 대출 충당)</span>
-            </div>
-            <div class="flex items-center gap-1 text-xs">
-              <span class="text-slate-600 font-medium">반영 부대비용 합계:</span>
-              <span id="fp-txt-expense-amount" class="text-xs font-black text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md"></span>
-            </div>
-          </div>
-          
-          <!-- 필수 취득세 vs 선택 인테리어 2분할 체크박스 카드 영역 -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs">
-            <!-- 1) [필수] 취득세·거래비용 체크박스 카드 -->
-            <div class="p-2.5 bg-white/90 rounded-lg border border-purple-200/80 flex items-center justify-between shadow-2xs">
-              <label class="inline-flex items-center gap-1.5 font-bold text-slate-800 cursor-pointer select-none">
-                <input type="checkbox" id="fp-chk-include-mandatory" checked class="w-4 h-4 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer">
-                <span class="text-xs text-blue-950">[필수] 취득세·거래비용 반영</span>
-              </label>
-              <div class="flex items-center gap-1">
-                <span id="fp-txt-mandatory-cost" class="font-black text-blue-700">약 520만 원</span>
-              </div>
-            </div>
-
-            <!-- 2) [선택] 인테리어·수리비 체크박스 카드 -->
-            <div class="p-2.5 bg-white/90 rounded-lg border border-purple-200/80 space-y-1.5 shadow-2xs">
-              <div class="flex items-center justify-between">
-                <label class="inline-flex items-center gap-1.5 font-bold text-slate-800 cursor-pointer select-none">
-                  <input type="checkbox" id="fp-chk-include-optional" checked class="w-4 h-4 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer">
-                  <span class="text-xs text-indigo-950">[선택] 인테리어·수리비 반영</span>
-                </label>
-                <span id="fp-txt-optional-cost-display" class="font-black text-indigo-700">1,000만 원</span>
-              </div>
-              <div id="fp-box-optional-input" class="flex items-center justify-between gap-2 pt-1 border-t border-purple-100">
-                <label for="fp-inp-optional-cost" class="text-[11px] text-slate-600 flex items-center gap-1">
-                  <i data-lucide="paintbrush" class="w-3 h-3 text-slate-400"></i>
-                  <span>수리 예산 직접 입력:</span>
-                </label>
-                <div class="relative w-36">
-                  <input type="text" inputmode="numeric" id="fp-inp-optional-cost" class="w-full pl-2 pr-6 py-0.5 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800 text-right focus:ring-1 focus:ring-purple-500 shadow-xs" value="10,000,000">
-                  <span class="absolute right-2 top-0.5 text-[11px] text-slate-400">원</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 선택비용 아래: 보유현금 입력란 -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-purple-200/40">
-            <div class="flex items-center gap-2 text-xs text-slate-500">
-              <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i>
-              <span>• 보유현금 입력 시 해당 금액만큼 필요 대출액(⑧)이 직접 차감됩니다.</span>
-            </div>
-            <div class="flex items-center gap-2 text-xs">
-              <label for="fp-inp-holding-cash" class="text-slate-700 flex-shrink-0 flex items-center gap-1">
-                <i data-lucide="wallet" class="w-3.5 h-3.5 text-slate-500"></i>
-                <span>• 보유현금:</span>
-              </label>
-              <div class="relative w-40">
-                <input type="text" inputmode="numeric" id="fp-inp-holding-cash" class="w-full pl-2 pr-7 py-1 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-800 text-right focus:ring-1 focus:ring-emerald-500 shadow-xs" value="0">
-                <span class="absolute right-2 top-1 text-[11px] text-slate-400">원</span>
-              </div>
             </div>
           </div>
         </div>
@@ -1969,15 +1906,86 @@
           </table>
         </div>
 
+        <!-- ⑧ 금융기관 대출액 부대비용 및 선택비용(인테리어) 설정 컨트롤 바 -->
+        <div class="p-3.5 bg-purple-50/70 border border-purple-200 rounded-xl space-y-2.5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-purple-200/60 pb-2">
+            <div class="flex items-center gap-1.5 text-xs font-extrabold text-purple-950">
+              <i data-lucide="sliders" class="w-4 h-4 text-purple-600"></i>
+              <span>부대비용 시뮬레이션 (체크 시 ② 예금액 차감 ➔ ⑧ 대출 충당)</span>
+            </div>
+            <div class="flex items-center gap-1 text-xs">
+              <span class="text-slate-600 font-medium">반영 부대비용 합계:</span>
+              <span id="fp-txt-expense-amount" class="text-xs font-black text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md"></span>
+            </div>
+          </div>
+          
+          <!-- 필수 취득세 vs 선택 인테리어 2분할 체크박스 카드 영역 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs">
+            <!-- 1) [필수] 취득세·거래비용 체크박스 카드 -->
+            <div class="p-2.5 bg-white/90 rounded-lg border border-purple-200/80 flex items-center justify-between shadow-2xs">
+              <label class="inline-flex items-center gap-1.5 font-bold text-slate-800 cursor-pointer select-none">
+                <input type="checkbox" id="fp-chk-include-mandatory" checked class="w-4 h-4 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer">
+                <span class="text-xs text-blue-950">[필수] 취득세·거래비용 반영</span>
+              </label>
+              <div class="flex items-center gap-1">
+                <span id="fp-txt-mandatory-cost" class="font-black text-blue-700">약 520만 원</span>
+              </div>
+            </div>
+
+            <!-- 2) [선택] 인테리어·수리비 체크박스 카드 -->
+            <div class="p-2.5 bg-white/90 rounded-lg border border-purple-200/80 space-y-1.5 shadow-2xs">
+              <div class="flex items-center justify-between">
+                <label class="inline-flex items-center gap-1.5 font-bold text-slate-800 cursor-pointer select-none">
+                  <input type="checkbox" id="fp-chk-include-optional" checked class="w-4 h-4 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer">
+                  <span class="text-xs text-indigo-950">[선택] 인테리어·수리비 반영</span>
+                </label>
+                <span id="fp-txt-optional-cost-display" class="font-black text-indigo-700">1,000만 원</span>
+              </div>
+              <div id="fp-box-optional-input" class="flex items-center justify-between gap-2 pt-1 border-t border-purple-100">
+                <label for="fp-inp-optional-cost" class="text-[11px] text-slate-600 flex items-center gap-1">
+                  <i data-lucide="paintbrush" class="w-3 h-3 text-slate-400"></i>
+                  <span>수리 예산 직접 입력:</span>
+                </label>
+                <div class="relative w-36">
+                  <input type="text" inputmode="numeric" id="fp-inp-optional-cost" class="w-full pl-2 pr-6 py-0.5 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800 text-right focus:ring-1 focus:ring-purple-500 shadow-xs" value="10,000,000">
+                  <span class="absolute right-2 top-0.5 text-[11px] text-slate-400">원</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 선택비용 아래: 보유현금 입력란 -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-purple-200/40">
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+              <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>• 보유현금 입력 시 해당 금액만큼 필요 대출액(⑧)이 직접 차감됩니다.</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+              <label for="fp-inp-holding-cash" class="text-slate-700 flex-shrink-0 flex items-center gap-1">
+                <i data-lucide="wallet" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span>• 보유현금:</span>
+              </label>
+              <div class="relative w-40">
+                <input type="text" inputmode="numeric" id="fp-inp-holding-cash" class="w-full pl-2 pr-7 py-1 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-800 text-right focus:ring-1 focus:ring-emerald-500 shadow-xs" value="0">
+                <span class="absolute right-2 top-1 text-[11px] text-slate-400">원</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 하단 액션 버튼 바 -->
         <div class="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-slate-200 gap-3">
           <div class="text-xs text-slate-500">
             * 모든 금액은 '만 원' 간편 입력(예: 3,700 ➔ 37,000,000원 자동 변환)을 지원합니다.
           </div>
-          <div class="flex items-center gap-2 flex-nowrap shrink-0 w-full sm:w-auto">
-            <button type="button" id="btn-fp-print-bottom" class="flex-1 sm:flex-initial px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
-              <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-              <span>공식 서식 인쇄 / PDF</span>
+          <div class="flex items-center gap-1.5 flex-nowrap shrink-0 w-full sm:w-auto">
+            <button type="button" id="btn-fp-print-blank-bottom" class="flex-1 sm:flex-initial px-3.5 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap" title="인적사항과 날짜가 공란인 수기 작성용 공식 서식 인쇄">
+              <i data-lucide="printer" class="w-3.5 h-3.5 text-slate-300"></i>
+              <span>공란 서식 인쇄</span>
+            </button>
+            <button type="button" id="btn-fp-print-complete-bottom" class="flex-1 sm:flex-initial px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap" title="입력된 인적사항과 오늘 날짜가 자동 채워진 완성본 공식 서식 인쇄">
+              <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-blue-200"></i>
+              <span>완성본 인쇄</span>
             </button>
             <button type="button" id="btn-fp-apply-bottom" class="flex-1 sm:flex-initial px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
               <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
@@ -2027,74 +2035,18 @@
               <i data-lucide="sparkles" class="w-3 h-3 text-indigo-600"></i>
               <span>기본값</span>
             </button>
-            <button type="button" id="btn-modal-fp-print-official" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-2xs">
-              <i data-lucide="printer" class="w-3 h-3"></i>
-              <span>공식 서식 인쇄 / PDF</span>
+            <button type="button" id="btn-modal-fp-print-blank" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-2xs" title="공란 서식 인쇄">
+              <i data-lucide="printer" class="w-3 h-3 text-slate-300"></i>
+              <span>공란 인쇄</span>
+            </button>
+            <button type="button" id="btn-modal-fp-print-complete" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-2xs" title="완성본 서식 인쇄">
+              <i data-lucide="file-check-2" class="w-3 h-3 text-blue-200"></i>
+              <span>완성본 인쇄</span>
             </button>
           </div>
           <div id="modal-fp-match-badge" class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1">
             <i data-lucide="check" class="w-3.5 h-3.5"></i>
             <span>차액 0원 (합계 일치)</span>
-          </div>
-        </div>
-
-        <!-- [최상단] ⑧ 금융기관 대출액 부대비용 및 선택비용(인테리어) 설정 컨트롤 바 -->
-        <div class="p-3 bg-purple-50/70 border border-purple-200 rounded-xl space-y-2 text-xs">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-purple-200/60 pb-1.5">
-            <div class="flex items-center gap-1.5 font-bold text-purple-950">
-              <i data-lucide="sliders" class="w-3.5 h-3.5 text-purple-600"></i>
-              <span>부대비용 시뮬레이션 (체크 시 ② 예금액 차감 ➔ ⑧ 대출 충당)</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <span class="text-slate-600 text-[11px]">반영 합계:</span>
-              <span id="modal-fp-txt-expense-amount" class="font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded text-[11px]"></span>
-            </div>
-          </div>
-          
-          <!-- 필수 vs 선택 2분할 체크박스 영역 -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            <!-- 1) [필수] 취득세·거래비용 체크박스 카드 -->
-            <div class="p-2 bg-white/90 rounded-lg border border-purple-200/80 flex items-center justify-between shadow-2xs">
-              <label class="inline-flex items-center gap-1.5 font-bold text-slate-800 cursor-pointer select-none">
-                <input type="checkbox" id="modal-fp-chk-include-mandatory" checked class="w-3.5 h-3.5 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer">
-                <span class="text-xs text-blue-950">[필수] 취득세·거래비용</span>
-              </label>
-              <span id="modal-fp-txt-mandatory-cost" class="font-bold text-blue-700">약 520만 원</span>
-            </div>
-
-            <!-- 2) [선택] 인테리어·수리비 체크박스 카드 -->
-            <div class="p-2 bg-white/90 rounded-lg border border-purple-200/80 space-y-1 shadow-2xs">
-              <div class="flex items-center justify-between">
-                <label class="inline-flex items-center gap-1.5 font-bold text-slate-800 cursor-pointer select-none">
-                  <input type="checkbox" id="modal-fp-chk-include-optional" checked class="w-3.5 h-3.5 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer">
-                  <span class="text-xs text-indigo-950">[선택] 인테리어·수리비</span>
-                </label>
-                <span id="modal-fp-txt-optional-cost-display" class="font-bold text-indigo-700">1,000만 원</span>
-              </div>
-              <div id="modal-fp-box-optional-input" class="flex items-center justify-between gap-1.5 pt-1 border-t border-purple-100">
-                <span class="text-[10.5px] text-slate-600">직접 입력:</span>
-                <div class="relative w-32">
-                  <input type="text" inputmode="numeric" id="modal-fp-inp-optional-cost" class="w-full pl-1.5 pr-5 py-0.5 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800 text-right focus:ring-1 focus:ring-purple-500" value="10,000,000">
-                  <span class="absolute right-1.5 top-0.5 text-[10px] text-slate-400">원</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 하단: 보유현금 입력란 -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-purple-200/40">
-            <div class="text-slate-500 text-[10.5px]">
-              • 보유현금 입력 시 필요 대출액(⑧) 직접 차감
-            </div>
-            <div class="flex items-center gap-1.5">
-              <label for="modal-fp-inp-holding-cash" class="text-slate-700 flex-shrink-0">
-                • 보유현금:
-              </label>
-              <div class="relative w-36">
-                <input type="text" inputmode="numeric" id="modal-fp-inp-holding-cash" class="w-full pl-2 pr-6 py-0.5 bg-white border border-slate-300 rounded text-xs font-medium text-slate-800 text-right focus:ring-1 focus:ring-emerald-500" value="0">
-                <span class="absolute right-2 top-0.5 text-[10px] text-slate-400">원</span>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -2248,6 +2200,66 @@
           </table>
         </div>
 
+        <!-- ⑧ 금융기관 대출액 부대비용 및 선택비용(인테리어) 설정 컨트롤 바 -->
+        <div class="p-3 bg-purple-50/70 border border-purple-200 rounded-xl space-y-2 text-xs">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-purple-200/60 pb-1.5">
+            <div class="flex items-center gap-1.5 font-bold text-purple-950">
+              <i data-lucide="sliders" class="w-3.5 h-3.5 text-purple-600"></i>
+              <span>부대비용 시뮬레이션 (체크 시 ② 예금액 차감 ➔ ⑧ 대출 충당)</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="text-slate-600 text-[11px]">반영 합계:</span>
+              <span id="modal-fp-txt-expense-amount" class="font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded text-[11px]"></span>
+            </div>
+          </div>
+          
+          <!-- 필수 vs 선택 2분할 체크박스 영역 -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <!-- 1) [필수] 취득세·거래비용 체크박스 카드 -->
+            <div class="p-2 bg-white/90 rounded-lg border border-purple-200/80 flex items-center justify-between shadow-2xs">
+              <label class="inline-flex items-center gap-1.5 font-bold text-slate-800 cursor-pointer select-none">
+                <input type="checkbox" id="modal-fp-chk-include-mandatory" checked class="w-3.5 h-3.5 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer">
+                <span class="text-xs text-blue-950">[필수] 취득세·거래비용</span>
+              </label>
+              <span id="modal-fp-txt-mandatory-cost" class="font-bold text-blue-700">약 520만 원</span>
+            </div>
+
+            <!-- 2) [선택] 인테리어·수리비 체크박스 카드 -->
+            <div class="p-2 bg-white/90 rounded-lg border border-purple-200/80 space-y-1 shadow-2xs">
+              <div class="flex items-center justify-between">
+                <label class="inline-flex items-center gap-1.5 font-bold text-slate-800 cursor-pointer select-none">
+                  <input type="checkbox" id="modal-fp-chk-include-optional" checked class="w-3.5 h-3.5 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer">
+                  <span class="text-xs text-indigo-950">[선택] 인테리어·수리비</span>
+                </label>
+                <span id="modal-fp-txt-optional-cost-display" class="font-bold text-indigo-700">1,000만 원</span>
+              </div>
+              <div id="modal-fp-box-optional-input" class="flex items-center justify-between gap-1.5 pt-1 border-t border-purple-100">
+                <span class="text-[10.5px] text-slate-600">직접 입력:</span>
+                <div class="relative w-32">
+                  <input type="text" inputmode="numeric" id="modal-fp-inp-optional-cost" class="w-full pl-1.5 pr-5 py-0.5 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800 text-right focus:ring-1 focus:ring-purple-500" value="10,000,000">
+                  <span class="absolute right-1.5 top-0.5 text-[10px] text-slate-400">원</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 하단: 보유현금 입력란 -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-purple-200/40">
+            <div class="text-slate-500 text-[10.5px]">
+              • 보유현금 입력 시 필요 대출액(⑧) 직접 차감
+            </div>
+            <div class="flex items-center gap-1.5">
+              <label for="modal-fp-inp-holding-cash" class="text-slate-700 flex-shrink-0">
+                • 보유현금:
+              </label>
+              <div class="relative w-36">
+                <input type="text" inputmode="numeric" id="modal-fp-inp-holding-cash" class="w-full pl-2 pr-6 py-0.5 bg-white border border-slate-300 rounded text-xs font-medium text-slate-800 text-right focus:ring-1 focus:ring-emerald-500" value="0">
+                <span class="absolute right-2 top-0.5 text-[10px] text-slate-400">원</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- 모달 푸터 액션 버튼 바 -->
@@ -2255,16 +2267,131 @@
         <button type="button" id="btn-modal-fp-cancel" class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap">
           취소
         </button>
-        <div class="flex items-center gap-2 flex-nowrap shrink-0">
-          <button type="button" id="btn-modal-fp-print-bottom" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
-            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-            <span>공식 서식 인쇄 / PDF</span>
+        <div class="flex items-center gap-1.5 flex-nowrap shrink-0">
+          <button type="button" id="btn-modal-fp-print-blank-bottom" class="px-3 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap" title="공란 서식 인쇄">
+            <i data-lucide="printer" class="w-3.5 h-3.5 text-slate-300"></i>
+            <span>공란 서식 인쇄</span>
+          </button>
+          <button type="button" id="btn-modal-fp-print-complete-bottom" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap" title="완성본 서식 인쇄">
+            <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-blue-200"></i>
+            <span>완성본 인쇄</span>
           </button>
           <button type="button" id="btn-modal-fp-apply" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
             <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
             <span>시뮬레이션 실행</span>
           </button>
         </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- [신규 모달] 자금조달계획서 완성본 인쇄 전용 인적사항 및 주택정보 입력 모달 -->
+  <!-- 평소에는 숨겨져 있으며, '완성본 인쇄' 클릭 시에만 팝업되어 1회성 확인 및 입력 -->
+  <!-- ======================================================== -->
+  <div id="modal-buyer-info" class="hidden fixed inset-0 z-[85] overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+      
+      <!-- 모달 헤더 -->
+      <div class="flex items-center justify-between p-4 px-6 border-b border-slate-200 bg-slate-50/90 flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+            <i data-lucide="user-check" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+              제출인(매수인) 및 대상주택 정보 입력
+            </h3>
+            <p class="text-[11px] text-slate-500">
+              국토교통부 표준 [별지 제1호의2서식] 공식 서식 완성본 자동 인쇄용
+            </p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-buyer-info-modal" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- 모달 본문 (폼) -->
+      <div class="p-5 sm:p-6 space-y-4 text-xs overflow-y-auto max-h-[75vh]">
+        
+        <!-- 원클릭 예시 채우기 안내 툴바 -->
+        <div class="flex items-center justify-between p-2.5 bg-blue-50/80 rounded-xl border border-blue-100">
+          <div class="text-[11px] text-blue-900 font-medium">
+            💡 숫자만 입력 시 하이픈(-)이 자동 삽입됩니다.
+          </div>
+          <button type="button" id="btn-bi-load-preset" class="px-2.5 py-1 bg-white hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-2xs">
+            <i data-lucide="sparkles" class="w-3 h-3 text-blue-600"></i>
+            <span>예시값 채우기</span>
+          </button>
+        </div>
+
+        <!-- 1열: 성명 & 주민등록번호 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label for="modal-bi-inp-name" class="block font-bold text-slate-800 mb-1">
+              성명 (법인명) <span class="text-red-500">*</span>
+            </label>
+            <input type="text" id="modal-bi-inp-name" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-2xs transition" placeholder="예: 홍길동">
+          </div>
+          <div>
+            <label for="modal-bi-inp-ssn" class="block font-bold text-slate-800 mb-1">
+              주민등록번호 <span class="text-red-500">*</span>
+            </label>
+            <input type="text" id="modal-bi-inp-ssn" maxlength="14" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-2xs transition" placeholder="숫자만 입력 (예: 9001011234567)">
+            <p id="modal-bi-err-ssn" class="text-[11px] text-red-600 font-semibold mt-1 hidden"></p>
+          </div>
+        </div>
+
+        <!-- 2열: 전화번호 & 제출일자 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label for="modal-bi-inp-phone" class="block font-bold text-slate-800 mb-1">
+              전화번호 (연락처) <span class="text-red-500">*</span>
+            </label>
+            <input type="text" id="modal-bi-inp-phone" maxlength="13" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-2xs transition" placeholder="숫자만 입력 (예: 01012345678)">
+            <p id="modal-bi-err-phone" class="text-[11px] text-red-600 font-semibold mt-1 hidden"></p>
+          </div>
+          <div>
+            <label for="modal-bi-inp-date" class="block font-bold text-slate-800 mb-1">
+              제출 일자 (서약일) <span class="text-blue-600 text-[10.5px] font-normal">(오늘 날짜 자동셋팅)</span>
+            </label>
+            <input type="date" id="modal-bi-inp-date" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-2xs transition">
+          </div>
+        </div>
+
+        <!-- 3열: 주민등록상 주소 -->
+        <div>
+          <label for="modal-bi-inp-addr" class="block font-bold text-slate-800 mb-1">
+            주민등록상 주소
+          </label>
+          <input type="text" id="modal-bi-inp-addr" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-2xs transition" placeholder="예: 서울특별시 마포구 백범로 123, 101동 1001호">
+        </div>
+
+        <!-- 4열: 대상주택 소재지 -->
+        <div>
+          <label for="modal-bi-inp-target" class="block font-bold text-slate-800 mb-1">
+            대상주택 소재지
+          </label>
+          <input type="text" id="modal-bi-inp-target" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-2xs transition" placeholder="예: 서울특별시 영등포구 여의도동 OO아파트 102동 1502호">
+        </div>
+
+        <div class="text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+          * 입력된 정보는 공식 서식 상단 인적사항란과 하단 서명란에 자동 반영되며, 외부 서버로 전송되지 않고 브라우저에만 안전하게 유지됩니다.
+        </div>
+
+      </div>
+
+      <!-- 모달 푸터 액션 바 -->
+      <div class="p-4 px-6 border-t border-slate-200 bg-slate-50 flex items-center justify-between flex-shrink-0">
+        <button type="button" id="btn-modal-bi-cancel" class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap">
+          취소
+        </button>
+        <button type="button" id="btn-modal-bi-submit-print" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
+          <i data-lucide="file-check-2" class="w-3.5 h-3.5"></i>
+          <span>완성본 인쇄 실행 / PDF</span>
+        </button>
       </div>
 
     </div>
