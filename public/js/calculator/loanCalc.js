@@ -145,12 +145,17 @@ const LoanCalculator = {
     return conditions.map(cond => {
       const monthlyPayment = this.calculateEqualPayment(loanAmount, cond.rate, cond.years);
       const ratio = this.calculateHousingCostRatio(monthlyPayment, monthlyNetIncome);
+      const rawMan = monthlyPayment / 10000;
+      const roundedMan = Math.round(rawMan * 10) / 10;
+      const manStr = Number.isInteger(roundedMan)
+        ? roundedMan.toLocaleString()
+        : roundedMan.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 });
       return {
         rate: cond.rate,
         years: cond.years,
         label: `연 ${cond.rate.toFixed(1)}% / ${cond.years}년 만기`,
         monthlyPayment: monthlyPayment,
-        monthlyPaymentTenThousand: (monthlyPayment / 10000).toFixed(1),
+        monthlyPaymentTenThousand: manStr,
         ratio: ratio,
         desc: cond.desc
       };
@@ -177,11 +182,16 @@ const LoanCalculator = {
         monthlyPayment = this.calculateInterestOnly(loanAmount, cond.rate); // 만기일시 월 순수 이자
       }
       const ratio = this.calculateHousingCostRatio(monthlyPayment, monthlyNetIncome);
+      const rawMan = monthlyPayment / 10000;
+      const roundedMan = Math.round(rawMan * 10) / 10;
+      const manStr = Number.isInteger(roundedMan)
+        ? roundedMan.toLocaleString()
+        : roundedMan.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 });
       return {
         rate: cond.rate,
         label: cond.label,
         monthlyPayment: monthlyPayment,
-        monthlyPaymentTenThousand: (monthlyPayment / 10000).toFixed(1),
+        monthlyPaymentTenThousand: manStr,
         ratio: ratio,
         desc: cond.desc
       };

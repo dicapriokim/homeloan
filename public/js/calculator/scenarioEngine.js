@@ -30,17 +30,17 @@ const ScenarioEngine = {
   },
 
   /**
-   * 만원 단위 금액 텍스트 변환 (예: 587187 -> 약 58.7만 원, 77000000 -> 7,700만 원)
+   * 만원 단위 금액 텍스트 변환 (예: 587187 -> 약 58.7만 원, 420000 -> 약 42만 원, 77000000 -> 7,700만 원)
    */
   formatTenThousand: function(amount, isApprox = true) {
+    if (!amount || amount === 0) return isApprox ? '약 0원' : '0원';
     const rawMan = amount / 10000;
+    const roundedMan = Math.round(rawMan * 10) / 10;
     let manStr = '';
-    if (rawMan >= 1000 && Number.isInteger(rawMan)) {
-      manStr = rawMan.toLocaleString();
-    } else if (Number.isInteger(rawMan)) {
-      manStr = rawMan.toString();
+    if (Number.isInteger(roundedMan)) {
+      manStr = roundedMan.toLocaleString();
     } else {
-      manStr = rawMan.toFixed(1);
+      manStr = roundedMan.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 });
     }
     const prefix = isApprox ? '약 ' : '';
     return `${prefix}${manStr}만 원`;
@@ -84,10 +84,13 @@ const ScenarioEngine = {
     const fullTotalBudget = price + actualMandatory + (expenseData.isMoveinIncluded ? optionalExpense : 0);
     const totalBudget = fullTotalBudget;
 
-    // 2. 필요 주택담보대출 계산 (매매 희망 금액 - 보유 순자산)
-    const requiredLoan = Math.max(0, price - equity);
-    const pureRequiredLoan = requiredLoan;
-    const fullRequiredLoan = requiredLoan;
+    // 2. 필요 주택담보대출 계산 (총 필요 예산 - 보유 순자산, 금융 실무 기준 100만 원 단위 절사/버림 대출 적용)
+    const rawPureRequiredLoan = Math.max(0, pureTotalBudget - equity);
+    const rawFullRequiredLoan = Math.max(0, fullTotalBudget - equity);
+    const pureRequiredLoan = Math.floor(rawPureRequiredLoan / 1000000) * 1000000;
+    const fullRequiredLoan = Math.floor(rawFullRequiredLoan / 1000000) * 1000000;
+    const requiredLoan = fullRequiredLoan;
+    const loanRemainder = rawFullRequiredLoan - requiredLoan; // 100만 원 단위 절사로 인한 끝전 잔금 (현금 정산액)
 
     const pureLtv = LoanCalculator.calculateLTV(pureRequiredLoan, price);
     const fullLtv = LoanCalculator.calculateLTV(fullRequiredLoan, price);
@@ -196,6 +199,8 @@ const ScenarioEngine = {
       totalBudget,
       pureRequiredLoan,
       fullRequiredLoan,
+      rawRequiredLoan: rawFullRequiredLoan,
+      loanRemainder,
       requiredLoan,
       pureLtv,
       fullLtv,
@@ -266,10 +271,13 @@ const ScenarioEngine = {
     const pureTotalBudget = price + actualMandatory;
     const totalBudget = fullTotalBudget;
 
-    // 2. 필요 주택담보대출 (잔금 대출) = 매매 희망 금액 - 보유 순자산
-    const requiredLoan = Math.max(0, price - equity);
-    const pureRequiredLoan = requiredLoan;
-    const fullRequiredLoan = requiredLoan;
+    // 2. 필요 주택담보대출 (잔금 대출) = 총 필요 예산 - 보유 순자산 (금융 실무 100만 원 단위 절사/버림 적용)
+    const rawPureRequiredLoan = Math.max(0, pureTotalBudget - equity);
+    const rawFullRequiredLoan = Math.max(0, fullTotalBudget - equity);
+    const pureRequiredLoan = Math.floor(rawPureRequiredLoan / 1000000) * 1000000;
+    const fullRequiredLoan = Math.floor(rawFullRequiredLoan / 1000000) * 1000000;
+    const requiredLoan = fullRequiredLoan;
+    const loanRemainder = rawFullRequiredLoan - requiredLoan;
 
     const pureLtv = LoanCalculator.calculateLTV(pureRequiredLoan, price);
     const fullLtv = LoanCalculator.calculateLTV(fullRequiredLoan, price);
@@ -360,6 +368,8 @@ const ScenarioEngine = {
       totalBudget,
       pureRequiredLoan,
       fullRequiredLoan,
+      rawRequiredLoan: rawFullRequiredLoan,
+      loanRemainder,
       requiredLoan,
       pureLtv,
       fullLtv,
@@ -416,8 +426,10 @@ const ScenarioEngine = {
       includeMovein = true
     } = params;
 
-    // 1. 필요 전세자금대출 계산 (전세보증금 - 보유 현금)
-    const requiredLoan = Math.max(0, deposit - equity);
+    // 1. 필요 전세자금대출 계산 (전세보증금 - 보유 현금, 금융 실무 100만 원 단위 절사/버림 적용)
+    const rawRequiredLoan = Math.max(0, deposit - equity);
+    const requiredLoan = Math.floor(rawRequiredLoan / 1000000) * 1000000;
+    const loanRemainder = rawRequiredLoan - requiredLoan;
     const loanRatio = Number(((requiredLoan / deposit) * 100).toFixed(1));
 
     // 2. 부대비용 산출 (필수 + 선택 이원화)
@@ -530,6 +542,8 @@ const ScenarioEngine = {
       stampDuty,
       totalExpense,
       totalBudget,
+      rawRequiredLoan,
+      loanRemainder,
       requiredLoan,
       pureRequiredLoan: Math.max(0, pureTotalBudget - equity),
       fullRequiredLoan: Math.max(0, fullTotalBudget - equity),

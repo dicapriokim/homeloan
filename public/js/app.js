@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     incomeType: 'double', // 'double' (맞벌이) | 'single-earner' (외벌이) | 'individual' (단독)
     activeProfile: 'couple-double', // 'couple-double' | 'couple-single-earner' | 'couple-child1' | 'newlywed' | 'single'
     viewMode: 'dashboard', // 'dashboard' | 'markdown'
-    price: 450000000,
+    price: 520000000,
     equity: 370000000,
     equityDeposit: 200000000,
     equitySavings: 60000000,
@@ -26,7 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
     isHomeless: true,
     creditLoanRate: 4.5,
     customExtra: null,
-    includeMovein: false,
+    includeMandatory: true,
+    includeMovein: true,
     moveinExtra: 0,
     generatedMarkdown: ''
   };
@@ -42,6 +43,97 @@ document.addEventListener('DOMContentLoaded', () => {
   const ratesView = document.getElementById('rates-view');
   const tabAmortization = document.getElementById('tab-amortization');
   const amortizationView = document.getElementById('amortization-view');
+  const tabFundPlan = document.getElementById('tab-fund-plan');
+  const fundPlanView = document.getElementById('fund-plan-view');
+  const modalFundPlan = document.getElementById('modal-fund-plan');
+  const btnOpenFundPlanModal = document.getElementById('btn-open-fund-plan-modal');
+  const btnCloseFundPlanModal = document.getElementById('btn-close-fund-plan-modal');
+  const btnModalFpCancel = document.getElementById('btn-modal-fp-cancel');
+  const btnModalFpApply = document.getElementById('btn-modal-fp-apply');
+
+  // 자금조달계획서 전용 탭 뷰 버튼
+  const btnFpLoadPreset52 = document.getElementById('btn-fp-load-preset-52');
+  const btnFpApplyToEquity = document.getElementById('btn-fp-apply-to-equity');
+  const btnFpApplyBottom = document.getElementById('btn-fp-apply-bottom');
+
+  // 자금조달계획서 모달 툴바 버튼
+  const btnModalFpPreset52 = document.getElementById('btn-modal-fp-preset-52');
+
+  // 자금조달계획서 기준 원래 예금액 보존 변수 (부대비용 체크/해제 시 가감 기준, 사이드바 금융 예적금 6,000만 원과 일치)
+  let baseDepositSavings = 37000000;
+  const fpTxtDepositSubnotice = document.getElementById('fp-txt-deposit-subnotice');
+  const modalFpTxtDepositSubnotice = document.getElementById('modal-fp-txt-deposit-subnotice');
+
+  // 자금조달계획서 전용 탭 뷰 인풋/요소
+  const fpInpDepositSavings = document.getElementById('fp-inp-deposit-savings');
+  const fpInpStockCrypto = document.getElementById('fp-inp-stock-crypto');
+  const fpInpGift = document.getElementById('fp-inp-gift');
+  const fpSelGiftRelation = document.getElementById('fp-sel-gift-relation');
+  const fpInpCashOther = document.getElementById('fp-inp-cash-other');
+  const fpInpRealEstate = document.getElementById('fp-inp-real-estate');
+  const fpSelRealEstateType = document.getElementById('fp-sel-real-estate-type');
+  const fpTxtSelfTotal = document.getElementById('fp-txt-self-total');
+
+  const fpInpMortgage = document.getElementById('fp-inp-mortgage');
+  const fpSelMortgageType = document.getElementById('fp-sel-mortgage-type');
+  const fpChkIncludeMandatory = document.getElementById('fp-chk-include-mandatory');
+  const fpChkIncludeOptional = document.getElementById('fp-chk-include-optional');
+  const fpTxtOptionalCostDisplay = document.getElementById('fp-txt-optional-cost-display');
+  const fpTxtExpenseAmount = document.getElementById('fp-txt-expense-amount');
+  const fpTxtMandatoryCost = document.getElementById('fp-txt-mandatory-cost');
+  const fpInpOptionalCost = document.getElementById('fp-inp-optional-cost');
+  const fpInpHoldingCash = document.getElementById('fp-inp-holding-cash');
+  const fpBoxOptionalInput = document.getElementById('fp-box-optional-input');
+  const fpInpLeaseDeposit = document.getElementById('fp-inp-lease-deposit');
+  const fpInpCompanyLoan = document.getElementById('fp-inp-company-loan');
+  const fpInpOtherLoan = document.getElementById('fp-inp-other-loan');
+  const fpTxtBorrowedTotal = document.getElementById('fp-txt-borrowed-total');
+
+  const fpTxtGrandTotal = document.getElementById('fp-txt-grand-total');
+  const fpInpTotalDeal = document.getElementById('fp-inp-total-deal');
+  const fpInpAccountTransfer = document.getElementById('fp-inp-account-transfer');
+  const fpInpTakeoverLoan = document.getElementById('fp-inp-takeover-loan');
+  const fpInpCashPay = document.getElementById('fp-inp-cash-pay');
+  const fpMatchBadge = document.getElementById('fp-match-badge');
+  const fpTxtDepSavingsMapping = document.getElementById('fp-txt-dep-savings-mapping');
+  const fpTxtSelfTotalMapping = document.getElementById('fp-txt-self-total-mapping');
+  const fpTxtMortgageMapping = document.getElementById('fp-txt-mortgage-mapping');
+
+  // 자금조달계획서 모달 인풋/요소
+  const modalFpInpDepositSavings = document.getElementById('modal-fp-inp-deposit-savings');
+  const modalFpInpStockCrypto = document.getElementById('modal-fp-inp-stock-crypto');
+  const modalFpInpGift = document.getElementById('modal-fp-inp-gift');
+  const modalFpSelGiftRelation = document.getElementById('modal-fp-sel-gift-relation');
+  const modalFpInpCashOther = document.getElementById('modal-fp-inp-cash-other');
+  const modalFpInpRealEstate = document.getElementById('modal-fp-inp-real-estate');
+  const modalFpSelRealEstateType = document.getElementById('modal-fp-sel-real-estate-type');
+  const modalFpTxtSelfTotal = document.getElementById('modal-fp-txt-self-total');
+
+  const modalFpInpMortgage = document.getElementById('modal-fp-inp-mortgage');
+  const modalFpSelMortgageType = document.getElementById('modal-fp-sel-mortgage-type');
+  const modalFpChkIncludeMandatory = document.getElementById('modal-fp-chk-include-mandatory');
+  const modalFpChkIncludeOptional = document.getElementById('modal-fp-chk-include-optional');
+  const modalFpTxtOptionalCostDisplay = document.getElementById('modal-fp-txt-optional-cost-display');
+  const modalFpTxtExpenseAmount = document.getElementById('modal-fp-txt-expense-amount');
+  const modalFpTxtMandatoryCost = document.getElementById('modal-fp-txt-mandatory-cost');
+  const modalFpInpOptionalCost = document.getElementById('modal-fp-inp-optional-cost');
+  const modalFpInpHoldingCash = document.getElementById('modal-fp-inp-holding-cash');
+  const modalFpBoxOptionalInput = document.getElementById('modal-fp-box-optional-input');
+  const modalFpInpOtherLoansSum = document.getElementById('modal-fp-inp-other-loans-sum');
+  const modalFpTxtBorrowedTotal = document.getElementById('modal-fp-txt-borrowed-total');
+
+  const modalFpTxtGrandTotal = document.getElementById('modal-fp-txt-grand-total');
+  const modalFpInpTotalDeal = document.getElementById('modal-fp-inp-total-deal');
+  const modalFpMatchBadge = document.getElementById('modal-fp-match-badge');
+  const modalFpTxtDepSavingsMapping = document.getElementById('modal-fp-txt-dep-savings-mapping');
+  const modalFpTxtSelfTotalMapping = document.getElementById('modal-fp-txt-self-total-mapping');
+  const modalFpTxtMortgageMapping = document.getElementById('modal-fp-txt-mortgage-mapping');
+
+  // 자금조달계획서 공식 서식 인쇄 버튼들
+  const btnFpPrintOfficial = document.getElementById('btn-fp-print-official');
+  const btnFpPrintBottom = document.getElementById('btn-fp-print-bottom');
+  const btnModalFpPrintOfficial = document.getElementById('btn-modal-fp-print-official');
+  const btnModalFpPrintBottom = document.getElementById('btn-modal-fp-print-bottom');
   
   const amortAmount = document.getElementById('amort-amount');
   const amortType = document.getElementById('amort-type');
@@ -64,9 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnActionGotoJeonse = document.getElementById('btn-action-goto-jeonse');
 
   // 가구 프로필 사전 설정 DOMs
-  const containerProfilePresets = document.getElementById('container-profile-presets');
-  const profilePresetBtns = document.querySelectorAll('.profile-preset-btn');
-  const activeProfileBadge = document.getElementById('active-profile-badge');
   const badgeHouseholdSummary = document.getElementById('badge-household-summary');
 
   // 가구 세부 조건 DOMs
@@ -203,21 +292,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 3-2. 금액 파싱 및 실시간 콤마 포맷팅 유틸리티
-  // 만 원 단위 간편 입력(100만 미만 양수 입력 시 자동으로 x 10,000 변환하여 '0' 입력 피로도 대폭 경감)
+  // parseMoney는 문자열/숫자를 순수하게 '원' 단위 정수로 파싱하는 순수 유틸리티 (절대 임의 곱셈 금지)
   function parseMoney(val) {
     if (val === null || val === undefined) return 0;
     if (typeof val === 'number') {
-      if (val > 0 && val < 1000000) return val * 10000;
-      return val;
+      return isNaN(val) ? 0 : Math.round(val);
     }
     const cleaned = String(val).replace(/[^0-9]/g, '');
     if (cleaned === '') return 0;
-    const num = Number(cleaned);
-    // 100만 미만의 양수(예: 4,700 ➔ 47,000,000원, 47,000 ➔ 470,000,000원) 입력 시 '만 원' 단위 자동 변환
-    if (num > 0 && num < 1000000) {
-      return num * 10000;
-    }
-    return num;
+    return Number(cleaned);
   }
 
   function formatMoney(val) {
@@ -229,8 +312,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function bindMoneyInput(inputElem, onUpdate) {
     if (!inputElem) return;
 
-    // 1) 포커스 시 빠른 수정을 위한 전체 텍스트 자동 선택
+    let isDirty = false; // 사용자가 실제로 키보드로 타이핑했는지 추적하는 플래그
+    let initialRaw = '';
+
+    // 1) 포커스 시 빠른 수정을 위한 전체 텍스트 자동 선택 및 초기 상태 기록
     inputElem.addEventListener('focus', () => {
+      isDirty = false;
+      initialRaw = inputElem.value.replace(/[^0-9]/g, '');
       setTimeout(() => {
         try {
           inputElem.select();
@@ -240,6 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2) 타이핑 중: 천단위 콤마 서식 실시간 적용 및 상태 연동
     inputElem.addEventListener('input', () => {
+      isDirty = true;
       const raw = inputElem.value.replace(/[^0-9]/g, '');
       if (raw === '') {
         inputElem.value = '';
@@ -250,19 +339,27 @@ document.addEventListener('DOMContentLoaded', () => {
       if (onUpdate) onUpdate();
     });
 
-    // 3) 입력 완료(blur 및 Enter 키): 100만 미만 입력값을 원 단위로 자동 확장 (예: 4,700 ➔ 47,000,000)
+    // 3) 입력 완료(blur 및 Enter 키): 사용자가 직접 타이핑한 만 원 단위 약어(1 ~ 99,999)를 원 단위로 1회 안전 확장
+    // (예: 32 ➔ 320,000 / 4,700 ➔ 47,000,000 / 52,000 ➔ 520,000,000)
+    // * 100,000 이상의 숫자(이미 6자리 이상 원 단위로 입력된 값)나 수정하지 않고 blur된 값은 절대 재확장 금지!
     const handleAutoExpand = () => {
+      if (!isDirty) return;
+      isDirty = false;
+
       const raw = inputElem.value.replace(/[^0-9]/g, '');
-      if (raw === '') return;
+      if (raw === '' || raw === initialRaw) return;
       const num = Number(raw);
-      if (num > 0 && num < 1000000) {
+
+      // 1 이상 100,000 미만의 약어 입력값만 만 원 단위(x 10,000)로 1회 변환
+      // (100,000 이상의 숫자는 이미 원 단위 금액이므로 이중 곱셈 원천 차단)
+      if (num > 0 && num < 100000) {
         const expanded = num * 10000;
         inputElem.value = expanded.toLocaleString();
         if (typeof showToast === 'function') {
           const unitText = (typeof ScenarioEngine !== 'undefined' && ScenarioEngine.formatKoreanMoney)
             ? ScenarioEngine.formatKoreanMoney(expanded)
             : `${expanded.toLocaleString()}원`;
-          showToast(`💡 입력값 [${num.toLocaleString()}]이(가) [${unitText}](${expanded.toLocaleString()}원)으로 자동 변환되었습니다.`);
+          showToast(`💡 간편 입력 [${num.toLocaleString()}]이(가) [${unitText}](${expanded.toLocaleString()}원)으로 자동 변환되었습니다.`);
         }
         if (onUpdate) onUpdate();
       }
@@ -277,7 +374,57 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 3-3. 보유 순자산 세부 분할(보증금/예적금/증여) 양방향 동기화 및 요약 유틸리티
+  // 3-3. 보유 순자산 세부 분할(보증금/예적금/증여) 로컬 스토리지 영구 보존 및 동기화 유틸리티
+  const STORAGE_KEY_EQUITY = 'homeloan_sidebar_equity_breakdown';
+
+  function saveEquityToStorage() {
+    try {
+      const dep = state.equityDeposit ?? (inpEquityDeposit ? parseMoney(inpEquityDeposit.value) : 200000000);
+      const sav = state.equitySavings ?? (inpEquitySavings ? parseMoney(inpEquitySavings.value) : 60000000);
+      const gift = state.equityGift ?? (inpEquityGift ? parseMoney(inpEquityGift.value) : 110000000);
+      const total = state.equity ?? (inpEquity ? parseMoney(inpEquity.value) : (dep + sav + gift));
+      const data = { deposit: dep, savings: sav, gift: gift, total: total };
+      localStorage.setItem(STORAGE_KEY_EQUITY, JSON.stringify(data));
+    } catch (e) {
+      console.warn('순자산 세부 구성 로컬 저장 실패:', e);
+    }
+  }
+
+  function loadEquityFromStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_EQUITY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (!data || typeof data !== 'object') return false;
+
+      const dep = typeof data.deposit === 'number' ? data.deposit : parseMoney(data.deposit);
+      const sav = typeof data.savings === 'number' ? data.savings : parseMoney(data.savings);
+      const gift = typeof data.gift === 'number' ? data.gift : parseMoney(data.gift);
+      let total = typeof data.total === 'number' ? data.total : parseMoney(data.total);
+
+      if (isNaN(dep) || isNaN(sav) || isNaN(gift)) return false;
+      if (isNaN(total) || total < 0) total = dep + sav + gift;
+
+      if (inpEquityDeposit) inpEquityDeposit.value = formatMoney(dep);
+      if (inpEquitySavings) inpEquitySavings.value = formatMoney(sav);
+      if (inpEquityGift) inpEquityGift.value = formatMoney(gift);
+      if (inpEquity) inpEquity.value = formatMoney(total);
+
+      state.equityDeposit = dep;
+      state.equitySavings = sav;
+      state.equityGift = gift;
+      state.equity = total;
+
+      if (txtEquityDisplay && typeof ScenarioEngine !== 'undefined') {
+        txtEquityDisplay.textContent = ScenarioEngine.formatKoreanMoney(total);
+      }
+      return true;
+    } catch (e) {
+      console.warn('순자산 세부 구성 로컬 복원 실패:', e);
+      return false;
+    }
+  }
+
   function syncSubEquityToMain() {
     if (!inpEquityDeposit || !inpEquitySavings || !inpEquityGift) return;
     const dep = parseMoney(inpEquityDeposit.value);
@@ -292,6 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (txtEquityDisplay && typeof ScenarioEngine !== 'undefined') {
       txtEquityDisplay.textContent = ScenarioEngine.formatKoreanMoney(total);
     }
+    saveEquityToStorage();
     recalculate();
   }
 
@@ -321,6 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
     state.equityDeposit = parseMoney(inpEquityDeposit.value);
     state.equitySavings = parseMoney(inpEquitySavings.value);
     state.equityGift = parseMoney(inpEquityGift.value);
+    saveEquityToStorage();
   }
 
   function getEquityBreakdownSummary(defaultNote = '이사 당일 임대인으로부터 전액 반환') {
@@ -387,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 4-4. 금리 라디오 버튼 카드 동적 갱신 (부적격 시 잠금 및 비활성화)
   function updateRateRadioStyles(eligibilityData) {
     // 1) 매매 적격성 평가 데이터 가져오기
-    const purchasePrice = (state.mode === 'jeonse') ? 450000000 : (Number(state.price) || 450000000);
+    const purchasePrice = (state.mode === 'jeonse') ? 520000000 : (Number(state.price) || 520000000);
     const el = eligibilityData || (typeof INTEREST_RATES_DATA !== 'undefined' && INTEREST_RATES_DATA.evaluateEligibility
       ? INTEREST_RATES_DATA.evaluateEligibility(state, purchasePrice, 'resale')
       : null);
@@ -933,19 +1082,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 5. 모드 전환 핸들러 (매매, 분양, 전세, 가구조건, 금리표)
+  // 5. 모드 전환 핸들러 (매매, 분양, 전세, 가구조건, 금리표, 상환일정표, 자금조달계획서)
   function setMode(mode) {
     if (mode === 'resale' || mode === 'presale' || mode === 'jeonse') {
       state.simMode = mode;
     }
     state.mode = mode;
 
-    [tabResale, tabPresale, tabJeonse, tabHousehold, tabRates, tabAmortization].forEach(tab => {
+    [tabResale, tabPresale, tabJeonse, tabHousehold, tabRates, tabAmortization, tabFundPlan].forEach(tab => {
       if (tab) {
         tab.classList.remove('active');
         tab.classList.add('text-slate-600');
       }
     });
+
+    if (fundPlanView) fundPlanView.classList.add('hidden');
 
     if (mode === 'resale') {
       tabResale.classList.add('active');
@@ -973,13 +1124,16 @@ document.addEventListener('DOMContentLoaded', () => {
       lblCustomExtra.textContent = '도배/장판/샷시 정비 예산 (매매)';
 
       selRepayType.value = 'equal-payment';
-      state.price = state.price || 450000000;
+      state.price = state.price || 520000000;
       state.equity = state.equity || 370000000;
       // 사용자가 이전에 선택한 매매 유효 금리(디딤돌 3.0, 보금자리 3.8 등)가 있으면 보존, 없으면 4.8
       const isCustomValidRate = (state.loanRate && state.loanRate >= 1.5 && state.loanRate <= 8.0 && state.loanRate !== 3.6 && state.loanRate !== 2.4 && state.loanRate !== 2.1);
       state.loanRate = isCustomValidRate ? state.loanRate : 4.8;
       inpPrice.value = (state.price).toLocaleString();
       inpEquity.value = (state.equity).toLocaleString();
+      if (inpEquityDeposit && state.equityDeposit !== undefined) inpEquityDeposit.value = formatMoney(state.equityDeposit);
+      if (inpEquitySavings && state.equitySavings !== undefined) inpEquitySavings.value = formatMoney(state.equitySavings);
+      if (inpEquityGift && state.equityGift !== undefined) inpEquityGift.value = formatMoney(state.equityGift);
       inpRate.value = state.loanRate;
       rngRate.value = state.loanRate;
       syncRateToRadios(state.loanRate);
@@ -1015,6 +1169,9 @@ document.addEventListener('DOMContentLoaded', () => {
       state.loanRate = isCustomValidPresaleRate ? state.loanRate : 4.8;
       inpPrice.value = (state.price).toLocaleString();
       inpEquity.value = (state.equity).toLocaleString();
+      if (inpEquityDeposit && state.equityDeposit !== undefined) inpEquityDeposit.value = formatMoney(state.equityDeposit);
+      if (inpEquitySavings && state.equitySavings !== undefined) inpEquitySavings.value = formatMoney(state.equitySavings);
+      if (inpEquityGift && state.equityGift !== undefined) inpEquityGift.value = formatMoney(state.equityGift);
       inpRate.value = state.loanRate;
       rngRate.value = state.loanRate;
       syncRateToRadios(state.loanRate);
@@ -1089,7 +1246,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (amortAmount) {
         let loanAmt = 100000000;
         if (state.simMode) {
-          const simPrice = state.price || 450000000;
+          const simPrice = state.price || 520000000;
           const simEquity = state.equity || 370000000;
           if (simPrice > simEquity) {
             loanAmt = simPrice - simEquity;
@@ -1114,10 +1271,25 @@ document.addEventListener('DOMContentLoaded', () => {
           calculateAmortization(true);
         }
       }, 50);
+    } else if (mode === 'fund-plan') {
+      if (tabFundPlan) {
+        tabFundPlan.classList.add('active');
+        tabFundPlan.classList.remove('text-slate-600');
+      }
+
+      simulatorView.classList.add('hidden');
+      if (householdView) householdView.classList.add('hidden');
+      ratesView.classList.add('hidden');
+      if (amortizationView) amortizationView.classList.add('hidden');
+      if (fundPlanView) fundPlanView.classList.remove('hidden');
+
+      if (typeof calculateFundPlanTotals === 'function') {
+        calculateFundPlanTotals(false);
+      }
     }
 
     refreshIcons();
-    if (mode !== 'rates' && mode !== 'amortization') {
+    if (mode !== 'rates' && mode !== 'amortization' && mode !== 'fund-plan') {
       validateAndAutoCorrectLoanRules('household');
       recalculate();
     }
@@ -1343,7 +1515,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const txtCommercialApply = document.getElementById('txt-commercial-apply-action');
     const txtBeotimmokApply = document.getElementById('txt-beotimmok-apply-action');
 
-    const purchasePrice = (state.mode === 'jeonse') ? 450000000 : (Number(state.price) || 450000000);
+    const purchasePrice = (state.mode === 'jeonse') ? 520000000 : (Number(state.price) || 520000000);
     const el = eligibilityData || (typeof INTEREST_RATES_DATA !== 'undefined' && INTEREST_RATES_DATA.evaluateEligibility
       ? INTEREST_RATES_DATA.evaluateEligibility(state, purchasePrice, 'resale')
       : null);
@@ -1799,7 +1971,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       cardLblLoan.textContent = '필요 전세대출금';
       cardRequiredLoan.textContent = formatWon(s.requiredLoan);
-      cardLtvBadge.textContent = `대출비율 ${s.loanRatio}% (안전 한도 80% 이내)`;
+      if (s.loanRemainder > 0) {
+        cardLtvBadge.textContent = `대출비율 ${s.loanRatio}% (100만 단위 절사 / 끝전 ${formatWon(s.loanRemainder)} 잔금 현금 정산)`;
+      } else {
+        cardLtvBadge.textContent = `대출비율 ${s.loanRatio}% (안전 한도 80% 이내)`;
+      }
 
       cardLblMonthly.textContent = s.repayType === 'equal-payment' ? '월 원리금 상환액' : '월 순수 이자 부담';
       cardMonthlyPaymentDetail.classList.add('hidden');
@@ -2010,7 +2186,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       cardLblLoan.textContent = '필요 대출 금액';
       cardRequiredLoan.textContent = formatWon(s.requiredLoan);
-      cardLtvBadge.textContent = `LTV ${s.ltv}% (매매 대금 기준 ${formatWon(s.requiredLoan)})`;
+      if (s.loanRemainder > 0) {
+        cardLtvBadge.textContent = `LTV ${s.ltv}% (100만 단위 절사 / 끝전 ${formatWon(s.loanRemainder)} 잔금 현금 정산)`;
+      } else {
+        cardLtvBadge.textContent = `LTV ${s.ltv}% (부대비용 포함 실질 조달 대출)`;
+      }
 
       if (s.repayType === 'equal-principal' || s.repayType === 'graduated') {
         cardMonthlyPaymentDetail.textContent = `마지막 달: 약 ${formatTenMan(s.lastMonthlyPayment)}`;
@@ -2025,10 +2205,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const extraCostTotal = (state.includeMandatory ? s.mandatoryExpense : 0) + (s.isMoveinIncluded ? s.optionalExpense : 0);
       const extraCostDesc = (state.includeMandatory && s.isMoveinIncluded)
-        ? `법정 취득비용(${formatTenMan(s.mandatoryExpense, false)}) + 입주정비비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`
+        ? `법정 취득비용(${formatTenMan(s.mandatoryExpense, false)}) + 입주정비비(${formatTenMan(s.optionalExpense, false)})`
         : (state.includeMandatory
-            ? `취득세·중개보수·등기비 등 법정 필수비용(${formatTenMan(s.mandatoryExpense, false)}) 별도 현금 준비 필요`
-            : `도배·장판·이사비 등 선택적 입주비용(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`);
+            ? `취득세·중개보수·등기비 등 법정 필수비용(${formatTenMan(s.mandatoryExpense, false)})`
+            : `도배·장판·이사비 등 선택적 입주비용(${formatTenMan(s.optionalExpense, false)})`);
 
       titleFundingSection.innerHTML = `<i data-lucide="pie-chart" class="w-5 h-5 text-blue-600"></i> 자금 조달 구조 및 핵심 재무 지표`;
       const taxDesc = `생애최초 취득세 감면(${formatTenMan(s.expenseData.taxInfo.finalTax, false)}) + 중개보수(${formatTenMan(s.expenseData.brokerageInfo.totalFee, false)}) + 법무사/등기/채권할인/인지세(${formatTenMan(s.expenseData.regFee, false)})`;
@@ -2076,15 +2256,13 @@ document.addEventListener('DOMContentLoaded', () => {
         <tr class="bg-purple-50/40">
           <td class="px-4 py-3 font-bold text-purple-900">필요 주택담보대출</td>
           <td class="px-4 py-3 text-right font-extrabold text-purple-700">${formatWon(s.requiredLoan)}</td>
-          <td class="px-4 py-3 text-purple-700 font-medium">LTV 약 ${s.ltv}% (매매 대금 기준 ${formatWon(s.requiredLoan)})</td>
+          <td class="px-4 py-3 text-purple-700 font-medium">LTV 약 ${s.ltv}% (100만 원 단위 절사 대출 실행${s.loanRemainder > 0 ? `, 끝전 ${formatWon(s.loanRemainder)} 제외` : ''})</td>
         </tr>
-        ${extraCostTotal > 0 ? `
-        <tr class="bg-amber-50/50">
-          <td class="px-4 py-3 font-bold text-amber-950">준비해야 할 부가 비용</td>
-          <td class="px-4 py-3 text-right font-extrabold text-amber-700 whitespace-nowrap">약 ${formatWon(extraCostTotal)}</td>
-          <td class="px-4 py-3 text-amber-900 font-medium">${extraCostDesc}</td>
+        <tr class="bg-emerald-50/50">
+          <td class="px-4 py-3 font-bold text-emerald-950">${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}</td>
+          <td class="px-4 py-3 text-right font-extrabold text-emerald-700 whitespace-nowrap">${formatWon(s.loanRemainder || 0)}</td>
+          <td class="px-4 py-3 text-emerald-900 font-medium">${s.loanRemainder > 0 ? `대출 100만 원 단위 절사(버림)로 인해 잔금일 본인 현금/예금으로 정산하는 금액 (총 소요 예산 ${formatWon(s.totalBudget)} 100% 완결)` : `총 소요 예산(${formatWon(s.totalBudget)}) 전액이 [보유 순자산 + 주담대]로 100% 완벽 충당됨`}</td>
         </tr>
-        ` : ''}
         <tr class="border-t-2 border-slate-400">
           <td class="px-4 py-3 pt-3.5 font-semibold text-slate-700 border-t-2 border-slate-400">월 원리금 상환액</td>
           <td class="px-4 py-3 pt-3.5 text-right font-bold text-slate-800 border-t-2 border-slate-400">${formatTenMan(s.monthlyPayment)}</td>
@@ -2278,7 +2456,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       cardLblLoan.textContent = '필요 잔금 주담대';
       cardRequiredLoan.textContent = formatWon(s.requiredLoan);
-      cardLtvBadge.textContent = `LTV ${s.ltv}% (분양가 기준 ${formatWon(s.requiredLoan)})`;
+      if (s.loanRemainder > 0) {
+        cardLtvBadge.textContent = `LTV ${s.ltv}% (100만 단위 절사 / 끝전 ${formatWon(s.loanRemainder)} 잔금 현금 정산)`;
+      } else {
+        cardLtvBadge.textContent = `LTV ${s.ltv}% (옵션·취득비 포함 실질 조달 대출)`;
+      }
 
       if (s.repayType === 'equal-principal' || s.repayType === 'graduated') {
         cardMonthlyPaymentDetail.textContent = `마지막 달: 약 ${formatTenMan(s.lastMonthlyPayment)}`;
@@ -2293,10 +2475,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const extraCostTotal = (state.includeMandatory ? s.mandatoryExpense : 0) + (s.isMoveinIncluded ? s.optionalExpense : 0);
       const extraCostDesc = (state.includeMandatory && s.isMoveinIncluded)
-        ? `필수 취득세/등기비(${formatTenMan(s.mandatoryExpense, false)}) + 옵션/입주비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`
+        ? `필수 취득세/등기비(${formatTenMan(s.mandatoryExpense, false)}) + 옵션/입주비(${formatTenMan(s.optionalExpense, false)})`
         : (state.includeMandatory
-            ? `생애최초 취득세 및 소유권이전 등기비용(${formatTenMan(s.mandatoryExpense, false)}) 별도 현금 준비 필요`
-            : `발코니확장/옵션 및 가전이사비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`);
+            ? `생애최초 취득세 및 소유권이전 등기비용(${formatTenMan(s.mandatoryExpense, false)})`
+            : `발코니확장/옵션 및 가전이사비(${formatTenMan(s.optionalExpense, false)})`);
 
       titleFundingSection.innerHTML = `<i data-lucide="pie-chart" class="w-5 h-5 text-indigo-600"></i> 분양 자금 조달 구조 및 핵심 재무 지표`;
       tbodyFundingStructure.innerHTML = `
@@ -2339,15 +2521,13 @@ document.addEventListener('DOMContentLoaded', () => {
         <tr class="bg-purple-50/40">
           <td class="px-4 py-3 font-bold text-purple-900">필요 잔금 주택담보대출</td>
           <td class="px-4 py-3 text-right font-extrabold text-purple-700">${formatWon(s.requiredLoan)}</td>
-          <td class="px-4 py-3 text-purple-700 font-medium">LTV 약 ${s.ltv}% (분양가 기준 ${formatWon(s.requiredLoan)})</td>
+          <td class="px-4 py-3 text-purple-700 font-medium">LTV 약 ${s.ltv}% (분양가 기준, 옵션·취득비 전액 포함 조달)</td>
         </tr>
-        ${extraCostTotal > 0 ? `
-        <tr class="bg-amber-50/50">
-          <td class="px-4 py-3 font-bold text-amber-950">준비해야 할 부가 비용</td>
-          <td class="px-4 py-3 text-right font-extrabold text-amber-700 whitespace-nowrap">약 ${formatWon(extraCostTotal)}</td>
-          <td class="px-4 py-3 text-amber-900 font-medium">${extraCostDesc}</td>
+        <tr class="bg-emerald-50/50">
+          <td class="px-4 py-3 font-bold text-emerald-950">추가 준비 필요 자금</td>
+          <td class="px-4 py-3 text-right font-extrabold text-emerald-700 whitespace-nowrap">0원</td>
+          <td class="px-4 py-3 text-emerald-900 font-medium">총 분양·입주 예산(${formatWon(s.totalBudget)}) 전액이 [보유 순자산 + 잔금대출]로 100% 완벽 충당됨</td>
         </tr>
-        ` : ''}
         <tr class="border-t-2 border-slate-400">
           <td class="px-4 py-3 pt-3.5 font-semibold text-slate-700 border-t-2 border-slate-400">월 원리금 상환액</td>
           <td class="px-4 py-3 pt-3.5 text-right font-bold text-slate-800 border-t-2 border-slate-400">${formatTenMan(s.monthlyPayment)}</td>
@@ -2425,6 +2605,14 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-3 py-2.5 font-semibold text-slate-800">취득세(생애최초) 및 발코니/옵션/등기 정산</td>
           <td class="px-3 py-2.5 text-right font-bold text-slate-700">약 ${formatWon(s.step3.outflowExpense)}</td>
         </tr>
+        ${s.loanRemainder > 0 ? `
+        <tr class="bg-emerald-50/60">
+          <td class="px-3 py-2.5 font-bold text-emerald-950">대출 절사분 현금 정산</td>
+          <td class="px-3 py-2.5 text-right font-extrabold text-emerald-700">${formatWon(s.loanRemainder)}</td>
+          <td class="px-3 py-2.5 font-semibold text-slate-800">100만 단위 절사 대출에 따른 끝전 잔금 현금 추가 투입</td>
+          <td class="px-3 py-2.5 text-right font-bold text-slate-900">${formatWon(s.loanRemainder)}</td>
+        </tr>
+        ` : ''}
         <tr class="bg-slate-100 font-extrabold">
           <td class="px-3 py-2.5 text-slate-900">자금 유입 합계</td>
           <td class="px-3 py-2.5 text-right text-slate-900">${formatWon(s.step3.inflowTotal)}</td>
@@ -2456,17 +2644,835 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 1) 모드 탭 (매매, 분양, 전세, 가구조건, 금리표)
+  // 1) 모드 탭 (매매, 분양, 전세, 가구조건, 금리표, 상환일정표, 자금조달계획서)
   tabResale.addEventListener('click', () => setMode('resale'));
   tabPresale.addEventListener('click', () => setMode('presale'));
   tabJeonse.addEventListener('click', () => setMode('jeonse'));
   if (tabHousehold) tabHousehold.addEventListener('click', () => setMode('household'));
   tabRates.addEventListener('click', () => setMode('rates'));
   if (tabAmortization) tabAmortization.addEventListener('click', () => setMode('amortization'));
+  if (tabFundPlan) tabFundPlan.addEventListener('click', () => setMode('fund-plan'));
   
   if (btnCalcAmort) {
     btnCalcAmort.addEventListener('click', () => calculateAmortization(false));
   }
+
+  // ========================================================
+  // 자금조달계획서 (주택취득자금 조달 및 입주계획서) 연동 모듈
+  // ========================================================
+  function calculateFundPlanTotals(fromModal = false, isMortgageManual = false, isAccountTransferManual = false, isDepSavingsManual = false) {
+    const stockCrypto = parseMoney(fromModal ? modalFpInpStockCrypto?.value : fpInpStockCrypto?.value);
+    const gift = parseMoney(fromModal ? modalFpInpGift?.value : fpInpGift?.value);
+    const giftRel = fromModal ? modalFpSelGiftRelation?.value : fpSelGiftRelation?.value;
+    const cashOther = parseMoney(fromModal ? modalFpInpCashOther?.value : fpInpCashOther?.value);
+    const realEstate = parseMoney(fromModal ? modalFpInpRealEstate?.value : fpInpRealEstate?.value);
+    const realEstateType = fromModal ? modalFpSelRealEstateType?.value : fpSelRealEstateType?.value;
+
+    let otherLoans = 0;
+    if (fromModal) {
+      otherLoans = parseMoney(modalFpInpOtherLoansSum?.value);
+    } else {
+      const lease = parseMoney(fpInpLeaseDeposit?.value);
+      const company = parseMoney(fpInpCompanyLoan?.value);
+      const other = parseMoney(fpInpOtherLoan?.value);
+      otherLoans = lease + company + other;
+    }
+
+    const totalDeal = parseMoney(fromModal ? modalFpInpTotalDeal?.value : fpInpTotalDeal?.value);
+
+    // 1. 부대비용(필수 취득세 + 사용자 직접 입력 선택비용) 분리 옵션 계산
+    const includeMandatory = fromModal 
+      ? (modalFpChkIncludeMandatory ? modalFpChkIncludeMandatory.checked : false)
+      : (fpChkIncludeMandatory ? fpChkIncludeMandatory.checked : false);
+    const includeOptional = fromModal 
+      ? (modalFpChkIncludeOptional ? modalFpChkIncludeOptional.checked : false)
+      : (fpChkIncludeOptional ? fpChkIncludeOptional.checked : false);
+
+    // 체크박스 양방향 동기화
+    if (fromModal) {
+      if (fpChkIncludeMandatory) fpChkIncludeMandatory.checked = includeMandatory;
+      if (fpChkIncludeOptional) fpChkIncludeOptional.checked = includeOptional;
+    } else {
+      if (modalFpChkIncludeMandatory) modalFpChkIncludeMandatory.checked = includeMandatory;
+      if (modalFpChkIncludeOptional) modalFpChkIncludeOptional.checked = includeOptional;
+    }
+
+    // 1) 필수비용(취득세, 중개보수 등): 세법 표준 자동 계산 (만 원 단위 정규화로 1,000원 단위 단수 오차 방지)
+    let mandatoryCost = 0;
+    if (totalDeal > 0) {
+      if (typeof TaxCalculator !== 'undefined' && TaxCalculator.calculateTotalResaleExpenses) {
+        const expData = TaxCalculator.calculateTotalResaleExpenses(totalDeal, state.isFirstHome, {
+          customRefurbishCost: 0,
+          customMoveinCost: 0,
+          includeMovein: false
+        });
+        mandatoryCost = Math.round(expData.totalMandatory / 10000) * 10000;
+      } else {
+        mandatoryCost = Math.round(totalDeal * 0.015 / 10000) * 10000;
+      }
+    }
+
+    // 2) 선택비용(인테리어·수리비): 사용자 직접 입력값 반영
+    const optionalCost = parseMoney(fromModal ? modalFpInpOptionalCost?.value : fpInpOptionalCost?.value);
+
+    // 선택비용 인풋 양방향 동기화
+    if (fromModal) {
+      if (fpInpOptionalCost) fpInpOptionalCost.value = formatMoney(optionalCost);
+    } else {
+      if (modalFpInpOptionalCost) modalFpInpOptionalCost.value = formatMoney(optionalCost);
+    }
+
+    // 체크 상태에 따른 실제 반영 부대비용
+    const activeMandatoryCost = includeMandatory ? mandatoryCost : 0;
+    const activeOptionalCost = includeOptional ? optionalCost : 0;
+    const totalExpenses = activeMandatoryCost + activeOptionalCost;
+    const includeExpenses = totalExpenses > 0;
+
+    const fmt = (typeof ScenarioEngine !== 'undefined' && ScenarioEngine.formatKoreanMoney)
+      ? ScenarioEngine.formatKoreanMoney
+      : (v => `${(Math.round(v / 10000)).toLocaleString()}만 원`);
+
+    if (fpTxtMandatoryCost) fpTxtMandatoryCost.textContent = `약 ${fmt(mandatoryCost)}`;
+    if (modalFpTxtMandatoryCost) modalFpTxtMandatoryCost.textContent = `약 ${fmt(mandatoryCost)}`;
+
+    if (fpTxtOptionalCostDisplay) fpTxtOptionalCostDisplay.textContent = fmt(optionalCost);
+    if (modalFpTxtOptionalCostDisplay) modalFpTxtOptionalCostDisplay.textContent = fmt(optionalCost);
+
+    if (fpTxtExpenseAmount) {
+      fpTxtExpenseAmount.textContent = totalExpenses > 0 ? `(+${fmt(totalExpenses)})` : '+0원';
+      fpTxtExpenseAmount.style.display = totalExpenses > 0 ? 'inline-block' : 'none';
+    }
+    if (modalFpTxtExpenseAmount) {
+      modalFpTxtExpenseAmount.textContent = totalExpenses > 0 ? `(+${fmt(totalExpenses)})` : '+0원';
+      modalFpTxtExpenseAmount.style.display = totalExpenses > 0 ? 'inline-block' : 'none';
+    }
+
+    if (fpBoxOptionalInput) fpBoxOptionalInput.style.display = includeOptional ? 'flex' : 'none';
+    if (modalFpBoxOptionalInput) modalFpBoxOptionalInput.style.display = includeOptional ? 'flex' : 'none';
+
+    // 2. ② 금융기관 예금액 및 ⑧ 대출액 실무형 100만 원 단위 절사(버림) 자동 계산
+    let depSavings = 0;
+    let mortgage = parseMoney(fromModal ? modalFpInpMortgage?.value : fpInpMortgage?.value);
+    let loanRemainder = 0;
+
+    // 상단 추가 보유현금: 대출을 최대한 안 받고 필요한 현금 규모를 확인하는 시뮬레이션 용도
+    const holdingCash = parseMoney(fromModal ? modalFpInpHoldingCash?.value : fpInpHoldingCash?.value);
+    if (fromModal) {
+      if (fpInpHoldingCash) fpInpHoldingCash.value = formatMoney(holdingCash);
+    } else {
+      if (modalFpInpHoldingCash) modalFpInpHoldingCash.value = formatMoney(holdingCash);
+    }
+
+    if (isDepSavingsManual) {
+      const typedVal = parseMoney(fromModal ? modalFpInpDepositSavings?.value : fpInpDepositSavings?.value);
+      depSavings = typedVal;
+      baseDepositSavings = includeExpenses ? (typedVal + totalExpenses) : typedVal;
+      if (fromModal) {
+        if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(depSavings);
+      } else {
+        if (modalFpInpDepositSavings) modalFpInpDepositSavings.value = formatMoney(depSavings);
+      }
+      const selfTotalTmp = depSavings + stockCrypto + gift + cashOther + realEstate + holdingCash;
+      if (!isMortgageManual) {
+        const rawM = Math.max(0, totalDeal - selfTotalTmp - otherLoans);
+        mortgage = Math.floor(rawM / 1000000) * 1000000;
+        loanRemainder = rawM - mortgage;
+        if (fpInpMortgage) fpInpMortgage.value = formatMoney(mortgage);
+        if (modalFpInpMortgage) modalFpInpMortgage.value = formatMoney(mortgage);
+      }
+    } else if (isMortgageManual) {
+      if (fromModal) {
+        if (fpInpMortgage) fpInpMortgage.value = formatMoney(mortgage);
+      } else {
+        if (modalFpInpMortgage) modalFpInpMortgage.value = formatMoney(mortgage);
+      }
+      if (includeExpenses) {
+        depSavings = Math.max(0, baseDepositSavings - totalExpenses);
+      } else {
+        depSavings = Math.max(0, baseDepositSavings);
+      }
+      if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(depSavings);
+      if (modalFpInpDepositSavings) modalFpInpDepositSavings.value = formatMoney(depSavings);
+    } else {
+      // 일반적인 자동 계산 모드: 은행 실무 100만 원 단위 절사(버림 대출) 및 끝전 상계 정산
+      const baseSelfTotal = baseDepositSavings + stockCrypto + gift + cashOther + realEstate + holdingCash;
+      let rawMortgage = 0;
+      if (includeExpenses) {
+        // 총 필요 예산(매매가 + 부대비용)에서 순자산 차감
+        rawMortgage = Math.max(0, (totalDeal + totalExpenses) - baseSelfTotal - otherLoans);
+      } else {
+        rawMortgage = Math.max(0, totalDeal - baseSelfTotal - otherLoans);
+      }
+
+      // 금융 실무 기준 100만 원 단위 절사(버림 대출)
+      mortgage = Math.floor(rawMortgage / 1000000) * 1000000;
+      loanRemainder = rawMortgage - mortgage; // 100만 원 미만 끝전 잔금 (예: 320,000원)
+
+      // 서식상 매매가(totalDeal)를 정확히 맞추기 위해, 대출이 절사된 만큼(loanRemainder) 예금에서 매매자금으로 정산 충당
+      if (includeExpenses) {
+        depSavings = Math.max(0, baseDepositSavings - totalExpenses + loanRemainder);
+      } else {
+        depSavings = Math.max(0, baseDepositSavings + loanRemainder);
+      }
+
+      if (fpInpMortgage) fpInpMortgage.value = formatMoney(mortgage);
+      if (modalFpInpMortgage) modalFpInpMortgage.value = formatMoney(mortgage);
+      if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(depSavings);
+      if (modalFpInpDepositSavings) modalFpInpDepositSavings.value = formatMoney(depSavings);
+    }
+
+    // ② 예금액 차감 뱃지 표시
+    if (fpTxtDepositSubnotice) {
+      if (includeExpenses && totalExpenses > 0) {
+        if (loanRemainder > 0) {
+          fpTxtDepositSubnotice.textContent = `부대비용 대출충당 반영 (끝전 -${fmt(loanRemainder)} 잔금정산)`;
+        } else {
+          fpTxtDepositSubnotice.textContent = `부대비용 -${fmt(totalExpenses)} 차감됨`;
+        }
+        fpTxtDepositSubnotice.classList.remove('hidden');
+      } else {
+        fpTxtDepositSubnotice.classList.add('hidden');
+      }
+    }
+    if (modalFpTxtDepositSubnotice) {
+      if (includeExpenses && totalExpenses > 0) {
+        if (loanRemainder > 0) {
+          modalFpTxtDepositSubnotice.textContent = `100만 절사정산`;
+        } else {
+          modalFpTxtDepositSubnotice.textContent = `-${fmt(totalExpenses)} 차감`;
+        }
+        modalFpTxtDepositSubnotice.classList.remove('hidden');
+      } else {
+        modalFpTxtDepositSubnotice.classList.add('hidden');
+      }
+    }
+
+    // 3. 자기자금 소계 (⑦ = ②+③+④+⑤+⑥+보유현금)
+    const selfTotal = depSavings + stockCrypto + gift + cashOther + realEstate + holdingCash;
+
+    const mortgageType = fromModal ? modalFpSelMortgageType?.value : fpSelMortgageType?.value;
+
+    // 5. 차입금 등 소계 (⑫) 및 총 조달금액 (⑬)
+    const borrowedTotal = mortgage + otherLoans;
+    const grandTotal = selfTotal + borrowedTotal;
+
+    // 디스플레이 텍스트 업데이트
+    const selfTotalStr = `${formatMoney(selfTotal)} 원`;
+    const borrowedTotalStr = `${formatMoney(borrowedTotal)} 원`;
+    const grandTotalStr = `${formatMoney(grandTotal)} 원`;
+
+    if (fpTxtSelfTotal) fpTxtSelfTotal.textContent = selfTotalStr;
+    if (modalFpTxtSelfTotal) modalFpTxtSelfTotal.textContent = selfTotalStr;
+
+    if (fpTxtBorrowedTotal) fpTxtBorrowedTotal.textContent = borrowedTotalStr;
+    if (modalFpTxtBorrowedTotal) modalFpTxtBorrowedTotal.textContent = borrowedTotalStr;
+
+    if (fpTxtGrandTotal) fpTxtGrandTotal.textContent = grandTotalStr;
+    if (modalFpTxtGrandTotal) modalFpTxtGrandTotal.textContent = grandTotalStr;
+
+    // 우측 '시뮬레이터 연동 매핑' 열 텍스트 동적 업데이트 (부대비용 활성화 시 '집값 투입액 vs 총 순자산' 차이 명확화)
+    if (includeExpenses && totalExpenses > 0) {
+      if (fpTxtDepSavingsMapping) {
+        fpTxtDepSavingsMapping.innerHTML = '<div>➔ 금융 예적금 (집값분)</div><div class="text-[10px] text-slate-500 font-normal mt-0.5">(사이드바: 총 6,000만 원)</div>';
+      }
+      if (fpTxtSelfTotalMapping) {
+        fpTxtSelfTotalMapping.innerHTML = '<div>➔ 매매 투입 자기자금</div><div class="text-[10px] text-purple-700 font-normal mt-0.5">(부대비용 제외 / 사이드바 총 순자산 3.7억 보존)</div>';
+      }
+      if (fpTxtMortgageMapping) {
+        fpTxtMortgageMapping.innerHTML = '<div>➔ 필요 주택담보대출</div><div class="text-[10px] text-emerald-700 font-bold mt-0.5">(100만 절사 / 사이드바 대출 일치)</div>';
+      }
+
+      if (modalFpTxtDepSavingsMapping) {
+        modalFpTxtDepSavingsMapping.innerHTML = '<div>➔ 예적금 (집값분)</div><div class="text-[9.5px] text-slate-500 font-normal mt-0.5">(총 6,000만)</div>';
+      }
+      if (modalFpTxtSelfTotalMapping) {
+        modalFpTxtSelfTotalMapping.innerHTML = '<div>➔ 매매 투입 자기자금</div><div class="text-[9.5px] text-purple-700 font-normal mt-0.5">(부대비용 제외 / 총 3.7억)</div>';
+      }
+      if (modalFpTxtMortgageMapping) {
+        modalFpTxtMortgageMapping.innerHTML = '<div>➔ 필요 주택담보대출</div><div class="text-[9.5px] text-emerald-700 font-bold mt-0.5">(사이드바 대출 일치)</div>';
+      }
+    } else {
+      if (fpTxtDepSavingsMapping) fpTxtDepSavingsMapping.textContent = '➔ 금융 예적금·현금';
+      if (fpTxtSelfTotalMapping) fpTxtSelfTotalMapping.textContent = '➔ 보유 순자산(총액)';
+      if (fpTxtMortgageMapping) fpTxtMortgageMapping.textContent = '➔ 필요 주택담보대출';
+
+      if (modalFpTxtDepSavingsMapping) modalFpTxtDepSavingsMapping.textContent = '➔ 금융 예적금·현금';
+      if (modalFpTxtSelfTotalMapping) modalFpTxtSelfTotalMapping.textContent = '➔ 보유 순자산(총액)';
+      if (modalFpTxtMortgageMapping) modalFpTxtMortgageMapping.textContent = '➔ 필요 주택담보대출';
+    }
+
+    // 검증 뱃지 업데이트 (⑬ 조달금액 합계와 ⑭ 총 거래금액의 실제 서식 차액 기준 정확 판정)
+    const dealDiff = grandTotal - totalDeal;
+
+    if (fpMatchBadge) {
+      if (dealDiff === 0) {
+        fpMatchBadge.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs text-emerald-900 font-bold';
+        if (includeExpenses && loanRemainder > 0) {
+          fpMatchBadge.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><span>✓ 조달금액 합계(⑬)와 총 거래금액(⑭)이 일치하며, 대출액(${fmt(mortgage)})은 은행 실무 기준 100만 원 단위 절사(버림)되고 끝전 잔금(${fmt(loanRemainder)})은 예금으로 정산되었습니다 (차액 0원)</span>`;
+        } else if (includeExpenses && holdingCash > 0) {
+          fpMatchBadge.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><span>✓ 조달금액 합계(⑬)와 총 거래금액(⑭)이 일치하며, 부대비용(${fmt(totalExpenses)})은 ② 예금액에서 차감되고 보유현금(${fmt(holdingCash)}) 투입으로 대출이 절감되었습니다 (차액 0원)</span>`;
+        } else if (includeExpenses) {
+          fpMatchBadge.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><span>✓ 조달금액 합계(⑬)와 총 거래금액(⑭)이 완벽히 일치합니다 (부대비용 ${fmt(totalExpenses)}은 ② 예금액 차감 및 ⑧ 대출 충당 완료)</span>`;
+        } else if (holdingCash > 0) {
+          fpMatchBadge.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><span>✓ 조달금액 합계(⑬)와 총 거래금액(⑭)이 일치하며, 보유현금(${fmt(holdingCash)}) 투입으로 대출액이 ${fmt(holdingCash)} 절감되었습니다 (차액 0원)</span>`;
+        } else {
+          fpMatchBadge.innerHTML = '<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><span>✓ 조달금액 합계(⑬)와 총 거래금액(⑭)이 완벽히 일치합니다 (차액 0원)</span>';
+        }
+      } else if (dealDiff > 0) {
+        fpMatchBadge.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs text-emerald-900 font-bold';
+        fpMatchBadge.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><span>✓ 조달금액 합계(⑬)가 총 거래금액(⑭)을 초과 충당합니다 (+${fmt(dealDiff)})</span>`;
+      } else {
+        const shortage = totalDeal - grandTotal;
+        fpMatchBadge.className = 'p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2 text-xs text-amber-950 font-bold';
+        fpMatchBadge.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 flex-shrink-0"></i><span>⚠️ 조달금액 합계(⑬)가 총 거래금액(⑭)보다 부족합니다 (부족: ${fmt(shortage)})</span>`;
+      }
+    }
+
+    if (modalFpMatchBadge) {
+      if (dealDiff === 0) {
+        modalFpMatchBadge.className = 'px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1';
+        if (includeExpenses && loanRemainder > 0) {
+          modalFpMatchBadge.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i><span>100만 단위 절사 대출 완료 (차액 0원)</span>`;
+        } else if (includeExpenses) {
+          modalFpMatchBadge.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i><span>부대비용 예금차감 완료 (차액 0원)</span>`;
+        } else if (holdingCash > 0) {
+          modalFpMatchBadge.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i><span>보유현금 ${fmt(holdingCash)} 투입 (대출 차감 완료)</span>`;
+        } else {
+          modalFpMatchBadge.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i><span>차액 0원 (합계 일치)</span>';
+        }
+      } else if (dealDiff > 0) {
+        modalFpMatchBadge.className = 'px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1';
+        modalFpMatchBadge.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i><span>초과 충당 (+${fmt(dealDiff)})</span>`;
+      } else {
+        const shortage = totalDeal - grandTotal;
+        modalFpMatchBadge.className = 'px-2.5 py-1 bg-amber-100 text-amber-900 rounded-lg text-xs font-bold flex items-center gap-1';
+        modalFpMatchBadge.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-600"></i><span>부족: ${fmt(shortage)}</span>`;
+      }
+    }
+
+    // 5. ⑮~⑰ 조달자금 등의 지급방식 자동 계산 (국토교통부 표준 서식: ⑭ 총 거래금액 = ⑮ 계좌이체 금액 + ⑯ 보증금·대출 승계 + ⑰ 현금 등)
+    const takeoverLoan = parseMoney(fpInpTakeoverLoan?.value || 0);
+    const cashPay = parseMoney(fpInpCashPay?.value || 0);
+    let accountTransfer = parseMoney(fpInpAccountTransfer?.value || 0);
+
+    if (!isAccountTransferManual) {
+      accountTransfer = Math.max(0, totalDeal - takeoverLoan - cashPay);
+      if (fpInpAccountTransfer) {
+        fpInpAccountTransfer.value = formatMoney(accountTransfer);
+      }
+    }
+
+    // 양방향 인풋 동기화
+    if (fromModal) {
+      if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(depSavings);
+      if (fpInpStockCrypto) fpInpStockCrypto.value = formatMoney(stockCrypto);
+      if (fpInpGift) fpInpGift.value = formatMoney(gift);
+      if (fpSelGiftRelation && giftRel) fpSelGiftRelation.value = giftRel;
+      if (fpInpCashOther) fpInpCashOther.value = formatMoney(cashOther);
+      if (fpInpRealEstate) fpInpRealEstate.value = formatMoney(realEstate);
+      if (fpSelRealEstateType && realEstateType) fpSelRealEstateType.value = realEstateType;
+      if (fpInpMortgage) fpInpMortgage.value = formatMoney(mortgage);
+      if (fpSelMortgageType && mortgageType) fpSelMortgageType.value = mortgageType;
+      if (fpInpTotalDeal) fpInpTotalDeal.value = formatMoney(totalDeal);
+      if (fpInpAccountTransfer && !isAccountTransferManual) fpInpAccountTransfer.value = formatMoney(accountTransfer);
+    } else {
+      if (modalFpInpDepositSavings) modalFpInpDepositSavings.value = formatMoney(depSavings);
+      if (modalFpInpStockCrypto) modalFpInpStockCrypto.value = formatMoney(stockCrypto);
+      if (modalFpInpGift) modalFpInpGift.value = formatMoney(gift);
+      if (modalFpSelGiftRelation && giftRel) modalFpSelGiftRelation.value = giftRel;
+      if (modalFpInpCashOther) modalFpInpCashOther.value = formatMoney(cashOther);
+      if (modalFpInpRealEstate) modalFpInpRealEstate.value = formatMoney(realEstate);
+      if (modalFpSelRealEstateType && realEstateType) modalFpSelRealEstateType.value = realEstateType;
+      if (modalFpInpMortgage) modalFpInpMortgage.value = formatMoney(mortgage);
+      if (modalFpSelMortgageType && mortgageType) modalFpSelMortgageType.value = mortgageType;
+      if (modalFpInpOtherLoansSum) modalFpInpOtherLoansSum.value = formatMoney(otherLoans);
+      if (modalFpInpTotalDeal) modalFpInpTotalDeal.value = formatMoney(totalDeal);
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+    saveFundPlanToStorage();
+  }
+
+  // 자금조달계획서 로컬스토리지 영구 보존 및 복원 유틸리티
+  const STORAGE_KEY_FUND_PLAN = 'homeloan_fund_plan_inputs';
+
+  function saveFundPlanToStorage() {
+    try {
+      const data = {
+        baseDepositSavings: baseDepositSavings,
+        depSavings: parseMoney(fpInpDepositSavings ? fpInpDepositSavings.value : (modalFpInpDepositSavings?.value || 0)),
+        stockCrypto: parseMoney(fpInpStockCrypto ? fpInpStockCrypto.value : (modalFpInpStockCrypto?.value || 0)),
+        gift: parseMoney(fpInpGift ? fpInpGift.value : (modalFpInpGift?.value || 0)),
+        giftRel: fpSelGiftRelation?.value || modalFpSelGiftRelation?.value || '부부',
+        cashOther: parseMoney(fpInpCashOther ? fpInpCashOther.value : (modalFpInpCashOther?.value || 0)),
+        realEstate: parseMoney(fpInpRealEstate ? fpInpRealEstate.value : (modalFpInpRealEstate?.value || 0)),
+        realEstateType: fpSelRealEstateType?.value || modalFpSelRealEstateType?.value || '임대보증금',
+        mortgage: parseMoney(fpInpMortgage ? fpInpMortgage.value : (modalFpInpMortgage?.value || 0)),
+        mortgageType: fpSelMortgageType?.value || modalFpSelMortgageType?.value || '주택담보대출',
+        leaseDeposit: parseMoney(fpInpLeaseDeposit?.value || 0),
+        companyLoan: parseMoney(fpInpCompanyLoan?.value || 0),
+        otherLoan: parseMoney(fpInpOtherLoan?.value || 0),
+        optionalCost: parseMoney(fpInpOptionalCost ? fpInpOptionalCost.value : (modalFpInpOptionalCost?.value || 0)),
+        holdingCash: parseMoney(fpInpHoldingCash ? fpInpHoldingCash.value : (modalFpInpHoldingCash?.value || 0)),
+        totalDeal: parseMoney(fpInpTotalDeal ? fpInpTotalDeal.value : (modalFpInpTotalDeal?.value || 0)),
+        accountTransfer: parseMoney(fpInpAccountTransfer?.value || 0),
+        takeoverLoan: parseMoney(fpInpTakeoverLoan?.value || 0),
+        cashPay: parseMoney(fpInpCashPay?.value || 0),
+        includeMandatory: fpChkIncludeMandatory ? fpChkIncludeMandatory.checked : (modalFpChkIncludeMandatory?.checked ?? true),
+        includeOptional: fpChkIncludeOptional ? fpChkIncludeOptional.checked : (modalFpChkIncludeOptional?.checked ?? true)
+      };
+      localStorage.setItem(STORAGE_KEY_FUND_PLAN, JSON.stringify(data));
+    } catch (e) {
+      console.warn('자금조달계획서 로컬 저장 실패:', e);
+    }
+  }
+
+  function loadFundPlanFromStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_FUND_PLAN);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (!data || typeof data !== 'object') return false;
+
+      if (data.baseDepositSavings !== undefined) {
+        baseDepositSavings = data.baseDepositSavings;
+      } else if (data.depSavings !== undefined) {
+        baseDepositSavings = data.depSavings;
+      }
+
+      if (data.depSavings !== undefined) {
+        if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(data.depSavings);
+        if (modalFpInpDepositSavings) modalFpInpDepositSavings.value = formatMoney(data.depSavings);
+      }
+      if (data.stockCrypto !== undefined) {
+        if (fpInpStockCrypto) fpInpStockCrypto.value = formatMoney(data.stockCrypto);
+        if (modalFpInpStockCrypto) modalFpInpStockCrypto.value = formatMoney(data.stockCrypto);
+      }
+      if (data.gift !== undefined) {
+        if (fpInpGift) fpInpGift.value = formatMoney(data.gift);
+        if (modalFpInpGift) modalFpInpGift.value = formatMoney(data.gift);
+      }
+      if (data.giftRel) {
+        if (fpSelGiftRelation) fpSelGiftRelation.value = data.giftRel;
+        if (modalFpSelGiftRelation) modalFpSelGiftRelation.value = data.giftRel;
+      }
+      if (data.cashOther !== undefined) {
+        if (fpInpCashOther) fpInpCashOther.value = formatMoney(data.cashOther);
+        if (modalFpInpCashOther) modalFpInpCashOther.value = formatMoney(data.cashOther);
+      }
+      if (data.realEstate !== undefined) {
+        if (fpInpRealEstate) fpInpRealEstate.value = formatMoney(data.realEstate);
+        if (modalFpInpRealEstate) modalFpInpRealEstate.value = formatMoney(data.realEstate);
+      }
+      if (data.realEstateType) {
+        if (fpSelRealEstateType) fpSelRealEstateType.value = data.realEstateType;
+        if (modalFpSelRealEstateType) modalFpSelRealEstateType.value = data.realEstateType;
+      }
+      if (data.mortgage !== undefined) {
+        if (fpInpMortgage) fpInpMortgage.value = formatMoney(data.mortgage);
+        if (modalFpInpMortgage) modalFpInpMortgage.value = formatMoney(data.mortgage);
+      }
+      if (data.mortgageType) {
+        if (fpSelMortgageType) fpSelMortgageType.value = data.mortgageType;
+        if (modalFpSelMortgageType) modalFpSelMortgageType.value = data.mortgageType;
+      }
+      if (data.leaseDeposit !== undefined && fpInpLeaseDeposit) fpInpLeaseDeposit.value = formatMoney(data.leaseDeposit);
+      if (data.companyLoan !== undefined && fpInpCompanyLoan) fpInpCompanyLoan.value = formatMoney(data.companyLoan);
+      if (data.otherLoan !== undefined && fpInpOtherLoan) fpInpOtherLoan.value = formatMoney(data.otherLoan);
+      if (data.optionalCost !== undefined) {
+        if (fpInpOptionalCost) fpInpOptionalCost.value = formatMoney(data.optionalCost);
+        if (modalFpInpOptionalCost) modalFpInpOptionalCost.value = formatMoney(data.optionalCost);
+      }
+      if (data.holdingCash !== undefined) {
+        if (fpInpHoldingCash) fpInpHoldingCash.value = formatMoney(data.holdingCash);
+        if (modalFpInpHoldingCash) modalFpInpHoldingCash.value = formatMoney(data.holdingCash);
+      }
+      if (data.totalDeal !== undefined) {
+        if (fpInpTotalDeal) fpInpTotalDeal.value = formatMoney(data.totalDeal);
+        if (modalFpInpTotalDeal) modalFpInpTotalDeal.value = formatMoney(data.totalDeal);
+      }
+      if (data.takeoverLoan !== undefined && fpInpTakeoverLoan) {
+        fpInpTakeoverLoan.value = formatMoney(data.takeoverLoan);
+      }
+      if (data.cashPay !== undefined && fpInpCashPay) {
+        fpInpCashPay.value = formatMoney(data.cashPay);
+      }
+      if (data.accountTransfer !== undefined && fpInpAccountTransfer) {
+        fpInpAccountTransfer.value = formatMoney(data.accountTransfer);
+      } else if (data.totalDeal !== undefined && fpInpAccountTransfer) {
+        const to = data.takeoverLoan || 0;
+        const cp = data.cashPay || 0;
+        fpInpAccountTransfer.value = formatMoney(Math.max(0, data.totalDeal - to - cp));
+      }
+      if (data.includeMandatory !== undefined) {
+        if (fpChkIncludeMandatory) fpChkIncludeMandatory.checked = !!data.includeMandatory;
+        if (modalFpChkIncludeMandatory) modalFpChkIncludeMandatory.checked = !!data.includeMandatory;
+      } else if (data.includeExpenses !== undefined) {
+        if (fpChkIncludeMandatory) fpChkIncludeMandatory.checked = !!data.includeExpenses;
+        if (modalFpChkIncludeMandatory) modalFpChkIncludeMandatory.checked = !!data.includeExpenses;
+      } else {
+        if (fpChkIncludeMandatory) fpChkIncludeMandatory.checked = true;
+        if (modalFpChkIncludeMandatory) modalFpChkIncludeMandatory.checked = true;
+      }
+
+      if (data.includeOptional !== undefined) {
+        if (fpChkIncludeOptional) fpChkIncludeOptional.checked = !!data.includeOptional;
+        if (modalFpChkIncludeOptional) modalFpChkIncludeOptional.checked = !!data.includeOptional;
+      } else if (data.includeExpenses !== undefined) {
+        if (fpChkIncludeOptional) fpChkIncludeOptional.checked = !!data.includeExpenses;
+        if (modalFpChkIncludeOptional) modalFpChkIncludeOptional.checked = !!data.includeExpenses;
+      } else {
+        if (fpChkIncludeOptional) fpChkIncludeOptional.checked = true;
+        if (modalFpChkIncludeOptional) modalFpChkIncludeOptional.checked = true;
+      }
+      return true;
+    } catch (e) {
+      console.warn('자금조달계획서 로컬 복원 실패:', e);
+      return false;
+    }
+  }
+
+  // [자금조달계획서 ➔ 사이드바] 계획서의 매매가/자산/인테리어를 사이드바 입력란 및 시뮬레이터로 반영
+  let isSyncingFundPlanToSidebar = false;
+  function applyFundPlanToEquityBreakdown(options = {}) {
+    if (isSyncingFundPlanToSidebar) return;
+    isSyncingFundPlanToSidebar = true;
+
+    try {
+      const realEstate = parseMoney(fpInpRealEstate ? fpInpRealEstate.value : (modalFpInpRealEstate?.value || 0));
+      const depSavings = parseMoney(fpInpDepositSavings ? fpInpDepositSavings.value : (modalFpInpDepositSavings?.value || 0));
+      const stockCrypto = parseMoney(fpInpStockCrypto ? fpInpStockCrypto.value : (modalFpInpStockCrypto?.value || 0));
+      const cashOther = parseMoney(fpInpCashOther ? fpInpCashOther.value : (modalFpInpCashOther?.value || 0));
+      const gift = parseMoney(fpInpGift ? fpInpGift.value : (modalFpInpGift?.value || 0));
+      const totalDeal = parseMoney(fpInpTotalDeal ? fpInpTotalDeal.value : (modalFpInpTotalDeal?.value || 0));
+      const optionalCost = parseMoney(fpInpOptionalCost ? fpInpOptionalCost.value : (modalFpInpOptionalCost?.value || 0));
+      const holdingCash = parseMoney(fpInpHoldingCash ? fpInpHoldingCash.value : (modalFpInpHoldingCash?.value || 0));
+      const includeMandatory = fpChkIncludeMandatory ? fpChkIncludeMandatory.checked : (modalFpChkIncludeMandatory?.checked ?? true);
+      const includeOptional = fpChkIncludeOptional ? fpChkIncludeOptional.checked : (modalFpChkIncludeOptional?.checked ?? true);
+      const includeExpenses = (includeMandatory || includeOptional);
+
+      // 1. 매매가 연동: ⑭ 총 거래금액(매매 계약가)을 시뮬레이터 매매 희망가로 즉각 동기화
+      if (totalDeal > 0) {
+        if (inpPrice) inpPrice.value = formatMoney(totalDeal);
+        state.price = totalDeal;
+        if (txtPriceDisplay && typeof ScenarioEngine !== 'undefined') {
+          txtPriceDisplay.textContent = ScenarioEngine.formatKoreanMoney(totalDeal);
+        }
+      }
+
+      // 2. 자산 세부 구성 매핑:
+      // ⑥ 부동산 처분대금 등 ➔ 기존 전세보증금
+      if (inpEquityDeposit) inpEquityDeposit.value = formatMoney(realEstate);
+      // ② 예금액 + ③ 주식·채권 + ⑤ 현금 등 + 상단 추가 보유현금 ➔ 금융 예적금·현금
+      // (자금조달계획서에서 부대비용 체크 시 ② 예금액은 서식 맞춤용으로 차감되지만,
+      // 사용자의 실제 보유 금융자산은 원금(baseDepositSavings)이므로, 사이드바 순자산 계산 시에는 원금을 기준으로 매핑하여 3.7억을 온전히 유지합니다)
+      const actualDepSavings = includeExpenses ? baseDepositSavings : depSavings;
+      const totalSavings = actualDepSavings + stockCrypto + cashOther + holdingCash;
+      if (inpEquitySavings) inpEquitySavings.value = formatMoney(totalSavings);
+      // ④ 증여·상속 ➔ 증여·가족지원
+      if (inpEquityGift) inpEquityGift.value = formatMoney(gift);
+
+      // 3. 선택비용(인테리어/수리비) 연동: 사이드바 입주·수리비 예산 필드로 동기화
+      if (inpCustomExtra && optionalCost >= 0) {
+        inpCustomExtra.value = formatMoney(optionalCost);
+        state.customExtra = optionalCost;
+        state.customRefurbishCost = optionalCost;
+        if (txtCustomExtraDisplay && typeof ScenarioEngine !== 'undefined') {
+          txtCustomExtraDisplay.textContent = ScenarioEngine.formatKoreanMoney(optionalCost);
+        }
+      }
+
+      // 4. 부대비용 체크박스 연동 (필수/선택 각각 1:1 동기화)
+      if (chkIncludeMandatory) chkIncludeMandatory.checked = includeMandatory;
+      if (chkIncludeMovein) chkIncludeMovein.checked = includeOptional;
+      state.includeMandatory = includeMandatory;
+      state.includeMovein = includeOptional;
+
+      // 5. 사이드바 총 순자산 합산 및 시뮬레이션 계산
+      const dep = parseMoney(inpEquityDeposit ? inpEquityDeposit.value : 0);
+      const sav = parseMoney(inpEquitySavings ? inpEquitySavings.value : 0);
+      const gft = parseMoney(inpEquityGift ? inpEquityGift.value : 0);
+      const total = dep + sav + gft;
+      if (inpEquity) inpEquity.value = formatMoney(total);
+      state.equity = total;
+      state.equityDeposit = dep;
+      state.equitySavings = sav;
+      state.equityGift = gft;
+      if (txtEquityDisplay && typeof ScenarioEngine !== 'undefined') {
+        txtEquityDisplay.textContent = ScenarioEngine.formatKoreanMoney(total);
+      }
+
+      recalculate();
+      saveEquityToStorage();
+
+      // 6. 모달 닫기
+      if (options && options.closeModal && modalFundPlan) {
+        modalFundPlan.classList.add('hidden');
+      }
+
+      // 7. 시뮬레이터 화면으로 이동 여부 처리
+      if (options && options.navigateToSim) {
+        setMode('resale');
+        showToast('🚀 시뮬레이션이 즉시 실행되었습니다!');
+      } else if (!options || !options.silent) {
+        showToast('🚀 자금조달계획서가 사이드바에 완벽히 반영되었습니다!');
+      }
+    } finally {
+      isSyncingFundPlanToSidebar = false;
+    }
+  }
+
+  // 표준 자금조달계획서 기본값 프리셋 주입 (국토교통부 표준 예시 서식 기준, 사이드바 순자산 3.7억 및 대출 1.5억과 완벽 정렬)
+  function loadPreset52ToFundPlan() {
+    baseDepositSavings = 37000000;
+    if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(37000000);
+    if (fpInpStockCrypto) fpInpStockCrypto.value = formatMoney(23000000);
+    if (fpInpGift) fpInpGift.value = formatMoney(110000000);
+    if (fpSelGiftRelation) fpSelGiftRelation.value = '부부';
+    if (fpInpCashOther) fpInpCashOther.value = '0';
+    if (fpInpRealEstate) fpInpRealEstate.value = formatMoney(200000000);
+    if (fpSelRealEstateType) fpSelRealEstateType.value = '임대보증금';
+
+    if (fpInpMortgage) fpInpMortgage.value = formatMoney(150000000);
+    if (fpSelMortgageType) fpSelMortgageType.value = '주택담보대출';
+    if (fpInpLeaseDeposit) fpInpLeaseDeposit.value = '0';
+    if (fpInpCompanyLoan) fpInpCompanyLoan.value = '0';
+    if (fpInpOtherLoan) fpInpOtherLoan.value = '0';
+
+    if (fpInpTotalDeal) fpInpTotalDeal.value = formatMoney(520000000);
+    if (fpInpAccountTransfer) fpInpAccountTransfer.value = formatMoney(520000000);
+    if (fpInpTakeoverLoan) fpInpTakeoverLoan.value = '0';
+    if (fpInpOptionalCost) fpInpOptionalCost.value = formatMoney(10000000);
+    if (modalFpInpOptionalCost) modalFpInpOptionalCost.value = formatMoney(10000000);
+    if (fpInpHoldingCash) fpInpHoldingCash.value = '0';
+    if (modalFpInpHoldingCash) modalFpInpHoldingCash.value = '0';
+
+    if (fpChkIncludeMandatory) fpChkIncludeMandatory.checked = true;
+    if (modalFpChkIncludeMandatory) modalFpChkIncludeMandatory.checked = true;
+    if (fpChkIncludeOptional) fpChkIncludeOptional.checked = true;
+    if (modalFpChkIncludeOptional) modalFpChkIncludeOptional.checked = true;
+
+    calculateFundPlanTotals(false);
+    showToast('✨ 표준 자금조달계획서 기본값이 입력되었습니다.');
+  }
+
+  // 모달 제어 이벤트 바인딩
+  if (btnOpenFundPlanModal) {
+    btnOpenFundPlanModal.addEventListener('click', () => {
+      calculateFundPlanTotals(true);
+      if (modalFundPlan) modalFundPlan.classList.remove('hidden');
+      if (window.lucide) window.lucide.createIcons();
+    });
+  }
+
+  if (btnCloseFundPlanModal) {
+    btnCloseFundPlanModal.addEventListener('click', () => {
+      if (modalFundPlan) modalFundPlan.classList.add('hidden');
+    });
+  }
+
+  if (btnModalFpCancel) {
+    btnModalFpCancel.addEventListener('click', () => {
+      if (modalFundPlan) modalFundPlan.classList.add('hidden');
+    });
+  }
+
+  if (modalFundPlan) {
+    modalFundPlan.addEventListener('click', (e) => {
+      if (e.target === modalFundPlan) {
+        modalFundPlan.classList.add('hidden');
+      }
+    });
+  }
+
+  // 액션 버튼 이벤트 바인딩
+  if (btnFpApplyToEquity) {
+    btnFpApplyToEquity.addEventListener('click', () => {
+      applyFundPlanToEquityBreakdown({ navigateToSim: true, closeModal: false });
+    });
+  }
+  if (btnModalFpApply) {
+    btnModalFpApply.addEventListener('click', () => {
+      applyFundPlanToEquityBreakdown({ navigateToSim: true, closeModal: true });
+    });
+  }
+  if (btnFpApplyBottom) {
+    btnFpApplyBottom.addEventListener('click', () => {
+      applyFundPlanToEquityBreakdown({ navigateToSim: true, closeModal: false });
+    });
+  }
+
+  if (btnFpLoadPreset52) btnFpLoadPreset52.addEventListener('click', loadPreset52ToFundPlan);
+  if (btnModalFpPreset52) btnModalFpPreset52.addEventListener('click', loadPreset52ToFundPlan);
+
+  // ② 금융기관 예금액 직접 입력 (사용자가 직접 타이핑 시 baseDepositSavings 갱신 및 덮어쓰기 방지)
+  if (fpInpDepositSavings) {
+    bindMoneyInput(fpInpDepositSavings, () => calculateFundPlanTotals(false, false, false, true));
+  }
+  if (modalFpInpDepositSavings) {
+    bindMoneyInput(modalFpInpDepositSavings, () => calculateFundPlanTotals(true, false, false, true));
+  }
+
+  // 모든 인풋 필드에 bindMoneyInput 바인딩 (매매계약가 또는 자기자금 변경 시 ⑧ 대출액 및 ⑮ 계좌이체 자동 계산)
+  [
+    fpInpStockCrypto, fpInpGift, fpInpCashOther,
+    fpInpRealEstate, fpInpLeaseDeposit, fpInpCompanyLoan,
+    fpInpOtherLoan, fpInpTakeoverLoan, fpInpCashPay
+  ].forEach(inp => {
+    if (inp) bindMoneyInput(inp, () => calculateFundPlanTotals(false, false, false));
+  });
+
+  if (fpInpTotalDeal) {
+    bindMoneyInput(fpInpTotalDeal, () => calculateFundPlanTotals(false, false, false));
+  }
+
+  if (fpInpAccountTransfer) {
+    bindMoneyInput(fpInpAccountTransfer, () => calculateFundPlanTotals(false, false, true));
+  }
+
+  if (fpInpMortgage) {
+    bindMoneyInput(fpInpMortgage, () => calculateFundPlanTotals(false, true));
+  }
+  if (fpInpOptionalCost) {
+    bindMoneyInput(fpInpOptionalCost, () => calculateFundPlanTotals(false, false));
+  }
+
+  [
+    modalFpInpStockCrypto, modalFpInpGift, modalFpInpCashOther,
+    modalFpInpRealEstate, modalFpInpOtherLoansSum, modalFpInpTotalDeal
+  ].forEach(inp => {
+    if (inp) bindMoneyInput(inp, () => calculateFundPlanTotals(true, false));
+  });
+
+  if (modalFpInpMortgage) {
+    bindMoneyInput(modalFpInpMortgage, () => calculateFundPlanTotals(true, true));
+  }
+  if (modalFpInpOptionalCost) {
+    bindMoneyInput(modalFpInpOptionalCost, () => calculateFundPlanTotals(true, false));
+  }
+
+  // 상단 추가 보유현금 입력 바인딩 (서식 ⑤번과 분리, 필요 대출액 ⑧만 직접 차감)
+  if (fpInpHoldingCash) {
+    bindMoneyInput(fpInpHoldingCash, () => {
+      if (modalFpInpHoldingCash) modalFpInpHoldingCash.value = fpInpHoldingCash.value;
+      calculateFundPlanTotals(false, false);
+    });
+  }
+  if (modalFpInpHoldingCash) {
+    bindMoneyInput(modalFpInpHoldingCash, () => {
+      if (fpInpHoldingCash) fpInpHoldingCash.value = modalFpInpHoldingCash.value;
+      calculateFundPlanTotals(true, false);
+    });
+  }
+
+  [fpSelGiftRelation, fpSelRealEstateType, fpSelMortgageType].forEach(sel => {
+    if (sel) sel.addEventListener('change', () => calculateFundPlanTotals(false, false));
+  });
+
+  [modalFpSelGiftRelation, modalFpSelRealEstateType, modalFpSelMortgageType].forEach(sel => {
+    if (sel) sel.addEventListener('change', () => calculateFundPlanTotals(true, false));
+  });
+
+  if (fpChkIncludeMandatory) {
+    fpChkIncludeMandatory.addEventListener('change', () => calculateFundPlanTotals(false, false));
+  }
+  if (fpChkIncludeOptional) {
+    fpChkIncludeOptional.addEventListener('change', () => calculateFundPlanTotals(false, false));
+  }
+  if (modalFpChkIncludeMandatory) {
+    modalFpChkIncludeMandatory.addEventListener('change', () => calculateFundPlanTotals(true, false));
+  }
+  if (modalFpChkIncludeOptional) {
+    modalFpChkIncludeOptional.addEventListener('change', () => calculateFundPlanTotals(true, false));
+  }
+
+  // ========================================================
+  // [공식 서식 인쇄/PDF] 국토교통부 별지 제1호의2서식 공식 규격 출력 실행
+  // ========================================================
+  function printOfficialFundPlan() {
+    // 1. 최신 입력 데이터 추출
+    const depSavings = parseMoney(fpInpDepositSavings ? fpInpDepositSavings.value : (modalFpInpDepositSavings?.value || 0));
+    const stockCrypto = parseMoney(fpInpStockCrypto ? fpInpStockCrypto.value : (modalFpInpStockCrypto?.value || 0));
+    const gift = parseMoney(fpInpGift ? fpInpGift.value : (modalFpInpGift?.value || 0));
+    const giftRel = fpSelGiftRelation?.value || modalFpSelGiftRelation?.value || '부부';
+    const cashOther = parseMoney(fpInpCashOther ? fpInpCashOther.value : (modalFpInpCashOther?.value || 0));
+    const realEstate = parseMoney(fpInpRealEstate ? fpInpRealEstate.value : (modalFpInpRealEstate?.value || 0));
+    const realEstateType = fpSelRealEstateType?.value || modalFpSelRealEstateType?.value || '임대보증금';
+    const holdingCash = parseMoney(fpInpHoldingCash ? fpInpHoldingCash.value : (modalFpInpHoldingCash?.value || 0));
+
+    const selfTotal = depSavings + stockCrypto + gift + cashOther + realEstate + holdingCash;
+
+    const mortgage = parseMoney(fpInpMortgage ? fpInpMortgage.value : (modalFpInpMortgage?.value || 0));
+    const mortgageType = fpSelMortgageType?.value || modalFpSelMortgageType?.value || '주택담보대출';
+    const leaseDeposit = parseMoney(fpInpLeaseDeposit?.value || 0);
+    const companyLoan = parseMoney(fpInpCompanyLoan?.value || 0);
+    const otherLoan = parseMoney(fpInpOtherLoan ? fpInpOtherLoan.value : (modalFpInpOtherLoansSum?.value || 0));
+
+    const borrowedTotal = mortgage + leaseDeposit + companyLoan + otherLoan;
+    const grandTotal = selfTotal + borrowedTotal;
+
+    const totalDeal = parseMoney(fpInpTotalDeal ? fpInpTotalDeal.value : (modalFpInpTotalDeal?.value || 0));
+    const takeoverLoan = parseMoney(fpInpTakeoverLoan?.value || 0);
+    const cashPay = parseMoney(fpInpCashPay?.value || 0);
+    const accountTransfer = parseMoney(fpInpAccountTransfer?.value || Math.max(0, totalDeal - takeoverLoan - cashPay));
+
+    // 2. 인쇄 전용 공식 서식 DOM에 데이터 주입
+    const setTxt = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    };
+
+    setTxt('print-fp-deposit-savings', `${formatMoney(depSavings)} 원`);
+    setTxt('print-fp-stock-crypto', `${formatMoney(stockCrypto)} 원`);
+    setTxt('print-fp-gift', `${formatMoney(gift)} 원`);
+    setTxt('print-fp-gift-relation', giftRel);
+    setTxt('print-fp-cash-other', `${formatMoney(cashOther + holdingCash)} 원`);
+    setTxt('print-fp-real-estate', `${formatMoney(realEstate)} 원`);
+    setTxt('print-fp-real-estate-type', realEstateType);
+    setTxt('print-fp-self-total', `${formatMoney(selfTotal)} 원`);
+
+    setTxt('print-fp-mortgage', `${formatMoney(mortgage)} 원`);
+    setTxt('print-fp-mortgage-type', mortgageType);
+    setTxt('print-fp-lease-deposit', `${formatMoney(leaseDeposit)} 원`);
+    setTxt('print-fp-company-loan', `${formatMoney(companyLoan)} 원`);
+    setTxt('print-fp-other-loan', `${formatMoney(otherLoan)} 원`);
+    setTxt('print-fp-borrowed-total', `${formatMoney(borrowedTotal)} 원`);
+
+    setTxt('print-fp-grand-total', `${formatMoney(grandTotal)} 원`);
+
+    setTxt('print-fp-top-total-deal', `${formatMoney(totalDeal)} 원`);
+    setTxt('print-fp-total-deal', `${formatMoney(totalDeal)} 원`);
+    setTxt('print-fp-account-transfer', `${formatMoney(accountTransfer)} 원`);
+    setTxt('print-fp-takeover-loan', `${formatMoney(takeoverLoan)} 원`);
+    setTxt('print-fp-cash-pay', `${formatMoney(cashPay)} 원`);
+
+    // 제출 날짜: 연도만 표시하고 월과 일은 공란으로 처리
+    const now = new Date();
+    const y = now.getFullYear();
+    setTxt('print-fp-today-date', `${y}년       월       일`);
+
+    // 3. 인쇄 모드 진입 및 다이얼로그 호출
+    document.body.classList.add('printing-official-fund-plan');
+    const printSheet = document.getElementById('official-fund-plan-print-sheet');
+    if (printSheet) printSheet.classList.remove('hidden');
+
+    window.print();
+
+    // 인쇄 종료 시 원상 복구
+    const cleanup = () => {
+      document.body.classList.remove('printing-official-fund-plan');
+      if (printSheet) printSheet.classList.add('hidden');
+    };
+    window.addEventListener('afterprint', cleanup, { once: true });
+    setTimeout(cleanup, 1000);
+  }
+
+  [btnFpPrintOfficial, btnFpPrintBottom, btnModalFpPrintOfficial, btnModalFpPrintBottom].forEach(btn => {
+    if (btn) btn.addEventListener('click', printOfficialFundPlan);
+  });
+
+  // 초기 자금조달계획서 자동 계산 실행 (선택비용 기본값 1,000만 원 반영)
+  calculateFundPlanTotals(false, false);
   
   function calculateAmortization(skipScroll = false) {
     if (!amortAmount || !amortType || !amortRate || !amortTerm || !tbodyAmortResult || !amortResultContainer) return;
@@ -3176,7 +4182,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // 1. 타깃 시뮬레이터 모드로 전환 (가구 조건 및 소득은 사용자 설정 100% 온전 보존)
       setMode(targetMode);
 
-      const priceVal = (targetMode === 'jeonse') ? (state.price || 250000000) : (state.price || 450000000);
+      const priceVal = (targetMode === 'jeonse') ? (state.price || 250000000) : (state.price || 520000000);
       const el = (typeof INTEREST_RATES_DATA !== 'undefined' && INTEREST_RATES_DATA.evaluateEligibility)
         ? INTEREST_RATES_DATA.evaluateEligibility(state, priceVal, targetMode)
         : null;
@@ -3432,6 +4438,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // 1. 로컬스토리지에 저장된 자금 세부 구성 및 자금조달계획서 복원
+  loadEquityFromStorage();
+  loadFundPlanFromStorage();
+
+  // 2. 서버 금리 동기화 및 메인 모드 초기 실행
   syncRatesFromServer(true);
   setMode('resale');
 });

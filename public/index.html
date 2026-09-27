@@ -70,6 +70,10 @@
             <i data-lucide="calendar-days" class="w-4 h-4 flex-shrink-0"></i>
             <span>상환일정표</span>
           </button>
+          <button id="tab-fund-plan" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900 whitespace-nowrap">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4 flex-shrink-0"></i>
+            <span>자금조달계획서</span>
+          </button>
         </div>
       </div>
     </div>
@@ -82,299 +86,305 @@
     <div id="simulator-view" class="grid grid-cols-1 lg:grid-cols-12 gap-8 outline-none focus:outline-none">
       
       <!-- 좌측: 입력 컨트롤 사이드바 (5 cols) -->
-      <aside class="lg:col-span-4 space-y-6">
+      <aside class="lg:col-span-4 space-y-3">
         
         <!-- 0. 현재 적용 가구 조건 요약 & 원클릭 변경 배너 카드 -->
-        <div class="bg-gradient-to-r from-indigo-50/90 to-blue-50/90 p-4 rounded-2xl border border-indigo-100 shadow-xs space-y-2.5">
-          <div class="flex items-center justify-between gap-2">
+        <div class="bg-gradient-to-r from-indigo-50/90 to-blue-50/90 p-3 rounded-xl border border-indigo-100 shadow-xs space-y-1.5">
+          <div class="flex items-center justify-between gap-1.5">
             <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-950">
-              <i data-lucide="users" class="w-4 h-4 text-indigo-600 flex-shrink-0"></i>
+              <i data-lucide="users" class="w-3.5 h-3.5 text-indigo-600 flex-shrink-0"></i>
               <span>가구 조건</span>
-              <span id="sidebar-active-profile-name" class="active-profile-badge text-[10.5px] font-extrabold text-indigo-700 bg-white px-2 py-0.5 rounded-md border border-indigo-200">
+              <span id="sidebar-active-profile-name" class="active-profile-badge text-[10px] font-extrabold text-indigo-700 bg-white px-1.5 py-0.5 rounded border border-indigo-200">
                 맞벌이 (기본)
               </span>
             </div>
-            <button type="button" id="btn-goto-household-settings" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] font-bold transition shadow-xs flex items-center gap-1 flex-shrink-0">
+            <button type="button" id="btn-goto-household-settings" class="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10.5px] font-bold transition shadow-xs flex items-center gap-1 flex-shrink-0">
               <i data-lucide="sliders" class="w-3 h-3"></i>
               <span>조건 변경</span>
             </button>
           </div>
-          <div class="flex items-center justify-between text-[11px] text-slate-600 bg-white/90 p-2 rounded-xl border border-indigo-50/80">
+          <div class="flex items-center justify-between text-[10.5px] text-slate-600 bg-white/90 px-2 py-1 rounded-lg border border-indigo-50/80">
             <div id="sidebar-household-summary-text" class="truncate font-semibold text-slate-700">
               👫 기혼 7년+ · 무자녀 · 생초감면
             </div>
-            <div id="sidebar-household-diagnosis-badge" class="flex-shrink-0 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+            <div id="sidebar-household-diagnosis-badge" class="flex-shrink-0 text-[9.5px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
               디딤돌 불가 / 시중 4.8%
             </div>
           </div>
         </div>
 
         <!-- 빠른 시나리오 프리셋 -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-2">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
               <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500"></i>
               실전 시나리오 프리셋
             </span>
-            <span id="preset-mode-badge" class="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+            <span id="preset-mode-badge" class="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
               매매 모드
             </span>
           </div>
 
           <!-- 매매 모드 프리셋 -->
-          <div id="resale-presets" class="grid grid-cols-2 gap-2">
-            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition" data-price="350000000" data-equity="370000000" data-rate="4.8">
+          <div id="resale-presets" class="grid grid-cols-2 gap-1.5">
+            <button type="button" class="preset-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition" data-price="350000000" data-equity="370000000" data-rate="4.8">
               📌 3.5억 구축 매매
             </button>
-            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition" data-price="440000000" data-equity="370000000" data-rate="4.8">
+            <button type="button" class="preset-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition" data-price="440000000" data-equity="370000000" data-rate="4.8">
               📌 4.4억 구축 매매
             </button>
-            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition" data-price="470000000" data-equity="370000000" data-rate="4.8">
+            <button type="button" class="preset-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition" data-price="470000000" data-equity="370000000" data-rate="4.8">
               📌 4.7억 구축 매매
             </button>
-            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition" data-price="520000000" data-equity="370000000" data-rate="4.8">
-              📌 5.2억 구축 매매
+            <button type="button" class="preset-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition" data-price="520000000" data-equity="370000000" data-rate="4.8">
+              📌 5.2억 구축 매매 (기본)
             </button>
           </div>
 
           <!-- 분양 모드 프리셋 -->
-          <div id="presale-presets" class="hidden grid grid-cols-2 gap-2">
-            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition" data-price="400000000" data-equity="370000000" data-rate="4.8">
+          <div id="presale-presets" class="hidden grid grid-cols-2 gap-1.5">
+            <button type="button" class="preset-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition" data-price="400000000" data-equity="370000000" data-rate="4.8">
               🏗️ 4.0억 분양
             </button>
-            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition" data-price="450000000" data-equity="370000000" data-rate="4.8">
-              🏗️ 4.5억 분양 (기본)
+            <button type="button" class="preset-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition" data-price="450000000" data-equity="370000000" data-rate="4.8">
+              🏗️ 4.5억 분양
             </button>
-            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition" data-price="500000000" data-equity="370000000" data-rate="4.8">
+            <button type="button" class="preset-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition" data-price="500000000" data-equity="370000000" data-rate="4.8">
               🏗️ 5.0억 분양
             </button>
-            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition" data-price="600000000" data-equity="370000000" data-rate="4.8">
+            <button type="button" class="preset-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition" data-price="600000000" data-equity="370000000" data-rate="4.8">
               🏗️ 6.0억 분양
             </button>
           </div>
 
           <!-- 전세 모드 프리셋 (HUG 전세보증 기준 2.8억, 3억, 3.3억, 3.5억 / 자기자본 2.5억) -->
-          <div id="jeonse-presets" class="hidden grid grid-cols-2 gap-2">
-            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition" data-price="280000000" data-equity="250000000" data-rate="3.6">
+          <div id="jeonse-presets" class="hidden grid grid-cols-2 gap-1.5">
+            <button type="button" class="preset-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition" data-price="280000000" data-equity="250000000" data-rate="3.6">
               🔑 2.8억 (HUG 안심)
             </button>
-            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition" data-price="300000000" data-equity="250000000" data-rate="3.6">
+            <button type="button" class="preset-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition" data-price="300000000" data-equity="250000000" data-rate="3.6">
               🔑 3.0억 (HUG 안심)
             </button>
-            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition" data-price="330000000" data-equity="250000000" data-rate="3.6">
+            <button type="button" class="preset-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition" data-price="330000000" data-equity="250000000" data-rate="3.6">
               🔑 3.3억 (HUG 안심)
             </button>
-            <button type="button" class="preset-btn py-2 px-3 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition" data-price="350000000" data-equity="250000000" data-rate="3.6">
+            <button type="button" class="preset-btn py-1.5 px-2 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition" data-price="350000000" data-equity="250000000" data-rate="3.6">
               🔑 3.5억 (HUG 안심)
             </button>
           </div>
         </div>
 
         <!-- 핵심 파라미터 입력 폼 -->
-        <form id="calc-form" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+        <form id="calc-form" class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-3">
           
           <!-- 1. 목표 가격 (매매가 / 분양가 / 전세보증금) -->
           <div>
-            <div class="flex justify-between items-center mb-1.5">
-              <label id="lbl-price" class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                <i data-lucide="tag" class="w-4 h-4 text-blue-600"></i>
+            <div class="flex justify-between items-center mb-1">
+              <label id="lbl-price" class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <i data-lucide="tag" class="w-3.5 h-3.5 text-blue-600"></i>
                 매매 희망 금액
               </label>
-              <span id="txt-price-display" class="text-base font-extrabold text-blue-600">4억 5,000만 원</span>
+              <span id="txt-price-display" class="text-sm font-extrabold text-blue-600">5억 2,000만 원</span>
             </div>
             <div class="relative">
-              <input type="text" inputmode="numeric" id="inp-price" class="w-full pl-3 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-right" value="450,000,000" placeholder="예: 47,000 또는 470,000,000">
-              <span class="absolute right-3.5 top-2.5 text-xs font-semibold text-slate-400">원</span>
+              <input type="text" inputmode="numeric" id="inp-price" class="w-full pl-3 pr-10 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-right text-sm" value="520,000,000" placeholder="예: 52,000 또는 520,000,000">
+              <span class="absolute right-3 top-2 text-xs font-semibold text-slate-400">원</span>
             </div>
-            <div class="flex justify-between items-center px-1 text-[10.5px] text-slate-500">
+            <div class="flex justify-between items-center px-1 text-[10px] text-slate-500 mt-0.5">
               <span>💡 <strong>'만 원'</strong> 단위 간편 입력 지원</span>
-              <span class="text-blue-600 font-semibold">4,700 입력 시 ➔ 4,700만 원</span>
+              <span class="text-blue-600 font-semibold">5,200 입력 시 ➔ 5억 2,000만 원</span>
             </div>
             <!-- 간편 증감 버튼 -->
-            <div class="flex gap-1.5 mt-2">
-              <button type="button" class="price-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition" data-delta="-50000000">-5천만</button>
-              <button type="button" class="price-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition" data-delta="-10000000">-1천만</button>
-              <button type="button" class="price-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition" data-delta="10000000">+1천만</button>
-              <button type="button" class="price-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition" data-delta="50000000">+5천만</button>
-              <button type="button" class="price-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition" data-delta="100000000">+1억</button>
+            <div class="flex gap-1 mt-1">
+              <button type="button" class="price-adjust-btn flex-1 py-0.5 text-[10.5px] font-medium bg-slate-100 hover:bg-slate-200 rounded text-slate-700 transition" data-delta="-50000000">-5천만</button>
+              <button type="button" class="price-adjust-btn flex-1 py-0.5 text-[10.5px] font-medium bg-slate-100 hover:bg-slate-200 rounded text-slate-700 transition" data-delta="-10000000">-1천만</button>
+              <button type="button" class="price-adjust-btn flex-1 py-0.5 text-[10.5px] font-medium bg-slate-100 hover:bg-slate-200 rounded text-slate-700 transition" data-delta="10000000">+1천만</button>
+              <button type="button" class="price-adjust-btn flex-1 py-0.5 text-[10.5px] font-medium bg-slate-100 hover:bg-slate-200 rounded text-slate-700 transition" data-delta="50000000">+5천만</button>
+              <button type="button" class="price-adjust-btn flex-1 py-0.5 text-[10.5px] font-medium bg-slate-100 hover:bg-slate-200 rounded text-slate-700 transition" data-delta="100000000">+1억</button>
             </div>
           </div>
 
           <!-- 2. 보유 순자산 (전세보증금 / 자기자본 현금) -->
-          <div class="space-y-1.5">
-            <div class="flex justify-between items-center mb-1.5">
-              <label id="lbl-equity" class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                <i data-lucide="wallet" class="w-4 h-4 text-emerald-600"></i>
+          <div class="space-y-1">
+            <div class="flex justify-between items-center mb-1">
+              <label id="lbl-equity" class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <i data-lucide="wallet" class="w-3.5 h-3.5 text-emerald-600"></i>
                 보유 순자산 (전세보증금/현금)
               </label>
               <span id="txt-equity-display" class="text-sm font-bold text-emerald-600">3억 7,000만 원</span>
             </div>
             <div class="relative">
-              <input type="text" inputmode="numeric" id="inp-equity" class="w-full pl-3 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white text-right" value="370,000,000" placeholder="예: 37,000 또는 370,000,000">
-              <span class="absolute right-3.5 top-2.5 text-xs font-semibold text-slate-400">원</span>
+              <input type="text" inputmode="numeric" id="inp-equity" class="w-full pl-3 pr-10 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white text-right text-sm" value="370,000,000" placeholder="예: 37,000 또는 370,000,000">
+              <span class="absolute right-3 top-2 text-xs font-semibold text-slate-400">원</span>
             </div>
-            <div class="flex justify-between items-center px-1 text-[10.5px] text-slate-500">
+            <div class="flex justify-between items-center px-1 text-[10px] text-slate-500 mt-0.5">
               <span>💡 <strong>'만 원'</strong> 단위 간편 입력 지원</span>
               <span class="text-emerald-600 font-semibold">37,000 입력 시 ➔ 3억 7,000만 원</span>
             </div>
             <!-- 순자산 간편 증감 버튼 -->
-            <div class="flex gap-1.5 mt-2">
-              <button type="button" class="equity-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-slate-700 transition" data-delta="-50000000">-5천만</button>
-              <button type="button" class="equity-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-slate-700 transition" data-delta="-10000000">-1천만</button>
-              <button type="button" class="equity-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-slate-700 transition" data-delta="10000000">+1천만</button>
-              <button type="button" class="equity-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-slate-700 transition" data-delta="50000000">+5천만</button>
-              <button type="button" class="equity-adjust-btn flex-1 py-1 text-[11px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-slate-700 transition" data-delta="100000000">+1억</button>
+            <div class="flex gap-1 mt-1">
+              <button type="button" class="equity-adjust-btn flex-1 py-0.5 text-[10.5px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded text-slate-700 transition" data-delta="-50000000">-5천만</button>
+              <button type="button" class="equity-adjust-btn flex-1 py-0.5 text-[10.5px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded text-slate-700 transition" data-delta="-10000000">-1천만</button>
+              <button type="button" class="equity-adjust-btn flex-1 py-0.5 text-[10.5px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded text-slate-700 transition" data-delta="10000000">+1천만</button>
+              <button type="button" class="equity-adjust-btn flex-1 py-0.5 text-[10.5px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded text-slate-700 transition" data-delta="50000000">+5천만</button>
+              <button type="button" class="equity-adjust-btn flex-1 py-0.5 text-[10.5px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded text-slate-700 transition" data-delta="100000000">+1억</button>
             </div>
 
             <!-- 자산 세부 구성 분할 입력 (보증금 / 예적금 / 증여) -->
-            <details id="details-equity-breakdown" class="group text-xs border border-slate-200/80 rounded-xl bg-slate-50/60 p-2.5 mt-1.5 transition">
-              <summary class="font-bold text-slate-700 cursor-pointer flex items-center justify-between select-none hover:text-emerald-700">
+            <details id="details-equity-breakdown" class="group text-xs border border-slate-200/80 rounded-lg bg-slate-50/60 p-2 mt-1 transition">
+              <summary class="font-bold text-slate-700 cursor-pointer flex items-center justify-between select-none hover:text-emerald-700 text-[11px]">
                 <span class="flex items-center gap-1.5">
-                  <i data-lucide="layers" class="w-3.5 h-3.5 text-emerald-600"></i>
-                  <span>자산 세부 구성 입력 <span class="text-[10px] text-slate-500 font-normal">(보증금·예적금·증여)</span></span>
+                  <i data-lucide="layers" class="w-3 h-3 text-emerald-600"></i>
+                  <span>자산 세부 구성 입력 <span class="text-[9.5px] text-slate-500 font-normal">(보증금·예적금·증여)</span></span>
                 </span>
-                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 group-open:rotate-180 transition"></i>
+                <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400 group-open:rotate-180 transition"></i>
               </summary>
 
-              <div class="pt-2.5 mt-2 border-t border-slate-200/60 space-y-2">
+              <div class="pt-1.5 mt-1 border-t border-slate-200/60 space-y-1.5">
                 <!-- 보증금 -->
                 <div class="flex items-center justify-between gap-2">
-                  <label class="text-[11px] font-semibold text-slate-600 flex items-center gap-1 whitespace-nowrap">
+                  <label class="text-[10.5px] font-semibold text-slate-600 flex items-center gap-1 whitespace-nowrap">
                     <span>🏠 기존 전세보증금</span>
                   </label>
-                  <div class="relative w-36">
-                    <input type="text" inputmode="numeric" id="inp-equity-deposit" class="w-full pl-2 pr-6 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-right focus:ring-1 focus:ring-emerald-500" value="200,000,000" placeholder="예: 20,000 (2억)">
-                    <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
+                  <div class="relative w-32">
+                    <input type="text" inputmode="numeric" id="inp-equity-deposit" class="w-full pl-2 pr-5 py-0.5 bg-white border border-slate-200 rounded text-xs font-semibold text-right focus:ring-1 focus:ring-emerald-500" value="200,000,000" placeholder="예: 20,000 (2억)">
+                    <span class="absolute right-1.5 top-0.5 text-[9.5px] text-slate-400">원</span>
                   </div>
                 </div>
                 <!-- 예적금/현금 -->
                 <div class="flex items-center justify-between gap-2">
-                  <label class="text-[11px] font-semibold text-slate-600 flex items-center gap-1 whitespace-nowrap">
+                  <label class="text-[10.5px] font-semibold text-slate-600 flex items-center gap-1 whitespace-nowrap">
                     <span>💰 금융 예적금·현금</span>
                   </label>
-                  <div class="relative w-36">
-                    <input type="text" inputmode="numeric" id="inp-equity-savings" class="w-full pl-2 pr-6 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-right focus:ring-1 focus:ring-emerald-500" value="60,000,000" placeholder="예: 6,000 (6천만)">
-                    <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
+                  <div class="relative w-32">
+                    <input type="text" inputmode="numeric" id="inp-equity-savings" class="w-full pl-2 pr-5 py-0.5 bg-white border border-slate-200 rounded text-xs font-semibold text-right focus:ring-1 focus:ring-emerald-500" value="60,000,000" placeholder="예: 6,000 (6천만)">
+                    <span class="absolute right-1.5 top-0.5 text-[9.5px] text-slate-400">원</span>
                   </div>
                 </div>
                 <!-- 증여/지원금 -->
                 <div class="flex items-center justify-between gap-2">
-                  <label class="text-[11px] font-semibold text-slate-600 flex items-center gap-1 whitespace-nowrap">
+                  <label class="text-[10.5px] font-semibold text-slate-600 flex items-center gap-1 whitespace-nowrap">
                     <span>🎁 증여·가족지원</span>
                   </label>
-                  <div class="relative w-36">
-                    <input type="text" inputmode="numeric" id="inp-equity-gift" class="w-full pl-2 pr-6 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-right focus:ring-1 focus:ring-emerald-500" value="110,000,000" placeholder="예: 11,000 (1.1억)">
-                    <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
+                  <div class="relative w-32">
+                    <input type="text" inputmode="numeric" id="inp-equity-gift" class="w-full pl-2 pr-5 py-0.5 bg-white border border-slate-200 rounded text-xs font-semibold text-right focus:ring-1 focus:ring-emerald-500" value="110,000,000" placeholder="예: 11,000 (1.1억)">
+                    <span class="absolute right-1.5 top-0.5 text-[9.5px] text-slate-400">원</span>
                   </div>
                 </div>
-                <div class="text-[10px] text-slate-500 pt-1 border-t border-slate-200/50 flex justify-between items-center">
-                  <span>* 세 항목 입력 시 순자산에 합산되며, 만 원 단위(예: 6,000 ➔ 6,000만 원) 간편 입력이 지원됩니다.</span>
+                <div class="text-[9.5px] text-slate-500 pt-1.5 border-t border-slate-200/50 flex flex-col gap-1.5">
+                  <div class="flex items-center justify-between">
+                    <span>* 세 항목 입력 시 순자산 자동 합산</span>
+                    <button type="button" id="btn-open-fund-plan-modal" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold transition shadow-xs flex items-center gap-1 cursor-pointer">
+                      <i data-lucide="file-spreadsheet" class="w-3 h-3"></i>
+                      <span>자금마련계획서 서식 입력</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </details>
           </div>
 
           <!-- 3. 대출 금리 선택 및 설정 -->
-          <div class="space-y-2.5">
-            <label class="text-sm font-bold text-slate-900 flex items-center justify-between">
-              <span class="flex items-center gap-1.5">
-                <i data-lucide="badge-percent" class="w-4 h-4 text-purple-600"></i>
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-900 flex items-center justify-between">
+              <span class="flex items-center gap-1">
+                <i data-lucide="badge-percent" class="w-3.5 h-3.5 text-purple-600"></i>
                 <span id="lbl-rate-title">주택담보대출 적용 금리</span>
               </span>
-              <span id="txt-rate-display" class="text-sm font-extrabold text-purple-600">연 4.8%</span>
+              <span id="txt-rate-display" class="text-xs font-extrabold text-purple-600">연 4.8%</span>
             </label>
 
             <!-- 매매/분양용 금리 프리셋 라디오 -->
-            <div id="mortgage-rate-radios" class="grid grid-cols-2 gap-2 text-xs">
-              <label id="label-rate-didimdol" class="rate-radio-card flex items-start p-2.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
+            <div id="mortgage-rate-radios" class="grid grid-cols-2 gap-1.5 text-xs">
+              <label id="label-rate-didimdol" class="rate-radio-card flex items-start p-1.5 rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
                 <input type="radio" name="rate-preset" value="3.0" class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
-                <div class="ml-2 flex-1 min-w-0">
+                <div class="ml-1.5 flex-1 min-w-0">
                   <div class="flex items-center justify-between gap-1">
-                    <span class="font-bold text-slate-800 whitespace-nowrap">디딤돌대출</span>
-                    <span id="badge-rate-didimdol" class="rate-radio-badge text-[9.5px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap">부부합산</span>
+                    <span class="font-bold text-slate-800 whitespace-nowrap text-[11px]">디딤돌대출</span>
+                    <span id="badge-rate-didimdol" class="rate-radio-badge text-[9px] bg-amber-100 text-amber-800 font-bold px-1 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap">부부합산</span>
                   </div>
-                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">연 3.0% (생애최초·5억)</div>
+                  <div class="text-[9.5px] text-slate-500 mt-0.5 whitespace-nowrap truncate">연 3.0% (생애최초·5억)</div>
                 </div>
               </label>
-              <label id="label-rate-bogeumjari" class="rate-radio-card flex items-start p-2.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
+              <label id="label-rate-bogeumjari" class="rate-radio-card flex items-start p-1.5 rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
                 <input type="radio" name="rate-preset" value="3.8" class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
-                <div class="ml-2 flex-1 min-w-0">
+                <div class="ml-1.5 flex-1 min-w-0">
                   <div class="flex items-center justify-between gap-1">
-                    <span class="font-bold text-slate-800 whitespace-nowrap">보금자리론</span>
-                    <span id="badge-rate-bogeumjari" class="rate-radio-badge text-[9.5px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap">부부합산</span>
+                    <span class="font-bold text-slate-800 whitespace-nowrap text-[11px]">보금자리론</span>
+                    <span id="badge-rate-bogeumjari" class="rate-radio-badge text-[9px] bg-amber-100 text-amber-800 font-bold px-1 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap">부부합산</span>
                   </div>
-                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">연 3.8% (우대·6억이하)</div>
+                  <div class="text-[9.5px] text-slate-500 mt-0.5 whitespace-nowrap truncate">연 3.8% (우대·6억이하)</div>
                 </div>
               </label>
-              <label id="label-rate-commercial" class="rate-radio-card flex items-start p-2.5 rounded-xl border-2 border-purple-500 bg-purple-50/60 shadow-sm cursor-pointer transition">
+              <label id="label-rate-commercial" class="rate-radio-card flex items-start p-1.5 rounded-lg border-2 border-purple-500 bg-purple-50/60 shadow-xs cursor-pointer transition">
                 <input type="radio" name="rate-preset" value="4.8" checked class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
-                <div class="ml-2 flex-1 min-w-0">
-                  <div class="font-bold text-purple-900 whitespace-nowrap">시중은행 주담대</div>
-                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">연 4.8% (1금융권·LTV80%)</div>
+                <div class="ml-1.5 flex-1 min-w-0">
+                  <div class="font-bold text-purple-900 whitespace-nowrap text-[11px]">시중은행 주담대</div>
+                  <div class="text-[9.5px] text-slate-500 mt-0.5 whitespace-nowrap truncate">연 4.8% (1금융권·LTV80%)</div>
                 </div>
               </label>
-              <label id="label-rate-custom" class="rate-radio-card flex items-start p-2.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
+              <label id="label-rate-custom" class="rate-radio-card flex items-start p-1.5 rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
                 <input type="radio" name="rate-preset" value="custom" class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
-                <div class="ml-2 flex-1 min-w-0">
-                  <div class="font-bold text-slate-800 whitespace-nowrap">직접 입력</div>
-                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">자유 금리 설정</div>
+                <div class="ml-1.5 flex-1 min-w-0">
+                  <div class="font-bold text-slate-800 whitespace-nowrap text-[11px]">직접 입력</div>
+                  <div class="text-[9.5px] text-slate-500 mt-0.5 whitespace-nowrap truncate">자유 금리 설정</div>
                 </div>
               </label>
             </div>
 
             <!-- 전세대출 전용 금리 프리셋 라디오 -->
-            <div id="jeonse-rate-radios" class="hidden grid grid-cols-2 gap-2 text-xs">
-              <label id="label-rate-jeonse-hug" class="rate-radio-card flex items-start p-2.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
+            <div id="jeonse-rate-radios" class="hidden grid grid-cols-2 gap-1.5 text-xs">
+              <label id="label-rate-jeonse-hug" class="rate-radio-card flex items-start p-1.5 rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
                 <input type="radio" name="jeonse-rate-preset" value="3.6" checked class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
-                <div class="ml-2 flex-1 min-w-0">
-                  <div class="font-bold text-slate-800 whitespace-nowrap">HUG 안심전세</div>
-                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">연 3.6% (반환보증 100%)</div>
+                <div class="ml-1.5 flex-1 min-w-0">
+                  <div class="font-bold text-slate-800 whitespace-nowrap text-[11px]">HUG 안심전세</div>
+                  <div class="text-[9.5px] text-slate-500 mt-0.5 whitespace-nowrap truncate">연 3.6% (반환보증 100%)</div>
                 </div>
               </label>
-              <label id="label-rate-jeonse-bank" class="rate-radio-card flex items-start p-2.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
+              <label id="label-rate-jeonse-bank" class="rate-radio-card flex items-start p-1.5 rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
                 <input type="radio" name="jeonse-rate-preset" value="4.1" class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
-                <div class="ml-2 flex-1 min-w-0">
-                  <div class="font-bold text-slate-800 whitespace-nowrap">시중은행 전세대출</div>
-                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">연 4.1% (SGI/HF 표준)</div>
+                <div class="ml-1.5 flex-1 min-w-0">
+                  <div class="font-bold text-slate-800 whitespace-nowrap text-[11px]">시중은행 전세대출</div>
+                  <div class="text-[9.5px] text-slate-500 mt-0.5 whitespace-nowrap truncate">연 4.1% (SGI/HF 표준)</div>
                 </div>
               </label>
-              <label id="label-rate-jeonse-newlywed" class="rate-radio-card flex items-start p-2.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
+              <label id="label-rate-jeonse-newlywed" class="rate-radio-card flex items-start p-1.5 rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
                 <input type="radio" name="jeonse-rate-preset" value="2.4" class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
-                <div class="ml-2 flex-1 min-w-0">
+                <div class="ml-1.5 flex-1 min-w-0">
                   <div class="flex items-center justify-between gap-1">
-                    <span class="font-bold text-slate-800 whitespace-nowrap">신혼 버팀목</span>
-                    <span id="badge-rate-beotimmok-newlywed" class="rate-radio-badge text-[9.5px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap">부부합산</span>
+                    <span class="font-bold text-slate-800 whitespace-nowrap text-[11px]">신혼 버팀목</span>
+                    <span id="badge-rate-beotimmok-newlywed" class="rate-radio-badge text-[9px] bg-amber-100 text-amber-800 font-bold px-1 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap">부부합산</span>
                   </div>
-                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">연 2.4% (혼인 7년 이내)</div>
+                  <div class="text-[9.5px] text-slate-500 mt-0.5 whitespace-nowrap truncate">연 2.4% (혼인 7년 이내)</div>
                 </div>
               </label>
-              <label id="label-rate-jeonse-youth" class="rate-radio-card flex items-start p-2.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
+              <label id="label-rate-jeonse-youth" class="rate-radio-card flex items-start p-1.5 rounded-lg border border-slate-200 hover:border-purple-300 hover:bg-slate-50 cursor-pointer transition">
                 <input type="radio" name="jeonse-rate-preset" value="2.1" class="mt-0.5 text-purple-600 focus:ring-purple-500 flex-shrink-0">
-                <div class="ml-2 flex-1 min-w-0">
+                <div class="ml-1.5 flex-1 min-w-0">
                   <div class="flex items-center justify-between gap-1">
-                    <span class="font-bold text-slate-800 whitespace-nowrap">청년 버팀목</span>
-                    <span id="badge-rate-beotimmok-youth" class="rate-radio-badge text-[9.5px] bg-indigo-100 text-indigo-800 font-bold px-1.5 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap">단독전용</span>
+                    <span class="font-bold text-slate-800 whitespace-nowrap text-[11px]">청년 버팀목</span>
+                    <span id="badge-rate-beotimmok-youth" class="rate-radio-badge text-[9px] bg-indigo-100 text-indigo-800 font-bold px-1 py-0.5 rounded leading-none flex-shrink-0 whitespace-nowrap">단독전용</span>
                   </div>
-                  <div class="text-[10px] text-slate-500 mt-1 whitespace-nowrap truncate">연 2.1% (만19~34세)</div>
+                  <div class="text-[9.5px] text-slate-500 mt-0.5 whitespace-nowrap truncate">연 2.1% (만19~34세)</div>
                 </div>
               </label>
             </div>
 
             <!-- 금리 슬라이더 / 수치 입력 -->
-            <div class="flex items-center gap-3 pt-1">
+            <div class="flex items-center gap-2 pt-0.5">
               <input type="range" id="rng-rate" min="1.5" max="7.0" step="0.1" value="4.8" class="w-full accent-purple-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer">
-              <div class="relative w-24 flex-shrink-0">
-                <input type="number" id="inp-rate" min="1.0" max="15.0" step="0.1" value="4.8" class="w-full pl-2 pr-6 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-right focus:outline-none focus:ring-2 focus:ring-purple-500">
-                <span class="absolute right-2 top-1 text-xs text-slate-400 font-semibold">%</span>
+              <div class="relative w-20 flex-shrink-0">
+                <input type="number" id="inp-rate" min="1.0" max="15.0" step="0.1" value="4.8" class="w-full pl-1.5 pr-5 py-0.5 bg-slate-50 border border-slate-200 rounded text-xs font-bold text-right focus:outline-none focus:ring-1 focus:ring-purple-500">
+                <span class="absolute right-1.5 top-0.5 text-xs text-slate-400 font-semibold">%</span>
               </div>
             </div>
           </div>
 
           <!-- 4. 대출 만기 및 상환 방식 -->
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-2">
             <div id="container-loan-years">
-              <label class="text-xs font-bold text-slate-700 block mb-1">대출 만기 기간</label>
-              <select id="sel-loan-years" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500">
+              <label class="text-[11px] font-bold text-slate-700 block mb-0.5">대출 만기 기간</label>
+              <select id="sel-loan-years" class="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:ring-1 focus:ring-blue-500">
                 <option value="20">20년 만기</option>
                 <option value="30" selected>30년 만기 (표준)</option>
                 <option value="35">35년 만기</option>
@@ -383,8 +393,8 @@
               </select>
             </div>
             <div>
-              <label class="text-xs font-bold text-slate-700 block mb-1">상환 방식</label>
-              <select id="sel-repay-type" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500">
+              <label class="text-[11px] font-bold text-slate-700 block mb-0.5">상환 방식</label>
+              <select id="sel-repay-type" class="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:ring-1 focus:ring-blue-500">
                 <option value="equal-principal">체감식(원금균등)분할상환</option>
                 <option value="equal-payment" selected>원리금균등분할상환</option>
                 <option value="graduated">체증식 분할상환</option>
@@ -394,18 +404,18 @@
           </div>
 
           <!-- 6. 부대비용 세부 설정 (필수 취득 vs 선택 입주 이원화) -->
-          <details id="details-custom-extra" open class="group text-xs border border-slate-200 rounded-xl p-3 bg-white space-y-3">
-            <summary class="font-bold text-slate-800 cursor-pointer flex items-center justify-between select-none">
+          <details id="details-custom-extra" open class="group text-xs border border-slate-200 rounded-xl p-2.5 bg-white space-y-2">
+            <summary class="font-bold text-slate-800 cursor-pointer flex items-center justify-between select-none text-xs">
               <span class="flex items-center gap-1.5">
                 <i data-lucide="sliders" class="w-3.5 h-3.5 text-blue-600"></i>
                 부대비용 (필수 취득 vs 선택 입주) 미세조정
               </span>
-              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 group-open:rotate-180 transition"></i>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 group-open:rotate-180 transition"></i>
             </summary>
 
-            <div class="pt-2 space-y-3 border-t border-slate-100">
+            <div class="pt-1.5 space-y-2 border-t border-slate-100">
               <!-- 1) 필수 취득·거래비용 실시간 요약 카드 -->
-              <div class="p-2.5 bg-blue-50/60 rounded-xl border border-blue-100 space-y-1.5">
+              <div class="p-2 bg-blue-50/60 rounded-lg border border-blue-100 space-y-1">
                 <div class="flex justify-between items-center text-xs font-bold text-blue-900">
                   <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-blue-900">
                     <input type="checkbox" id="chk-include-mandatory" checked class="rounded border-blue-300 text-blue-600 focus:ring-blue-500">
@@ -430,47 +440,47 @@
               </div>
 
               <!-- 2) 선택적 입주·정비비용 설정 카드 -->
-              <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+              <div class="p-2 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5">
                 <div class="flex items-center justify-between">
                   <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-800">
-                    <input type="checkbox" id="chk-include-movein" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                    <input type="checkbox" id="chk-include-movein" checked class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
                     <span>[선택] 입주·수리비 예산 포함</span>
                   </label>
                   <span id="txt-optional-expense-sum" class="text-xs font-bold text-indigo-600">약 1,511만 원</span>
                 </div>
 
-                <div id="container-optional-inputs" class="space-y-2 pt-1 border-t border-slate-200/60">
+                <div id="container-optional-inputs" class="space-y-1.5 pt-1 border-t border-slate-200/60">
                   <!-- 도배/장판/샷시/수리 -->
                   <div>
-                    <div class="flex justify-between items-center mb-1">
-                      <label id="lbl-custom-extra" class="text-[11px] font-semibold text-slate-700">도배·장판·샷시·기본수리</label>
-                      <span id="txt-custom-extra-display" class="text-[11px] font-bold text-indigo-600">1,511만 원</span>
+                    <div class="flex justify-between items-center mb-0.5">
+                      <label id="lbl-custom-extra" class="text-[10.5px] font-semibold text-slate-700">도배·장판·샷시·기본수리</label>
+                      <span id="txt-custom-extra-display" class="text-[10.5px] font-bold text-indigo-600">1,511만 원</span>
                     </div>
                     <div class="relative">
-                      <input type="text" inputmode="numeric" id="inp-custom-extra" placeholder="자동 표준 산정" class="w-full pl-2 pr-8 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-right">
-                      <span class="absolute right-2 top-1.5 text-[11px] text-slate-400">원</span>
+                      <input type="text" inputmode="numeric" id="inp-custom-extra" placeholder="자동 표준 산정" class="w-full pl-2 pr-7 py-1 bg-white border border-slate-200 rounded-md text-xs font-semibold text-right">
+                      <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
                     </div>
-                    <div class="flex gap-1 mt-1">
-                      <button type="button" class="refurbish-adjust-btn flex-1 py-0.5 text-[10px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="-5000000">-500만</button>
-                      <button type="button" class="refurbish-adjust-btn flex-1 py-0.5 text-[10px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="3000000">+300만</button>
-                      <button type="button" class="refurbish-adjust-btn flex-1 py-0.5 text-[10px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="5000000">+500만</button>
+                    <div class="flex gap-1 mt-0.5">
+                      <button type="button" class="refurbish-adjust-btn flex-1 py-0.5 text-[9.5px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="-5000000">-500만</button>
+                      <button type="button" class="refurbish-adjust-btn flex-1 py-0.5 text-[9.5px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="3000000">+300만</button>
+                      <button type="button" class="refurbish-adjust-btn flex-1 py-0.5 text-[9.5px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="5000000">+500만</button>
                     </div>
                   </div>
 
                   <!-- 가구/가전/포장이사비 -->
                   <div>
-                    <div class="flex justify-between items-center mb-1">
-                      <label class="text-[11px] font-semibold text-slate-700">가구·가전·이사비 예산</label>
-                      <span id="txt-movein-extra-display" class="text-[11px] font-bold text-indigo-600">0원</span>
+                    <div class="flex justify-between items-center mb-0.5">
+                      <label class="text-[10.5px] font-semibold text-slate-700">가구·가전·이사비 예산</label>
+                      <span id="txt-movein-extra-display" class="text-[10.5px] font-bold text-indigo-600">0원</span>
                     </div>
                     <div class="relative">
-                      <input type="text" inputmode="numeric" id="inp-movein-extra" placeholder="0" value="0" class="w-full pl-2 pr-8 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-right">
-                      <span class="absolute right-2 top-1.5 text-[11px] text-slate-400">원</span>
+                      <input type="text" inputmode="numeric" id="inp-movein-extra" placeholder="0" value="0" class="w-full pl-2 pr-7 py-1 bg-white border border-slate-200 rounded-md text-xs font-semibold text-right">
+                      <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
                     </div>
-                    <div class="flex gap-1 mt-1">
-                      <button type="button" class="movein-adjust-btn flex-1 py-0.5 text-[10px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="-1000000">-100만</button>
-                      <button type="button" class="movein-adjust-btn flex-1 py-0.5 text-[10px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="1000000">+100만</button>
-                      <button type="button" class="movein-adjust-btn flex-1 py-0.5 text-[10px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="3000000">+300만</button>
+                    <div class="flex gap-1 mt-0.5">
+                      <button type="button" class="movein-adjust-btn flex-1 py-0.5 text-[9.5px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="-1000000">-100만</button>
+                      <button type="button" class="movein-adjust-btn flex-1 py-0.5 text-[9.5px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="1000000">+100만</button>
+                      <button type="button" class="movein-adjust-btn flex-1 py-0.5 text-[9.5px] font-medium bg-white hover:bg-indigo-50 border border-slate-200 rounded text-slate-600 transition" data-delta="3000000">+300만</button>
                     </div>
                   </div>
                 </div>
@@ -478,10 +488,10 @@
 
               <!-- 단기 신용대출 금리 -->
               <div>
-                <label class="text-[11px] font-medium text-slate-600 block mb-1">계약금 단기 신용대출 금리</label>
+                <label class="text-[10.5px] font-medium text-slate-600 block mb-0.5">계약금 단기 신용대출 금리</label>
                 <div class="relative">
-                  <input type="number" id="inp-credit-rate" value="4.5" step="0.1" class="w-full pl-2 pr-6 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-right">
-                  <span class="absolute right-2 top-1.5 text-[11px] text-slate-400">%</span>
+                  <input type="number" id="inp-credit-rate" value="4.5" step="0.1" class="w-full pl-2 pr-5 py-1 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-right">
+                  <span class="absolute right-2 top-1 text-[10px] text-slate-400">%</span>
                 </div>
               </div>
             </div>
@@ -552,7 +562,7 @@
                 <span id="card-lbl-monthly">월 원리금 상환액</span>
                 <i data-lucide="coins" class="w-4 h-4 text-emerald-200"></i>
               </div>
-              <div id="card-monthly-payment" class="text-xl font-extrabold tracking-tight">약 55.0만 원</div>
+              <div id="card-monthly-payment" class="text-xl font-extrabold tracking-tight">약 55만 원</div>
               <div id="card-monthly-payment-detail" class="text-[11px] text-yellow-200 mt-1 hidden font-bold">마지막 달: 0만 원</div>
               <div id="card-housing-ratio" class="text-[11px] text-emerald-100 mt-1">실수령액의 10.4% (최상급 안정)</div>
             </div>
@@ -1546,12 +1556,960 @@
       </div>
     </div>
 
+    <!-- ======================================================== -->
+    <!-- [신규 탭] 자금조달계획서 (주택취득자금 조달 및 입주계획서) 뷰 -->
+    <!-- ======================================================== -->
+    <div id="fund-plan-view" class="hidden space-y-6 max-w-5xl mx-auto outline-none focus:outline-none w-full">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+        
+        <!-- 상단 헤더 및 툴바 -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+          <div>
+            <h2 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="file-spreadsheet" class="w-5 h-5 text-emerald-600"></i>
+              주택취득자금 조달 및 입주계획서 (자금마련계획서)
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+              국토교통부 표준 서식 기준 · 자산 세부 구성(보증금/예적금/증여) 및 시뮬레이터 자동 연동
+            </p>
+          </div>
+          <div class="flex items-center gap-1.5 flex-nowrap shrink-0 overflow-x-auto">
+            <button type="button" id="btn-fp-load-preset-52" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-2xs">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-600"></i>
+              <span>기본값</span>
+            </button>
+            <button type="button" id="btn-fp-print-official" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
+              <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+              <span>공식 서식 인쇄 / PDF</span>
+            </button>
+            <button type="button" id="btn-fp-apply-to-equity" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+              <span>시뮬레이션 실행</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 실시간 검증 및 매핑 안내 배너 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div id="fp-match-badge" class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs text-emerald-900 font-bold">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+            <span>✓ 조달금액 합계(⑬)와 총 거래금액(⑭)이 완벽히 일치합니다 (차액 0원)</span>
+          </div>
+          <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 leading-relaxed font-medium space-y-1">
+            <div class="flex items-center gap-1.5 font-bold text-blue-950">
+              <i data-lucide="info" class="w-4 h-4 text-blue-600 flex-shrink-0"></i>
+              <span>📌 자금조달계획서와 사이드바(시뮬레이터) 연동 안내</span>
+            </div>
+            <div class="text-[11px] text-blue-900 leading-normal pl-5">
+              • <b>시뮬레이터(사이드바)</b>: 총 소요예산(5.38억)에서 <b>보유 총 순자산(3.7억)</b>을 차감하여 필요 대출(1억 6,832만 원)을 산출합니다.<br>
+              • <b>자금조달계획서(공적 서식)</b>: 순수 매매가(5.2억) 기준 서식이므로, 예금에서 부대비용을 뺀 금액만 기재되어 ⑦ 자기자금이 3억 5,168만 원으로 표시되며, <b>필요 대출(1억 6,832만 원)은 사이드바와 1원까지 완벽히 일치</b>합니다.
+            </div>
+          </div>
+        </div>
+
+        <!-- ⑧ 금융기관 대출액 부대비용 및 선택비용(인테리어) 설정 컨트롤 바 -->
+        <div class="p-3.5 bg-purple-50/70 border border-purple-200 rounded-xl space-y-2.5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-purple-200/60 pb-2">
+            <div class="flex items-center gap-1.5 text-xs font-extrabold text-purple-950">
+              <i data-lucide="sliders" class="w-4 h-4 text-purple-600"></i>
+              <span>부대비용 시뮬레이션 (체크 시 ② 예금액 차감 ➔ ⑧ 대출 충당)</span>
+            </div>
+            <div class="flex items-center gap-1 text-xs">
+              <span class="text-slate-600 font-medium">반영 부대비용 합계:</span>
+              <span id="fp-txt-expense-amount" class="text-xs font-black text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md"></span>
+            </div>
+          </div>
+          
+          <!-- 필수 취득세 vs 선택 인테리어 2분할 체크박스 카드 영역 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs">
+            <!-- 1) [필수] 취득세·거래비용 체크박스 카드 -->
+            <div class="p-2.5 bg-white/90 rounded-lg border border-purple-200/80 flex items-center justify-between shadow-2xs">
+              <label class="inline-flex items-center gap-1.5 font-bold text-slate-800 cursor-pointer select-none">
+                <input type="checkbox" id="fp-chk-include-mandatory" checked class="w-4 h-4 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer">
+                <span class="text-xs text-blue-950">[필수] 취득세·거래비용 반영</span>
+              </label>
+              <div class="flex items-center gap-1">
+                <span id="fp-txt-mandatory-cost" class="font-black text-blue-700">약 520만 원</span>
+              </div>
+            </div>
+
+            <!-- 2) [선택] 인테리어·수리비 체크박스 카드 -->
+            <div class="p-2.5 bg-white/90 rounded-lg border border-purple-200/80 space-y-1.5 shadow-2xs">
+              <div class="flex items-center justify-between">
+                <label class="inline-flex items-center gap-1.5 font-bold text-slate-800 cursor-pointer select-none">
+                  <input type="checkbox" id="fp-chk-include-optional" checked class="w-4 h-4 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer">
+                  <span class="text-xs text-indigo-950">[선택] 인테리어·수리비 반영</span>
+                </label>
+                <span id="fp-txt-optional-cost-display" class="font-black text-indigo-700">1,000만 원</span>
+              </div>
+              <div id="fp-box-optional-input" class="flex items-center justify-between gap-2 pt-1 border-t border-purple-100">
+                <label for="fp-inp-optional-cost" class="text-[11px] text-slate-600 flex items-center gap-1">
+                  <i data-lucide="paintbrush" class="w-3 h-3 text-slate-400"></i>
+                  <span>수리 예산 직접 입력:</span>
+                </label>
+                <div class="relative w-36">
+                  <input type="text" inputmode="numeric" id="fp-inp-optional-cost" class="w-full pl-2 pr-6 py-0.5 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800 text-right focus:ring-1 focus:ring-purple-500 shadow-xs" value="10,000,000">
+                  <span class="absolute right-2 top-0.5 text-[11px] text-slate-400">원</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 선택비용 아래: 보유현금 입력란 -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-purple-200/40">
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+              <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>• 보유현금 입력 시 해당 금액만큼 필요 대출액(⑧)이 직접 차감됩니다.</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+              <label for="fp-inp-holding-cash" class="text-slate-700 flex-shrink-0 flex items-center gap-1">
+                <i data-lucide="wallet" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span>• 보유현금:</span>
+              </label>
+              <div class="relative w-40">
+                <input type="text" inputmode="numeric" id="fp-inp-holding-cash" class="w-full pl-2 pr-7 py-1 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-800 text-right focus:ring-1 focus:ring-emerald-500 shadow-xs" value="0">
+                <span class="absolute right-2 top-1 text-[11px] text-slate-400">원</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 공식 서식 테이블 -->
+        <div class="overflow-x-auto border border-slate-200 rounded-xl">
+          <table class="w-full text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 text-center">
+                <th class="py-2.5 px-3 w-16">번호</th>
+                <th class="py-2.5 px-3 text-left">서식 항목명</th>
+                <th class="py-2.5 px-3 text-left w-48">세부 내역 및 관계</th>
+                <th class="py-2.5 px-3 text-right w-56">조달 금액 (원)</th>
+                <th class="py-2.5 px-3 text-left w-52">시뮬레이터 연동 매핑</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200/80">
+              
+              <!-- 1. 자기자금 대분류 -->
+              <tr class="bg-slate-100/90 font-bold text-slate-900">
+                <td colspan="5" class="py-2.5 px-3 text-xs text-slate-900">
+                  <div class="flex items-center gap-1.5">
+                    <i data-lucide="wallet" class="w-4 h-4 text-emerald-600"></i>
+                    <span class="text-xs font-bold text-slate-900">1. 자기자금</span>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- ② 금융기관 예금액 -->
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-2 px-3 text-center font-bold text-slate-600">②</td>
+                <td class="py-2 px-3 font-semibold text-slate-800">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span>금융기관 예금액</span>
+                    <span id="fp-txt-deposit-subnotice" class="text-[10px] text-purple-700 bg-purple-100 font-bold px-1.5 py-0.5 rounded hidden">부대비용 차감됨</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-slate-500">은행/증권 입출금·정기예적금</td>
+                <td class="py-2 px-3 text-right">
+                  <div class="relative">
+                    <input type="text" inputmode="numeric" id="fp-inp-deposit-savings" class="w-full pl-2 pr-6 py-1 bg-white border border-slate-300 rounded text-xs font-semibold text-right focus:ring-1 focus:ring-emerald-500" value="37,000,000">
+                    <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-[11px] text-blue-700 font-semibold" id="fp-txt-dep-savings-mapping">➔ 금융 예적금·현금</td>
+              </tr>
+
+              <!-- ③ 주식·채권·가상화폐 매각대금 -->
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-2 px-3 text-center font-bold text-slate-600">③</td>
+                <td class="py-2 px-3 font-semibold text-slate-800">주식·채권·가상화폐 매각대금</td>
+                <td class="py-2 px-3 text-slate-500">보유 유가증권·가상자산 환전</td>
+                <td class="py-2 px-3 text-right">
+                  <div class="relative">
+                    <input type="text" inputmode="numeric" id="fp-inp-stock-crypto" class="w-full pl-2 pr-6 py-1 bg-white border border-slate-300 rounded text-xs font-semibold text-right focus:ring-1 focus:ring-emerald-500" value="23,000,000">
+                    <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-[11px] text-blue-700 font-semibold">➔ 금융 예적금·현금</td>
+              </tr>
+
+              <!-- ④ 증여·상속 -->
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-2 px-3 text-center font-bold text-slate-600">④</td>
+                <td class="py-2 px-3 font-semibold text-slate-800">증여·상속</td>
+                <td class="py-2 px-3">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[11px] text-slate-500 font-medium">관계:</span>
+                    <select id="fp-sel-gift-relation" class="py-0.5 px-1.5 bg-white border border-slate-300 rounded text-[11px] font-semibold text-slate-700 focus:ring-1 focus:ring-purple-500">
+                      <option value="부부" selected>부부 (배우자 6억 공제)</option>
+                      <option value="직계존속">직계존속 (부모 5천만 공제)</option>
+                      <option value="직계비속">직계비속 (5천만 공제)</option>
+                      <option value="기타친족">기타친족 (1천만 공제)</option>
+                      <option value="그밖의관계">그 밖의 관계</option>
+                    </select>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-right">
+                  <div class="relative">
+                    <input type="text" inputmode="numeric" id="fp-inp-gift" class="w-full pl-2 pr-6 py-1 bg-white border border-slate-300 rounded text-xs font-semibold text-right focus:ring-1 focus:ring-emerald-500" value="110,000,000">
+                    <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-[11px] text-purple-700 font-semibold">➔ 증여·가족지원</td>
+              </tr>
+
+              <!-- ⑤ 현금 등 그 밖의 자금 -->
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-2 px-3 text-center font-bold text-slate-600">⑤</td>
+                <td class="py-2 px-3 font-semibold text-slate-800">현금 등 그 밖의 자금</td>
+                <td class="py-2 px-3 text-slate-500">보유 실물 현금 및 기타 자산</td>
+                <td class="py-2 px-3 text-right">
+                  <div class="relative">
+                    <input type="text" inputmode="numeric" id="fp-inp-cash-other" class="w-full pl-2 pr-6 py-1 bg-white border border-slate-300 rounded text-xs font-semibold text-right focus:ring-1 focus:ring-emerald-500" value="0">
+                    <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-[11px] text-blue-700 font-semibold">➔ 금융 예적금·현금</td>
+              </tr>
+
+              <!-- ⑥ 부동산 처분대금 등 -->
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-2 px-3 text-center font-bold text-slate-600">⑥</td>
+                <td class="py-2 px-3 font-semibold text-slate-800">부동산 처분대금 등</td>
+                <td class="py-2 px-3">
+                  <select id="fp-sel-real-estate-type" class="w-full py-0.5 px-1.5 bg-white border border-slate-300 rounded text-[11px] font-semibold text-slate-700 focus:ring-1 focus:ring-emerald-500">
+                    <option value="임대보증금" selected>임대보증금(취득주택 외) 회수</option>
+                    <option value="부동산처분대금">기존 소유 주택/부동산 처분대금</option>
+                  </select>
+                </td>
+                <td class="py-2 px-3 text-right">
+                  <div class="relative">
+                    <input type="text" inputmode="numeric" id="fp-inp-real-estate" class="w-full pl-2 pr-6 py-1 bg-white border border-slate-300 rounded text-xs font-semibold text-right focus:ring-1 focus:ring-emerald-500" value="200,000,000">
+                    <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-[11px] text-emerald-700 font-bold">➔ 기존 전세보증금</td>
+              </tr>
+
+              <!-- ⑦ 자기자금 소계 (합계) -->
+              <tr class="bg-emerald-50/80 font-bold text-emerald-950 border-t-2 border-emerald-300">
+                <td class="py-2.5 px-3 text-center font-black">⑦</td>
+                <td class="py-2.5 px-3 font-black text-emerald-950">자기자금 소계</td>
+                <td class="py-2.5 px-3 text-emerald-800 font-semibold">②+③+④+⑤+⑥+보유현금 자동 합산</td>
+                <td class="py-2.5 px-3 text-right font-black text-emerald-700 text-sm whitespace-nowrap" id="fp-txt-self-total">
+                  370,000,000 원
+                </td>
+                <td class="py-2.5 px-3 text-[11px] text-emerald-900 font-extrabold" id="fp-txt-self-total-mapping">➔ 보유 순자산(총액)</td>
+              </tr>
+
+              <!-- 2. 차입금 등 대분류 -->
+              <tr class="bg-slate-100/90 font-bold text-slate-900">
+                <td colspan="5" class="py-2.5 px-3 text-xs text-slate-900">
+                  <div class="flex items-center gap-1.5">
+                    <i data-lucide="landmark" class="w-4 h-4 text-purple-600"></i>
+                    <span class="text-xs font-bold text-slate-900">2. 차입금 등</span>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- ⑧ 금융기관 대출액 합계 -->
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-2 px-3 text-center font-bold text-slate-600">⑧</td>
+                <td class="py-2 px-3 font-semibold text-slate-800">
+                  <div class="flex items-center gap-1.5">
+                    <span>금융기관 대출액 합계</span>
+                    <span class="text-[10px] text-purple-700 bg-purple-100 font-bold px-1.5 py-0.5 rounded border border-purple-200">자동 계산</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3">
+                  <select id="fp-sel-mortgage-type" class="w-full py-0.5 px-1.5 bg-white border border-slate-300 rounded text-[11px] font-semibold text-slate-700 focus:ring-1 focus:ring-purple-500">
+                    <option value="주택담보대출" selected>주택담보대출</option>
+                    <option value="신용대출">신용대출</option>
+                    <option value="기타대출">기타 대출</option>
+                  </select>
+                </td>
+                <td class="py-2 px-3 text-right">
+                  <div class="relative">
+                    <input type="text" inputmode="numeric" id="fp-inp-mortgage" class="w-full pl-2 pr-6 py-1 bg-white border border-purple-300 rounded text-xs font-bold text-purple-950 text-right focus:ring-1 focus:ring-purple-500" value="150,000,000">
+                    <span class="absolute right-2 top-1 text-[10px] text-purple-400">원</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-[11px] text-purple-700 font-semibold" id="fp-txt-mortgage-mapping">➔ 필요 주택담보대출</td>
+              </tr>
+
+              <!-- ⑨ 취득주택의 임대보증금 -->
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-2 px-3 text-center font-bold text-slate-600">⑨</td>
+                <td class="py-2 px-3 font-semibold text-slate-800">취득주택의 임대보증금</td>
+                <td class="py-2 px-3 text-slate-500">갭투자 임대 승계 보증금 (실입주 시 0)</td>
+                <td class="py-2 px-3 text-right">
+                  <div class="relative">
+                    <input type="text" inputmode="numeric" id="fp-inp-lease-deposit" class="w-full pl-2 pr-6 py-1 bg-white border border-slate-300 rounded text-xs font-semibold text-right focus:ring-1 focus:ring-slate-400" value="0">
+                    <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-[11px] text-slate-500">승계 보증금</td>
+              </tr>
+
+              <!-- ⑩ 회사지원금·사채 -->
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-2 px-3 text-center font-bold text-slate-600">⑩</td>
+                <td class="py-2 px-3 font-semibold text-slate-800">회사지원금·사채</td>
+                <td class="py-2 px-3 text-slate-500">직장 사내대출 등</td>
+                <td class="py-2 px-3 text-right">
+                  <div class="relative">
+                    <input type="text" inputmode="numeric" id="fp-inp-company-loan" class="w-full pl-2 pr-6 py-1 bg-white border border-slate-300 rounded text-xs font-semibold text-right focus:ring-1 focus:ring-slate-400" value="0">
+                    <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-[11px] text-slate-500">회사 대출</td>
+              </tr>
+
+              <!-- ⑪ 그 밖의 차입금 -->
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-2 px-3 text-center font-bold text-slate-600">⑪</td>
+                <td class="py-2 px-3 font-semibold text-slate-800">그 밖의 차입금</td>
+                <td class="py-2 px-3 text-slate-500">부모/친족 차용금 (차용증 작성 필수)</td>
+                <td class="py-2 px-3 text-right">
+                  <div class="relative">
+                    <input type="text" inputmode="numeric" id="fp-inp-other-loan" class="w-full pl-2 pr-6 py-1 bg-white border border-slate-300 rounded text-xs font-semibold text-right focus:ring-1 focus:ring-slate-400" value="0">
+                    <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-[11px] text-slate-500">사적 차입금</td>
+              </tr>
+
+              <!-- ⑫ 차입금 등 소계 -->
+              <tr class="bg-purple-50/80 font-bold text-purple-950 border-t-2 border-purple-300">
+                <td class="py-2.5 px-3 text-center font-black">⑫</td>
+                <td class="py-2.5 px-3 font-black text-purple-950">차입금 등 소계</td>
+                <td class="py-2.5 px-3 text-purple-800 font-semibold">⑧+⑨+⑩+⑪ 자동 합산</td>
+                <td class="py-2.5 px-3 text-right font-black text-purple-700 text-sm whitespace-nowrap" id="fp-txt-borrowed-total">
+                  151,000,000 원
+                </td>
+                <td class="py-2.5 px-3 text-[11px] text-purple-900 font-extrabold">➔ 총 대출·부채액</td>
+              </tr>
+
+              <!-- 3. 조달금액 합계 (총계) -->
+              <tr class="bg-indigo-100/90 font-black text-indigo-950 border-t-2 border-b-2 border-indigo-400 text-sm">
+                <td class="py-3 px-3 text-center text-base">⑬</td>
+                <td class="py-3 px-3 text-base">합계 (총 조달금액)</td>
+                <td class="py-3 px-3 text-indigo-900 text-xs font-bold">⑦ 자기자금 + ⑫ 차입금 합산</td>
+                <td class="py-3 px-3 text-right text-base text-indigo-900 whitespace-nowrap" id="fp-txt-grand-total">
+                  520,000,000 원
+                </td>
+                <td class="py-3 px-3 text-xs text-indigo-900 font-black">⑭ 총 거래금액과 일치 필수</td>
+              </tr>
+
+              <!-- 4. 지급방식 대분류 -->
+              <tr class="bg-slate-100/90 font-bold text-slate-900">
+                <td colspan="5" class="py-2.5 px-3 text-xs text-slate-900">
+                  <div class="flex items-center gap-1.5">
+                    <i data-lucide="receipt" class="w-4 h-4 text-blue-600"></i>
+                    <span class="text-xs font-bold text-slate-900">3. 조달자금 지급방식</span>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- ⑭ 총 거래금액 -->
+              <tr class="hover:bg-slate-50/50 bg-blue-50/30">
+                <td class="py-2 px-3 text-center font-bold text-blue-800">⑭</td>
+                <td class="py-2 px-3 font-extrabold text-blue-900">총 거래금액 (매매 계약가)</td>
+                <td class="py-2 px-3 text-blue-700 font-medium">아파트 실거래 매매 계약금액</td>
+                <td class="py-2 px-3 text-right">
+                  <div class="relative">
+                    <input type="text" inputmode="numeric" id="fp-inp-total-deal" class="w-full pl-2 pr-6 py-1 bg-white border border-blue-300 rounded text-xs font-bold text-blue-900 text-right focus:ring-1 focus:ring-blue-500" value="520,000,000">
+                    <span class="absolute right-2 top-1 text-[10px] text-blue-400">원</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-[11px] text-blue-700 font-bold">➔ 시뮬레이터 매매 희망가</td>
+              </tr>
+
+              <!-- ⑮ 계좌이체 금액 -->
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-2 px-3 text-center font-bold text-slate-600">⑮</td>
+                <td class="py-2 px-3 font-semibold text-slate-800">계좌이체 금액</td>
+                <td class="py-2 px-3 text-slate-500">은행 계좌이체로 지급할 금액</td>
+                <td class="py-2 px-3 text-right">
+                  <div class="relative">
+                    <input type="text" inputmode="numeric" id="fp-inp-account-transfer" class="w-full pl-2 pr-6 py-1 bg-white border border-slate-300 rounded text-xs font-semibold text-right focus:ring-1 focus:ring-slate-400" value="520,000,000">
+                    <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-[11px] text-slate-500">금융 증빙 거래액</td>
+              </tr>
+
+              <!-- ⑯ 보증금·대출 승계 -->
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-2 px-3 text-center font-bold text-slate-600">⑯</td>
+                <td class="py-2 px-3 font-semibold text-slate-800">보증금·대출 승계</td>
+                <td class="py-2 px-3 text-slate-500">매도인의 기존 대출 또는 보증금 승계액</td>
+                <td class="py-2 px-3 text-right">
+                  <div class="relative">
+                    <input type="text" inputmode="numeric" id="fp-inp-takeover-loan" class="w-full pl-2 pr-6 py-1 bg-white border border-slate-300 rounded text-xs font-semibold text-right focus:ring-1 focus:ring-slate-400" value="0">
+                    <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-[11px] text-slate-500">승계 정산액</td>
+              </tr>
+
+              <!-- ⑰ 현금 및 기타 지급방식 -->
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-2 px-3 text-center font-bold text-slate-600">⑰</td>
+                <td class="py-2 px-3 font-semibold text-slate-800">현금 및 기타 지급방식</td>
+                <td class="py-2 px-3 text-slate-500">실물 현금 지급액 (증빙 필요)</td>
+                <td class="py-2 px-3 text-right">
+                  <div class="relative">
+                    <input type="text" inputmode="numeric" id="fp-inp-cash-pay" class="w-full pl-2 pr-6 py-1 bg-white border border-slate-300 rounded text-xs font-semibold text-right focus:ring-1 focus:ring-slate-400" value="0">
+                    <span class="absolute right-2 top-1 text-[10px] text-slate-400">원</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-[11px] text-slate-500">기타 지급액</td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 하단 액션 버튼 바 -->
+        <div class="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-slate-200 gap-3">
+          <div class="text-xs text-slate-500">
+            * 모든 금액은 '만 원' 간편 입력(예: 3,700 ➔ 37,000,000원 자동 변환)을 지원합니다.
+          </div>
+          <div class="flex items-center gap-2 flex-nowrap shrink-0 w-full sm:w-auto">
+            <button type="button" id="btn-fp-print-bottom" class="flex-1 sm:flex-initial px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
+              <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+              <span>공식 서식 인쇄 / PDF</span>
+            </button>
+            <button type="button" id="btn-fp-apply-bottom" class="flex-1 sm:flex-initial px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+              <span>시뮬레이션 실행</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </main>
+
+  <!-- ======================================================== -->
+  <!-- [모달 팝업] 자금마련계획서 간편 입력 모달 다이얼로그 -->
+  <!-- ======================================================== -->
+  <div id="modal-fund-plan" class="hidden fixed inset-0 z-[80] overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+      
+      <!-- 모달 헤더 -->
+      <div class="flex items-center justify-between p-4 px-6 border-b border-slate-200 bg-slate-50/80 flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm md:text-base font-bold text-slate-900 leading-tight">
+              자금마련계획서 (주택취득자금 조달계획서) 서식 입력
+            </h3>
+            <p class="text-[11px] text-slate-500">
+              국토교통부 표준 서식 번호 기준 입력 ➔ 자산 세부 구성 자동 완성
+            </p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-fund-plan-modal" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- 모달 본문 (스크롤) -->
+      <div class="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+        
+        <!-- 간편 버튼 툴바 -->
+        <div class="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+          <div class="flex items-center gap-1.5 flex-nowrap shrink-0">
+            <button type="button" id="btn-modal-fp-preset-52" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-2xs">
+              <i data-lucide="sparkles" class="w-3 h-3 text-indigo-600"></i>
+              <span>기본값</span>
+            </button>
+            <button type="button" id="btn-modal-fp-print-official" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-2xs">
+              <i data-lucide="printer" class="w-3 h-3"></i>
+              <span>공식 서식 인쇄 / PDF</span>
+            </button>
+          </div>
+          <div id="modal-fp-match-badge" class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            <span>차액 0원 (합계 일치)</span>
+          </div>
+        </div>
+
+        <!-- [최상단] ⑧ 금융기관 대출액 부대비용 및 선택비용(인테리어) 설정 컨트롤 바 -->
+        <div class="p-3 bg-purple-50/70 border border-purple-200 rounded-xl space-y-2 text-xs">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-purple-200/60 pb-1.5">
+            <div class="flex items-center gap-1.5 font-bold text-purple-950">
+              <i data-lucide="sliders" class="w-3.5 h-3.5 text-purple-600"></i>
+              <span>부대비용 시뮬레이션 (체크 시 ② 예금액 차감 ➔ ⑧ 대출 충당)</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="text-slate-600 text-[11px]">반영 합계:</span>
+              <span id="modal-fp-txt-expense-amount" class="font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded text-[11px]"></span>
+            </div>
+          </div>
+          
+          <!-- 필수 vs 선택 2분할 체크박스 영역 -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <!-- 1) [필수] 취득세·거래비용 체크박스 카드 -->
+            <div class="p-2 bg-white/90 rounded-lg border border-purple-200/80 flex items-center justify-between shadow-2xs">
+              <label class="inline-flex items-center gap-1.5 font-bold text-slate-800 cursor-pointer select-none">
+                <input type="checkbox" id="modal-fp-chk-include-mandatory" checked class="w-3.5 h-3.5 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer">
+                <span class="text-xs text-blue-950">[필수] 취득세·거래비용</span>
+              </label>
+              <span id="modal-fp-txt-mandatory-cost" class="font-bold text-blue-700">약 520만 원</span>
+            </div>
+
+            <!-- 2) [선택] 인테리어·수리비 체크박스 카드 -->
+            <div class="p-2 bg-white/90 rounded-lg border border-purple-200/80 space-y-1 shadow-2xs">
+              <div class="flex items-center justify-between">
+                <label class="inline-flex items-center gap-1.5 font-bold text-slate-800 cursor-pointer select-none">
+                  <input type="checkbox" id="modal-fp-chk-include-optional" checked class="w-3.5 h-3.5 text-purple-600 rounded border-purple-300 focus:ring-purple-500 cursor-pointer">
+                  <span class="text-xs text-indigo-950">[선택] 인테리어·수리비</span>
+                </label>
+                <span id="modal-fp-txt-optional-cost-display" class="font-bold text-indigo-700">1,000만 원</span>
+              </div>
+              <div id="modal-fp-box-optional-input" class="flex items-center justify-between gap-1.5 pt-1 border-t border-purple-100">
+                <span class="text-[10.5px] text-slate-600">직접 입력:</span>
+                <div class="relative w-32">
+                  <input type="text" inputmode="numeric" id="modal-fp-inp-optional-cost" class="w-full pl-1.5 pr-5 py-0.5 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800 text-right focus:ring-1 focus:ring-purple-500" value="10,000,000">
+                  <span class="absolute right-1.5 top-0.5 text-[10px] text-slate-400">원</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 하단: 보유현금 입력란 -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-purple-200/40">
+            <div class="text-slate-500 text-[10.5px]">
+              • 보유현금 입력 시 필요 대출액(⑧) 직접 차감
+            </div>
+            <div class="flex items-center gap-1.5">
+              <label for="modal-fp-inp-holding-cash" class="text-slate-700 flex-shrink-0">
+                • 보유현금:
+              </label>
+              <div class="relative w-36">
+                <input type="text" inputmode="numeric" id="modal-fp-inp-holding-cash" class="w-full pl-2 pr-6 py-0.5 bg-white border border-slate-300 rounded text-xs font-medium text-slate-800 text-right focus:ring-1 focus:ring-emerald-500" value="0">
+                <span class="absolute right-2 top-0.5 text-[10px] text-slate-400">원</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 서식 테이블 -->
+        <div class="border border-slate-200 rounded-xl overflow-hidden">
+          <table class="w-full text-xs">
+            <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+              <tr>
+                <th class="py-2 px-2.5 text-center w-12">번호</th>
+                <th class="py-2 px-3 text-left">서식 항목명</th>
+                <th class="py-2 px-3 text-left w-44">세부 옵션</th>
+                <th class="py-2 px-3 text-right w-44">금액 (원)</th>
+                <th class="py-2 px-3 text-left w-36">자동 연동 대상</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              
+              <!-- 1. 자기자금 -->
+              <tr class="bg-emerald-50/40 font-bold text-emerald-950">
+                <td colspan="5" class="py-1.5 px-3">1. 자기자금</td>
+              </tr>
+              <tr>
+                <td class="py-1.5 px-2.5 text-center font-bold text-slate-500">②</td>
+                <td class="py-1.5 px-3 font-semibold text-slate-800">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span>금융기관 예금액</span>
+                    <span id="modal-fp-txt-deposit-subnotice" class="text-[10px] text-purple-700 bg-purple-100 font-bold px-1 py-0.2 rounded hidden">차감됨</span>
+                  </div>
+                </td>
+                <td class="py-1.5 px-3 text-slate-500 text-[11px]">은행/예적금 잔액</td>
+                <td class="py-1.5 px-3 text-right">
+                  <input type="text" inputmode="numeric" id="modal-fp-inp-deposit-savings" class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded text-xs font-semibold text-right focus:bg-white focus:ring-1 focus:ring-emerald-500" value="37,000,000">
+                </td>
+                <td class="py-1.5 px-3 text-[10.5px] text-blue-700 font-semibold" id="modal-fp-txt-dep-savings-mapping">➔ 금융 예적금·현금</td>
+              </tr>
+              <tr>
+                <td class="py-1.5 px-2.5 text-center font-bold text-slate-500">③</td>
+                <td class="py-1.5 px-3 font-semibold text-slate-800">주식·채권·가상화폐 매각대금</td>
+                <td class="py-1.5 px-3 text-slate-500 text-[11px]">증권/가상자산 매각액</td>
+                <td class="py-1.5 px-3 text-right">
+                  <input type="text" inputmode="numeric" id="modal-fp-inp-stock-crypto" class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded text-xs font-semibold text-right focus:bg-white focus:ring-1 focus:ring-emerald-500" value="23,000,000">
+                </td>
+                <td class="py-1.5 px-3 text-[10.5px] text-blue-700 font-semibold">➔ 금융 예적금·현금</td>
+              </tr>
+              <tr>
+                <td class="py-1.5 px-2.5 text-center font-bold text-slate-500">④</td>
+                <td class="py-1.5 px-3 font-semibold text-slate-800">증여·상속 ➔ 증여</td>
+                <td class="py-1.5 px-3">
+                  <select id="modal-fp-sel-gift-relation" class="w-full py-0.5 px-1 bg-slate-50 border border-slate-200 rounded text-[10.5px] font-semibold text-slate-700">
+                    <option value="부부" selected>부부 (배우자)</option>
+                    <option value="직계존속">직계존속 (부모)</option>
+                    <option value="기타">기타 친족</option>
+                  </select>
+                </td>
+                <td class="py-1.5 px-3 text-right">
+                  <input type="text" inputmode="numeric" id="modal-fp-inp-gift" class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded text-xs font-semibold text-right focus:bg-white focus:ring-1 focus:ring-emerald-500" value="110,000,000">
+                </td>
+                <td class="py-1.5 px-3 text-[10.5px] text-purple-700 font-bold">➔ 증여·가족지원</td>
+              </tr>
+              <tr>
+                <td class="py-1.5 px-2.5 text-center font-bold text-slate-500">⑤</td>
+                <td class="py-1.5 px-3 font-semibold text-slate-800">현금 등 그 밖의 자금</td>
+                <td class="py-1.5 px-3 text-slate-500 text-[11px]">보유 현금</td>
+                <td class="py-1.5 px-3 text-right">
+                  <input type="text" inputmode="numeric" id="modal-fp-inp-cash-other" class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded text-xs font-semibold text-right focus:bg-white focus:ring-1 focus:ring-emerald-500" value="0">
+                </td>
+                <td class="py-1.5 px-3 text-[10.5px] text-blue-700 font-semibold">➔ 금융 예적금·현금</td>
+              </tr>
+              <tr>
+                <td class="py-1.5 px-2.5 text-center font-bold text-slate-500">⑥</td>
+                <td class="py-1.5 px-3 font-semibold text-slate-800">부동산 처분대금 등</td>
+                <td class="py-1.5 px-3">
+                  <select id="modal-fp-sel-real-estate-type" class="w-full py-0.5 px-1 bg-slate-50 border border-slate-200 rounded text-[10.5px] font-semibold text-slate-700">
+                    <option value="임대보증금" selected>임대보증금(취득주택 외)</option>
+                    <option value="부동산처분대금">부동산 처분대금</option>
+                  </select>
+                </td>
+                <td class="py-1.5 px-3 text-right">
+                  <input type="text" inputmode="numeric" id="modal-fp-inp-real-estate" class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded text-xs font-semibold text-right focus:bg-white focus:ring-1 focus:ring-emerald-500" value="200,000,000">
+                </td>
+                <td class="py-1.5 px-3 text-[10.5px] text-emerald-700 font-bold">➔ 기존 전세보증금</td>
+              </tr>
+              <tr class="bg-emerald-50 font-bold text-emerald-950">
+                <td class="py-2 px-2.5 text-center font-black">⑦</td>
+                <td class="py-2 px-3 font-bold">자기자금 소계</td>
+                <td class="py-2 px-3 text-[11px] text-emerald-800">②+③+④+⑤+⑥+보유현금 합산</td>
+                <td class="py-2 px-3 text-right font-black text-emerald-700 text-xs" id="modal-fp-txt-self-total">370,000,000 원</td>
+                <td class="py-2 px-3 text-[10.5px] text-emerald-900 font-bold" id="modal-fp-txt-self-total-mapping">➔ 보유 순자산(총액)</td>
+              </tr>
+
+              <!-- 2. 차입금 등 -->
+              <tr class="bg-purple-50/40 font-bold text-purple-950">
+                <td colspan="5" class="py-1.5 px-3">2. 차입금 등</td>
+              </tr>
+              <tr>
+                <td class="py-1.5 px-2.5 text-center font-bold text-slate-500">⑧</td>
+                <td class="py-1.5 px-3 font-semibold text-slate-800">
+                  <div class="flex items-center gap-1">
+                    <span>금융기관 대출액 합계</span>
+                    <span class="text-[9.5px] text-purple-700 bg-purple-100 font-bold px-1 py-0.2 rounded border border-purple-200">자동 계산</span>
+                  </div>
+                </td>
+                <td class="py-1.5 px-3">
+                  <select id="modal-fp-sel-mortgage-type" class="w-full py-0.5 px-1 bg-white border border-purple-200 rounded text-[10.5px] font-semibold text-slate-700">
+                    <option value="주택담보대출" selected>주택담보대출</option>
+                    <option value="신용대출">신용대출</option>
+                  </select>
+                </td>
+                <td class="py-1.5 px-3 text-right">
+                  <input type="text" inputmode="numeric" id="modal-fp-inp-mortgage" class="w-full px-2 py-1 bg-white border border-purple-300 rounded text-xs font-bold text-purple-950 text-right focus:ring-1 focus:ring-purple-500" value="150,000,000">
+                </td>
+                <td class="py-1.5 px-3 text-[10.5px] text-purple-700 font-semibold" id="modal-fp-txt-mortgage-mapping">➔ 필요 주택담보대출</td>
+              </tr>
+              <tr>
+                <td class="py-1.5 px-2.5 text-center font-bold text-slate-500">⑨</td>
+                <td class="py-1.5 px-3 font-semibold text-slate-800">임대보증금/회사지원금/기타</td>
+                <td class="py-1.5 px-3 text-slate-500 text-[11px]">기타 차입금 합산</td>
+                <td class="py-1.5 px-3 text-right">
+                  <input type="text" inputmode="numeric" id="modal-fp-inp-other-loans-sum" class="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded text-xs font-semibold text-right focus:bg-white focus:ring-1 focus:ring-slate-400" value="0">
+                </td>
+                <td class="py-1.5 px-3 text-[10.5px] text-slate-500">기타 차입금</td>
+              </tr>
+              <tr class="bg-purple-50 font-bold text-purple-950">
+                <td class="py-2 px-2.5 text-center font-black">⑫</td>
+                <td class="py-2 px-3 font-bold">차입금 등 소계</td>
+                <td class="py-2 px-3 text-[11px] text-purple-800">대출 및 차입금 합산</td>
+                <td class="py-2 px-3 text-right font-black text-purple-700 text-xs" id="modal-fp-txt-borrowed-total">151,000,000 원</td>
+                <td class="py-2 px-3 text-[10.5px] text-purple-900 font-bold">➔ 총 대출 금액</td>
+              </tr>
+
+              <!-- 3. 총 조달금액 합계 -->
+              <tr class="bg-indigo-100/90 font-black text-indigo-950">
+                <td class="py-2 px-2.5 text-center text-sm">⑬</td>
+                <td class="py-2 px-3 text-sm">조달금액 합계</td>
+                <td class="py-2 px-3 text-[11px] text-indigo-900 font-bold">⑦ 자기자금 + ⑫ 차입금</td>
+                <td class="py-2 px-3 text-right font-black text-indigo-900 text-sm" id="modal-fp-txt-grand-total">520,000,000 원</td>
+                <td class="py-2 px-3 text-[10.5px] text-indigo-950 font-extrabold">⑭ 총 거래금액과 일치</td>
+              </tr>
+
+              <!-- 4. 총 거래금액 -->
+              <tr class="bg-blue-50/50">
+                <td class="py-1.5 px-2.5 text-center font-bold text-blue-800">⑭</td>
+                <td class="py-1.5 px-3 font-bold text-blue-900">총 거래금액 (매매가)</td>
+                <td class="py-1.5 px-3 text-[11px] text-blue-700 font-medium">실거래 매매 계약가</td>
+                <td class="py-1.5 px-3 text-right">
+                  <input type="text" inputmode="numeric" id="modal-fp-inp-total-deal" class="w-full px-2 py-1 bg-white border border-blue-300 rounded text-xs font-bold text-blue-900 text-right focus:ring-1 focus:ring-blue-500" value="520,000,000">
+                </td>
+                <td class="py-1.5 px-3 text-[10.5px] text-blue-700 font-bold">➔ 매매 희망 금액</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- 모달 푸터 액션 버튼 바 -->
+      <div class="p-4 px-6 border-t border-slate-200 bg-slate-50 flex items-center justify-between flex-shrink-0">
+        <button type="button" id="btn-modal-fp-cancel" class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer whitespace-nowrap">
+          취소
+        </button>
+        <div class="flex items-center gap-2 flex-nowrap shrink-0">
+          <button type="button" id="btn-modal-fp-print-bottom" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+            <span>공식 서식 인쇄 / PDF</span>
+          </button>
+          <button type="button" id="btn-modal-fp-apply" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
+            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+            <span>시뮬레이션 실행</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
   <!-- 토스트 알림 컴포넌트 -->
   <div id="toast-message" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 translate-y-20 opacity-0 transition-all duration-300 z-[70] bg-slate-900 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 border border-slate-700">
     <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
     <span id="toast-text">알림 메시지</span>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- [공식 서식 출력 전용] 국토교통부 [별지 제1호의2서식] 주택취득자금 조달 및 입주계획서 -->
+  <!-- 평소 웹 브라우저에서는 hidden 상태이며, 인쇄 시에만 완벽한 행정 규격으로 출력됩니다 -->
+  <!-- ======================================================== -->
+  <div id="official-fund-plan-print-sheet" class="hidden font-sans text-black bg-white">
+    <div class="print-page border-2 border-black p-5 sm:p-6 max-w-[210mm] mx-auto text-xs leading-normal">
+      
+      <!-- 서식 헤더부 -->
+      <div class="border-b-2 border-black pb-2 mb-2.5">
+        <div class="flex justify-between items-start text-[10px] text-gray-700">
+          <span>■ 부동산 거래신고 등에 관한 법률 시행규칙 [별지 제1호의2서식] &lt;개정 2020. 10. 27.&gt;</span>
+          <span>(앞쪽)</span>
+        </div>
+        <h1 class="text-xl font-black text-center tracking-widest my-1.5 text-black">
+          주택취득자금 조달 및 입주계획서
+        </h1>
+        <p class="text-[10px] text-gray-600 text-center">
+          ※ 뒤쪽의 작성방법 및 유의사항을 읽고 작성해 주시기 바라며, [ ]에는 해당되는 곳에 √표를 합니다.
+        </p>
+      </div>
+
+      <!-- 1. 제출인(매수인) 및 주택 취득 개요 테이블 -->
+      <table class="w-full border-collapse border border-black text-[11px] mb-2">
+        <colgroup>
+          <col style="width: 14%;">
+          <col style="width: 22%;">
+          <col style="width: 14%;">
+          <col style="width: 20%;">
+          <col style="width: 12%;">
+          <col style="width: 18%;">
+        </colgroup>
+        <tbody>
+          <tr class="border-b border-black">
+            <th class="bg-gray-100 border-r border-black p-1 font-bold text-center">성명(법인명)</th>
+            <td class="border-r border-black p-1 text-center font-semibold" id="print-fp-buyer-name">&nbsp;</td>
+            <th class="bg-gray-100 border-r border-black p-1 font-bold text-center">주민등록번호</th>
+            <td class="border-r border-black p-1 text-center" id="print-fp-buyer-ssn">&nbsp;</td>
+            <th class="bg-gray-100 border-r border-black p-1 font-bold text-center">전화번호</th>
+            <td class="p-1 text-center" id="print-fp-buyer-phone">&nbsp;</td>
+          </tr>
+          <tr class="border-b border-black">
+            <th class="bg-gray-100 border-r border-black p-1 font-bold text-center">주소</th>
+            <td colspan="5" class="p-1 pl-2" id="print-fp-buyer-addr">&nbsp;</td>
+          </tr>
+          <tr>
+            <th class="bg-gray-100 border-r border-black p-1 font-bold text-center">대상주택<br>소재지</th>
+            <td colspan="3" class="border-r border-black p-1 pl-2" id="print-fp-target-house">&nbsp;</td>
+            <th class="bg-gray-100 border-r border-black p-1 font-bold text-center">총 거래금액<br>(매매 계약가)</th>
+            <td class="p-1 text-right font-black text-sm" id="print-fp-top-total-deal">520,000,000 원</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 2. 자금조달계획 및 조달자금 지급방식 메인 테이블 -->
+      <table class="w-full border-collapse border-2 border-black text-[11px] mb-2">
+        <colgroup>
+          <col style="width: 22%;">
+          <col style="width: 8%;">
+          <col style="width: 38%;">
+          <col style="width: 32%;">
+        </colgroup>
+        <thead>
+          <tr class="bg-gray-100 border-b-2 border-black text-center font-bold">
+            <th colspan="2" class="border-r border-black p-1">자금조달 구분</th>
+            <th class="border-r border-black p-1">항목 및 관계·종류</th>
+            <th class="p-1 text-right pr-3">금액 (원)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 1. 자기자금 -->
+          <tr class="border-b border-black">
+            <td rowspan="6" class="bg-gray-50 border-r border-black font-black text-center p-1.5">
+              1. 자기자금
+            </td>
+            <td class="border-r border-black text-center font-bold p-1">②</td>
+            <td class="border-r border-black p-1 pl-2">금융기관 예금액 (보유 예적금)</td>
+            <td class="p-1 pr-3 text-right font-bold" id="print-fp-deposit-savings">37,000,000 원</td>
+          </tr>
+          <tr class="border-b border-black">
+            <td class="border-r border-black text-center font-bold p-1">③</td>
+            <td class="border-r border-black p-1 pl-2">주식ㆍ채권 매각대금</td>
+            <td class="p-1 pr-3 text-right font-bold" id="print-fp-stock-crypto">23,000,000 원</td>
+          </tr>
+          <tr class="border-b border-black">
+            <td class="border-r border-black text-center font-bold p-1">④</td>
+            <td class="border-r border-black p-1 pl-2">
+              증여ㆍ상속 <span class="text-[10px] text-gray-600">(관계: <span id="print-fp-gift-relation" class="font-bold">부부</span>)</span>
+            </td>
+            <td class="p-1 pr-3 text-right font-bold" id="print-fp-gift">110,000,000 원</td>
+          </tr>
+          <tr class="border-b border-black">
+            <td class="border-r border-black text-center font-bold p-1">⑤</td>
+            <td class="border-r border-black p-1 pl-2">현금 등 그 밖의 자금</td>
+            <td class="p-1 pr-3 text-right font-bold" id="print-fp-cash-other">0 원</td>
+          </tr>
+          <tr class="border-b border-black">
+            <td class="border-r border-black text-center font-bold p-1">⑥</td>
+            <td class="border-r border-black p-1 pl-2">
+              부동산 처분대금 등 <span class="text-[10px] text-gray-600">(종류: <span id="print-fp-real-estate-type" class="font-bold">임대보증금</span>)</span>
+            </td>
+            <td class="p-1 pr-3 text-right font-bold" id="print-fp-real-estate">200,000,000 원</td>
+          </tr>
+          <tr class="border-b-2 border-black bg-gray-100">
+            <td class="border-r border-black text-center font-black p-1">⑦</td>
+            <td class="border-r border-black p-1 pl-2 font-black">소계 (②+③+④+⑤+⑥)</td>
+            <td class="p-1 pr-3 text-right font-black text-sm" id="print-fp-self-total">370,000,000 원</td>
+          </tr>
+
+          <!-- 2. 차입금 등 -->
+          <tr class="border-b border-black">
+            <td rowspan="5" class="bg-gray-50 border-r border-black font-black text-center p-1.5">
+              2. 차입금 등
+            </td>
+            <td class="border-r border-black text-center font-bold p-1">⑧</td>
+            <td class="border-r border-black p-1 pl-2">
+              금융기관 대출액 합계 <span class="text-[10px] text-gray-600">(<span id="print-fp-mortgage-type" class="font-bold">주택담보대출</span>)</span>
+            </td>
+            <td class="p-1 pr-3 text-right font-bold" id="print-fp-mortgage">150,000,000 원</td>
+          </tr>
+          <tr class="border-b border-black">
+            <td class="border-r border-black text-center font-bold p-1">⑨</td>
+            <td class="border-r border-black p-1 pl-2">임대보증금 (취득주택의 승계 보증금)</td>
+            <td class="p-1 pr-3 text-right font-bold" id="print-fp-lease-deposit">0 원</td>
+          </tr>
+          <tr class="border-b border-black">
+            <td class="border-r border-black text-center font-bold p-1">⑩</td>
+            <td class="border-r border-black p-1 pl-2">회사지원금ㆍ사채</td>
+            <td class="p-1 pr-3 text-right font-bold" id="print-fp-company-loan">0 원</td>
+          </tr>
+          <tr class="border-b border-black">
+            <td class="border-r border-black text-center font-bold p-1">⑪</td>
+            <td class="border-r border-black p-1 pl-2">그 밖의 차입금 (사적 차용금 등)</td>
+            <td class="p-1 pr-3 text-right font-bold" id="print-fp-other-loan">0 원</td>
+          </tr>
+          <tr class="border-b-2 border-black bg-gray-100">
+            <td class="border-r border-black text-center font-black p-1">⑫</td>
+            <td class="border-r border-black p-1 pl-2 font-black">소계 (⑧+⑨+⑩+⑪)</td>
+            <td class="p-1 pr-3 text-right font-black text-sm" id="print-fp-borrowed-total">150,000,000 원</td>
+          </tr>
+
+          <!-- 3. 합계 (총 조달금액) -->
+          <tr class="border-b-2 border-black bg-gray-200">
+            <td colspan="2" class="border-r border-black text-center font-black p-1.5 text-xs">
+              합계 (총 조달금액)
+            </td>
+            <td class="border-r border-black p-1.5 pl-2 font-black">
+              ⑬ 소계 합산 (⑦ 자기자금 + ⑫ 차입금 등)
+            </td>
+            <td class="p-1.5 pr-3 text-right font-black text-base" id="print-fp-grand-total">
+              520,000,000 원
+            </td>
+          </tr>
+
+          <!-- 4. 조달자금 지급방식 -->
+          <tr class="border-b border-black">
+            <td rowspan="4" class="bg-gray-50 border-r border-black font-black text-center p-1.5">
+              3. 조달자금<br>지급방식
+            </td>
+            <td class="border-r border-black text-center font-black p-1">⑭</td>
+            <td class="border-r border-black p-1 pl-2 font-black">총 거래금액 (매매 계약금액)</td>
+            <td class="p-1 pr-3 text-right font-black" id="print-fp-total-deal">520,000,000 원</td>
+          </tr>
+          <tr class="border-b border-black">
+            <td class="border-r border-black text-center font-bold p-1">⑮</td>
+            <td class="border-r border-black p-1 pl-2">계좌이체 금액 (금융 증빙 거래)</td>
+            <td class="p-1 pr-3 text-right font-bold" id="print-fp-account-transfer">520,000,000 원</td>
+          </tr>
+          <tr class="border-b border-black">
+            <td class="border-r border-black text-center font-bold p-1">⑯</td>
+            <td class="border-r border-black p-1 pl-2">보증금ㆍ대출 승계 금액</td>
+            <td class="p-1 pr-3 text-right font-bold" id="print-fp-takeover-loan">0 원</td>
+          </tr>
+          <tr>
+            <td class="border-r border-black text-center font-bold p-1">⑰</td>
+            <td class="border-r border-black p-1 pl-2">현금 및 그 밖의 지급방식</td>
+            <td class="p-1 pr-3 text-right font-bold" id="print-fp-cash-pay">0 원</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 4. 입주계획 테이블 -->
+      <table class="w-full border-collapse border border-black text-[11px] mb-2.5">
+        <colgroup>
+          <col style="width: 18%;">
+          <col style="width: 82%;">
+        </colgroup>
+        <tbody>
+          <tr class="border-b border-black">
+            <th class="bg-gray-100 border-r border-black p-1 font-bold text-center">입주 구분</th>
+            <td class="p-1 pl-3">
+              <span class="mr-4 font-bold">[√] 본인 입주</span>
+              <span class="mr-4 text-gray-500">[ ] 본인 외 가족 입주</span>
+              <span class="mr-4 text-gray-500">[ ] 임대 (전세·월세)</span>
+              <span class="text-gray-500">[ ] 기타</span>
+            </td>
+          </tr>
+          <tr>
+            <th class="bg-gray-100 border-r border-black p-1 font-bold text-center">입주 예정 시기</th>
+            <td class="p-1 pl-3 font-semibold" id="print-fp-movein-date">
+              잔금 지급일 직후 입주 예정
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 5. 법정 제출 확인문 및 서명 날인란 -->
+      <div class="border border-black p-3.5 text-[11px] space-y-2 mb-2">
+        <p class="text-center font-medium leading-relaxed">
+          「부동산 거래신고 등에 관한 법률」 제3조의2 및 같은 법 시행규칙 제2조에 따라<br>
+          위와 같이 <b>주택취득자금 조달 및 입주계획서</b>를 성실하게 작성하여 제출합니다.
+        </p>
+        
+        <div class="text-center font-bold text-xs pt-0.5 tracking-wider" id="print-fp-today-date">
+          2026년 &nbsp; &nbsp; &nbsp; &nbsp; 월 &nbsp; &nbsp; &nbsp; &nbsp; 일
+        </div>
+
+        <div class="flex justify-between items-end px-4 pt-1.5">
+          <div class="text-left space-y-0.5">
+            <div>제출인(매수인): <span id="print-fp-sign-buyer-name" class="inline-block w-24 border-b border-black text-center font-bold ml-1">&nbsp;</span> <span class="text-gray-500 text-[10px] ml-1">(서명 또는 인)</span></div>
+            <div>대리인(신고대리): <span class="inline-block w-24 border-b border-black"></span> <span class="text-gray-500 text-[10px] ml-1">(서명 또는 인)</span></div>
+          </div>
+          <div class="text-right">
+            <span class="text-xs font-black tracking-wider">특별자치시장 · 특별자치도지사 · 시장 · 군수 · 구청장</span> <span class="font-bold">귀하</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 풋노트 유의사항 안내 -->
+      <div class="text-[9px] text-gray-600 leading-tight border-t border-gray-300 pt-1">
+        ※ <b>증빙서류 제출 안내</b>: 투기과열지구 내 주택 거래 시 예금잔고증명서, 주식매각증명서, 증여·상속세 신고서, 소득금액증명원, 부채증명서 등 자금조달 증빙서류를 첨부해야 합니다.
+        (허위 신고 시 「부동산 거래신고 등에 관한 법률」 제28조제2항에 따라 과태료가 부과될 수 있습니다.)
+      </div>
+
+    </div>
   </div>
   
   <!-- 상환일정표 전용 스크롤 컨트롤러 (최상단, 위, 아래, 정지) -->

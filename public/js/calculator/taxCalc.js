@@ -104,13 +104,16 @@ const TaxCalculator = {
     // 선수관리비 (관리비 예치금): 아파트 분양 시 예치금으로 잔금일 매도인에게 현금 승계 정산 (통상 20만~40만 원, 표준 30만 원)
     const prepaidManagementFee = 300000;
     
-    const totalMandatory = taxInfo.finalTax + brokerageInfo.totalFee + regDetails.totalRegFee + prepaidManagementFee;
+    // 필수 부대비용 합계: 금융/대출 및 자금조달계획서 기준에 맞춰 만 원 단위 정규화 (1,000원 단위 단수 오차 제거)
+    const rawMandatory = taxInfo.finalTax + brokerageInfo.totalFee + regDetails.totalRegFee + prepaidManagementFee;
+    const totalMandatory = Math.round(rawMandatory / 10000) * 10000;
 
     return {
       taxInfo,
       brokerageInfo,
       regDetails,
       prepaidManagementFee,
+      rawMandatory,
       totalMandatory,
       totalMandatoryTenThousand: Math.round(totalMandatory / 10000)
     };
@@ -130,16 +133,10 @@ const TaxCalculator = {
       };
     }
 
-    // 도배/장판/샷시/기본수리 예산 (기본 표준값)
+    // 도배/장판/샷시/기본수리 예산 (기본 표준값: 1,000만 원)
     let refurbishCost = customRefurbishCost;
     if (refurbishCost === null || refurbishCost === undefined) {
-      if (price <= 350000000) {
-        refurbishCost = 15110000;
-      } else if (price <= 500000000) {
-        refurbishCost = 17500000;
-      } else {
-        refurbishCost = 20000000;
-      }
+      refurbishCost = 10000000;
     }
 
     // 가구/가전/이사비 예산
@@ -229,8 +226,8 @@ const TaxCalculator = {
     const taxInfo = this.calculateAcquisitionTax(price, isFirstHome);
     const regDetails = this.calculateRegistrationDetails(price);
     // 관리비 예치금(선수관리비): 신축 아파트 입주증 발급 시 관리사무소 지정 계좌 현금 선납 (통상 30만~40만 원, 표준 30만 원)
-    const prepaidManagementFee = 300000;
-    const totalMandatory = taxInfo.finalTax + regDetails.totalRegFee + prepaidManagementFee;
+    const rawMandatory = taxInfo.finalTax + regDetails.totalRegFee + prepaidManagementFee;
+    const totalMandatory = Math.round(rawMandatory / 10000) * 10000;
 
     // 발코니 확장 및 필수 시스템 에어컨/옵션 비용 (기본 약 3,000만 ~ 3,500만원)
     let optionCost = customOption;

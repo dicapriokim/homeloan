@@ -102,15 +102,8 @@ const MarkdownGenerator = {
       if (parts.length > 0) resaleEquityNote = parts.join(' \\+ ');
     }
     md += `| **보유 순자산 (전세보증금/현금)** | ${equityWon} | ${resaleEquityNote} |\n`;
-    md += `| **필요 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (매매 대금 기준 ${loanWon}) |\n`;
-    if (extraCostTotal > 0) {
-      const extraDesc = (s.includeMandatory && s.expenseData.isMoveinIncluded)
-        ? `법정 취득비용(${formatTenMan(s.mandatoryExpense, false)}) \\+ 입주정비비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`
-        : (s.includeMandatory
-            ? `취득세·중개보수·등기비 등 법정 필수비용(${formatTenMan(s.mandatoryExpense, false)}) 별도 현금 준비 필요`
-            : `도배·장판·이사비 등 선택적 입주비용(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`);
-      md += `| **준비해야 할 부가 비용** | **약 ${formatWon(extraCostTotal)}** | ${extraDesc} |\n`;
-    }
+    md += `| **필요 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (100만 원 단위 절사 대출 실행${s.loanRemainder > 0 ? `, 끝전 ${formatWon(s.loanRemainder)} 제외` : ''}) |\n`;
+    md += `| **${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}** | **${formatWon(s.loanRemainder || 0)}** | ${s.loanRemainder > 0 ? `대출 100만 원 단위 절사(버림)로 인해 잔금일 본인 현금/예금으로 정산하는 금액 (총 소요 예산 ${budgetWon} 100% 완결)` : `총 소요 예산(${budgetWon}) 전액이 [보유 순자산 + 주담대]로 100% 완벽 충당됨`} |\n`;
     md += `| **월 원리금 상환액** | ${monthlyPayWon} | ${s.loanYears}년 만기 원리금균등 (금리 연 ${s.loanRate}% 기준) |\n`;
     md += `| **소득 대비 주거비 비중** | 약 ${s.housingRatio}% | 월 실수령액 ${monthlyNetWon} 기준 (최상급 안정권) |\n`;
     md += `| **DSR (총부채원리금상환비율)** | 약 ${s.dsr}% | ${incomePrefix} ${annualIncomeWon} 기준 (규제 한도 40% 대비 초안전) |\n\n`;
@@ -276,15 +269,8 @@ const MarkdownGenerator = {
       if (parts.length > 0) presaleEquityNote = parts.join(' \\+ ');
     }
     md += `| **보유 순자산 (전세보증금/현금)** | ${equityWon} | ${presaleEquityNote} |\n`;
-    md += `| **필요 잔금 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (분양가 기준 ${loanWon}) |\n`;
-    if (presaleExtraCostTotal > 0) {
-      const presaleExtraDesc = (s.includeMandatory && s.expenseData.isMoveinIncluded)
-        ? `필수 취득세/등기비(${formatTenMan(s.mandatoryExpense, false)}) \\+ 옵션/입주비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`
-        : (s.includeMandatory
-            ? `생애최초 취득세 및 소유권이전 등기비용(${formatTenMan(s.mandatoryExpense, false)}) 별도 현금 준비 필요`
-            : `발코니확장/옵션 및 가전이사비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`);
-      md += `| **준비해야 할 부가 비용** | **약 ${formatWon(presaleExtraCostTotal)}** | ${presaleExtraDesc} |\n`;
-    }
+    md += `| **필요 잔금 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (100만 원 단위 절사 대출 실행${s.loanRemainder > 0 ? `, 끝전 ${formatWon(s.loanRemainder)} 제외` : ''}) |\n`;
+    md += `| **${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}** | **${formatWon(s.loanRemainder || 0)}** | ${s.loanRemainder > 0 ? `대출 100만 원 단위 절사로 인한 잔금일 현금 정산액 (총 소요 예산 ${budgetWon} 100% 충당)` : `총 분양·입주 소요 예산(${budgetWon}) 전액이 [보유 순자산 + 잔금대출]로 100% 완벽 충당됨`} |\n`;
     md += `| **월 원리금 상환액** | ${monthlyPayWon} | ${s.loanYears}년 만기 원리금균등 (연 ${s.loanRate}% 기준) |\n`;
     md += `| **가계 소득 대비 주거비 부담율** | 약 ${s.housingRatio}% | 월 실수령액 ${monthlyNetWon} 기준 (초안정 구간) |\n`;
     md += `| **DSR (총부채원리금상환비율)** | 약 ${s.dsr}% | ${incomePrefix} ${annualIncomeWon} 기준 (법정 한도 40% 대비 초안전) |\n\n`;
@@ -428,7 +414,7 @@ const MarkdownGenerator = {
       if (parts.length > 0) jeonseEquityNote = parts.join(' \\+ ');
     }
     md += `| **보유 자기자본 (순자산)** | ${equityWon} | ${jeonseEquityNote} |\n`;
-    md += `| **필요 전세자금대출** | **${loanWon}** | 보증금 대비 대출비율 약 ${s.loanRatio}% (한도 80% 이내 적격) |\n`;
+    md += `| **필요 전세자금대출** | **${loanWon}** | 보증금 대비 대출비율 약 ${s.loanRatio}% (100만 원 단위 절사 대출${s.loanRemainder > 0 ? `, 끝전 ${formatWon(s.loanRemainder)} 현금 정산` : ''}) |\n`;
     if (jeonseExtraCostTotal > 0) {
       const jeonseExtraDesc = (s.includeMandatory && s.isMoveinIncluded)
         ? `법정비용(${formatTenMan(s.mandatoryExpense, false)}) \\+ 입주이사비(${formatTenMan(s.optionalExpense, false)}) 별도 현금 준비 필요`
