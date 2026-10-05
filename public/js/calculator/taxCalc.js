@@ -226,6 +226,7 @@ const TaxCalculator = {
     const taxInfo = this.calculateAcquisitionTax(price, isFirstHome);
     const regDetails = this.calculateRegistrationDetails(price);
     // 관리비 예치금(선수관리비): 신축 아파트 입주증 발급 시 관리사무소 지정 계좌 현금 선납 (통상 30만~40만 원, 표준 30만 원)
+    const prepaidManagementFee = 300000;
     const rawMandatory = taxInfo.finalTax + regDetails.totalRegFee + prepaidManagementFee;
     const totalMandatory = Math.round(rawMandatory / 10000) * 10000;
 

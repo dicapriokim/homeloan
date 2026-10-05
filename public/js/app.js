@@ -29,6 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
     includeMandatory: true,
     includeMovein: true,
     moveinExtra: 0,
+    isLoanCapped: false,
+    loanCapAmount: 150000000,
     generatedMarkdown: ''
   };
 
@@ -59,8 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // 자금조달계획서 모달 툴바 버튼
   const btnModalFpPreset52 = document.getElementById('btn-modal-fp-preset-52');
 
-  // 자금조달계획서 기준 원래 예금액 보존 변수 (부대비용 체크/해제 시 가감 기준, 사이드바 금융 예적금 6,000만 원과 일치)
-  let baseDepositSavings = 37000000;
+  // 자금조달계획서 기준 원래 예금액 보존 변수 (금융기관 예금액 기본값 1,200만 원)
+  let baseDepositSavings = 12000000;
   const fpTxtDepositSubnotice = document.getElementById('fp-txt-deposit-subnotice');
   const modalFpTxtDepositSubnotice = document.getElementById('modal-fp-txt-deposit-subnotice');
 
@@ -82,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const fpTxtExpenseAmount = document.getElementById('fp-txt-expense-amount');
   const fpTxtMandatoryCost = document.getElementById('fp-txt-mandatory-cost');
   const fpInpOptionalCost = document.getElementById('fp-inp-optional-cost');
+  const fpInpMoveinCost = document.getElementById('fp-inp-movein-cost');
   const fpInpHoldingCash = document.getElementById('fp-inp-holding-cash');
   const fpBoxOptionalInput = document.getElementById('fp-box-optional-input');
   const fpInpLeaseDeposit = document.getElementById('fp-inp-lease-deposit');
@@ -117,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalFpTxtExpenseAmount = document.getElementById('modal-fp-txt-expense-amount');
   const modalFpTxtMandatoryCost = document.getElementById('modal-fp-txt-mandatory-cost');
   const modalFpInpOptionalCost = document.getElementById('modal-fp-inp-optional-cost');
+  const modalFpInpMoveinCost = document.getElementById('modal-fp-inp-movein-cost');
   const modalFpInpHoldingCash = document.getElementById('modal-fp-inp-holding-cash');
   const modalFpBoxOptionalInput = document.getElementById('modal-fp-box-optional-input');
   const modalFpInpOtherLoansSum = document.getElementById('modal-fp-inp-other-loans-sum');
@@ -220,6 +224,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const inpEquityDeposit = document.getElementById('inp-equity-deposit');
   const inpEquitySavings = document.getElementById('inp-equity-savings');
   const inpEquityGift = document.getElementById('inp-equity-gift');
+
+  // 대출 한도 고정 및 추가 부족자금 분리 DOMs
+  const chkLoanCapMode = document.getElementById('chk-loan-cap-mode');
+  const containerLoanCapInput = document.getElementById('container-loan-cap-input');
+  const inpLoanCapAmount = document.getElementById('inp-loan-cap-amount');
+  const txtLoanCapStatus = document.getElementById('txt-loan-cap-status');
+  const btnSyncFundPlanLoan = document.getElementById('btn-sync-fund-plan-loan');
 
   const lblRateTitle = document.getElementById('lbl-rate-title');
   const txtRateDisplay = document.getElementById('txt-rate-display');
@@ -1828,6 +1839,8 @@ document.addEventListener('DOMContentLoaded', () => {
     state.includeMandatory = chkIncludeMandatory ? chkIncludeMandatory.checked : true;
     state.includeMovein = chkIncludeMovein ? chkIncludeMovein.checked : false;
     state.moveinExtra = inpMoveinExtra ? parseMoney(inpMoveinExtra.value) : 0;
+    state.isLoanCapped = chkLoanCapMode ? chkLoanCapMode.checked : false;
+    state.loanCapAmount = (inpLoanCapAmount && inpLoanCapAmount.value) ? parseMoney(inpLoanCapAmount.value) : 150000000;
 
     // 표시 텍스트 갱신
     txtPriceDisplay.textContent = ScenarioEngine.formatKoreanMoney(state.price);
@@ -1844,6 +1857,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (txtMoveinExtraDisplay) {
       txtMoveinExtraDisplay.textContent = state.moveinExtra ? ScenarioEngine.formatKoreanMoney(state.moveinExtra) : '0원';
+    }
+    if (txtLoanCapStatus) {
+      txtLoanCapStatus.textContent = `목표 한도액: ${ScenarioEngine.formatKoreanMoney(state.loanCapAmount)}`;
     }
     if (containerOptionalInputs) {
       containerOptionalInputs.classList.toggle('opacity-40', !state.includeMovein);
@@ -1886,7 +1902,9 @@ document.addEventListener('DOMContentLoaded', () => {
         customRefurbishCost: state.customExtra,
         customMoveinCost: state.moveinExtra,
         includeMovein: state.includeMovein,
-        includeMandatory: state.includeMandatory
+        includeMandatory: state.includeMandatory,
+        isLoanCapped: state.isLoanCapped,
+        loanCapAmount: state.loanCapAmount
       });
       state.generatedMarkdown = MarkdownGenerator.generateResaleMarkdown(scenario);
     } else if (calcMode === 'presale') {
@@ -1909,7 +1927,9 @@ document.addEventListener('DOMContentLoaded', () => {
         customOptionCost: state.customExtra,
         customMoveinCost: state.moveinExtra,
         includeMovein: state.includeMovein,
-        includeMandatory: state.includeMandatory
+        includeMandatory: state.includeMandatory,
+        isLoanCapped: state.isLoanCapped,
+        loanCapAmount: state.loanCapAmount
       });
       state.generatedMarkdown = MarkdownGenerator.generatePresaleMarkdown(scenario);
     } else {
@@ -2206,7 +2226,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       cardLblLoan.textContent = '필요 대출 금액';
       cardRequiredLoan.textContent = formatWon(s.requiredLoan);
-      if (s.loanRemainder > 0) {
+      if (s.isCappedApplied) {
+        cardLtvBadge.textContent = `LTV ${s.ltv}% (목표한도 ${formatWon(s.requiredLoan)} 고정 / 초과 부족분 ${formatWon(s.loanExcess)} 별도 분리)`;
+      } else if (s.loanRemainder > 0) {
         cardLtvBadge.textContent = `LTV ${s.ltv}% (100만 단위 절사 / 끝전 ${formatWon(s.loanRemainder)} 잔금 현금 정산)`;
       } else {
         cardLtvBadge.textContent = `LTV ${s.ltv}% (부대비용 포함 실질 조달 대출)`;
@@ -2273,6 +2295,18 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-4 py-3 text-right font-bold text-emerald-600">${formatWon(s.equity)}</td>
           <td class="px-4 py-3 text-slate-500">${getEquityBreakdownSummary('이사 당일 임대인으로부터 전액 반환')}</td>
         </tr>
+        ${s.isCappedApplied ? `
+        <tr class="bg-indigo-50/50">
+          <td class="px-4 py-3 font-bold text-indigo-900">필요 주택담보대출 (목표한도 고정)</td>
+          <td class="px-4 py-3 text-right font-extrabold text-indigo-700">${formatWon(s.requiredLoan)}</td>
+          <td class="px-4 py-3 text-indigo-900 font-medium">LTV 약 ${s.ltv}% (계획 대출한도 ${formatWon(s.requiredLoan)} 고정, 전체 필요액 ${formatWon(s.fullRequiredLoan)} 중 초과액 분리)</td>
+        </tr>
+        <tr class="bg-amber-50/80 border-t border-b border-amber-200">
+          <td class="px-4 py-3 font-extrabold text-amber-950">추가 준비 필요 자금 (초과 부족분${s.baseLoanRemainder > 0 ? ' + 끝전' : ''})</td>
+          <td class="px-4 py-3 text-right font-black text-amber-700 whitespace-nowrap">${formatWon(s.loanRemainder || 0)}</td>
+          <td class="px-4 py-3 text-amber-950 font-bold">한도 초과 부족분 ${formatWon(s.loanExcess)}${s.baseLoanRemainder > 0 ? ` + 100만 절사 끝전 ${formatWon(s.baseLoanRemainder)}` : ''} ➔ 신용대출·가족차입 등으로 별도 조달 필요</td>
+        </tr>
+        ` : `
         <tr class="bg-purple-50/40">
           <td class="px-4 py-3 font-bold text-purple-900">필요 주택담보대출</td>
           <td class="px-4 py-3 text-right font-extrabold text-purple-700">${formatWon(s.requiredLoan)}</td>
@@ -2283,6 +2317,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-4 py-3 text-right font-extrabold text-emerald-700 whitespace-nowrap">${formatWon(s.loanRemainder || 0)}</td>
           <td class="px-4 py-3 text-emerald-900 font-medium">${s.loanRemainder > 0 ? `대출 100만 원 단위 절사(버림)로 인해 잔금일 본인 현금/예금으로 정산하는 금액 (총 소요 예산 ${formatWon(s.totalBudget)} 100% 완결)` : `총 소요 예산(${formatWon(s.totalBudget)}) 전액이 [보유 순자산 + 주담대]로 100% 완벽 충당됨`}</td>
         </tr>
+        `}
         <tr class="border-t-2 border-slate-400">
           <td class="px-4 py-3 pt-3.5 font-semibold text-slate-700 border-t-2 border-slate-400">월 원리금 상환액</td>
           <td class="px-4 py-3 pt-3.5 text-right font-bold text-slate-800 border-t-2 border-slate-400">${formatTenMan(s.monthlyPayment)}</td>
@@ -2476,7 +2511,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       cardLblLoan.textContent = '필요 잔금 주담대';
       cardRequiredLoan.textContent = formatWon(s.requiredLoan);
-      if (s.loanRemainder > 0) {
+      if (s.isCappedApplied) {
+        cardLtvBadge.textContent = `LTV ${s.ltv}% (목표한도 ${formatWon(s.requiredLoan)} 고정 / 초과 부족분 ${formatWon(s.loanExcess)} 별도 분리)`;
+      } else if (s.loanRemainder > 0) {
         cardLtvBadge.textContent = `LTV ${s.ltv}% (100만 단위 절사 / 끝전 ${formatWon(s.loanRemainder)} 잔금 현금 정산)`;
       } else {
         cardLtvBadge.textContent = `LTV ${s.ltv}% (옵션·취득비 포함 실질 조달 대출)`;
@@ -2538,16 +2575,29 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-4 py-3 text-right font-bold text-emerald-600">${formatWon(s.equity)}</td>
           <td class="px-4 py-3 text-slate-500">${getEquityBreakdownSummary('퇴거 시 전액 회수')}</td>
         </tr>
+        ${s.isCappedApplied ? `
+        <tr class="bg-indigo-50/50">
+          <td class="px-4 py-3 font-bold text-indigo-900">필요 잔금 주택담보대출 (목표한도 고정)</td>
+          <td class="px-4 py-3 text-right font-extrabold text-indigo-700">${formatWon(s.requiredLoan)}</td>
+          <td class="px-4 py-3 text-indigo-900 font-medium">LTV 약 ${s.ltv}% (계획 대출한도 ${formatWon(s.requiredLoan)} 고정, 전체 필요액 ${formatWon(s.fullRequiredLoan)} 중 초과액 분리)</td>
+        </tr>
+        <tr class="bg-amber-50/80 border-t border-b border-amber-200">
+          <td class="px-4 py-3 font-extrabold text-amber-950">추가 준비 필요 자금 (초과 부족분${s.baseLoanRemainder > 0 ? ' + 끝전' : ''})</td>
+          <td class="px-4 py-3 text-right font-black text-amber-700 whitespace-nowrap">${formatWon(s.loanRemainder || 0)}</td>
+          <td class="px-4 py-3 text-amber-950 font-bold">한도 초과 부족분 ${formatWon(s.loanExcess)}${s.baseLoanRemainder > 0 ? ` + 100만 절사 끝전 ${formatWon(s.baseLoanRemainder)}` : ''} ➔ 신용대출·가족지원 등으로 별도 조달 필요</td>
+        </tr>
+        ` : `
         <tr class="bg-purple-50/40">
           <td class="px-4 py-3 font-bold text-purple-900">필요 잔금 주택담보대출</td>
           <td class="px-4 py-3 text-right font-extrabold text-purple-700">${formatWon(s.requiredLoan)}</td>
           <td class="px-4 py-3 text-purple-700 font-medium">LTV 약 ${s.ltv}% (분양가 기준, 옵션·취득비 전액 포함 조달)</td>
         </tr>
         <tr class="bg-emerald-50/50">
-          <td class="px-4 py-3 font-bold text-emerald-950">추가 준비 필요 자금</td>
-          <td class="px-4 py-3 text-right font-extrabold text-emerald-700 whitespace-nowrap">0원</td>
-          <td class="px-4 py-3 text-emerald-900 font-medium">총 분양·입주 예산(${formatWon(s.totalBudget)}) 전액이 [보유 순자산 + 잔금대출]로 100% 완벽 충당됨</td>
+          <td class="px-4 py-3 font-bold text-emerald-950">${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}</td>
+          <td class="px-4 py-3 text-right font-extrabold text-emerald-700 whitespace-nowrap">${formatWon(s.loanRemainder || 0)}</td>
+          <td class="px-4 py-3 text-emerald-900 font-medium">${s.loanRemainder > 0 ? `대출 100만 원 단위 절사(버림)로 인해 잔금일 본인 현금/예금으로 정산하는 금액 (총 소요 예산 ${formatWon(s.totalBudget)} 100% 완결)` : `총 분양·입주 예산(${formatWon(s.totalBudget)}) 전액이 [보유 순자산 + 잔금대출]로 100% 완벽 충당됨`}</td>
         </tr>
+        `}
         <tr class="border-t-2 border-slate-400">
           <td class="px-4 py-3 pt-3.5 font-semibold text-slate-700 border-t-2 border-slate-400">월 원리금 상환액</td>
           <td class="px-4 py-3 pt-3.5 text-right font-bold text-slate-800 border-t-2 border-slate-400">${formatTenMan(s.monthlyPayment)}</td>
@@ -2732,14 +2782,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // 2) 선택비용(인테리어·수리비): 사용자 직접 입력값 반영
-    const optionalCost = parseMoney(fromModal ? modalFpInpOptionalCost?.value : fpInpOptionalCost?.value);
+    // 2) 선택비용(인테리어·수리비 + 가구·가전·이사비): 사용자 직접 입력값 반영
+    const refurbishCost = parseMoney(fromModal ? modalFpInpOptionalCost?.value : fpInpOptionalCost?.value);
+    const moveinCost = parseMoney(fromModal ? modalFpInpMoveinCost?.value : fpInpMoveinCost?.value);
+    const optionalCost = refurbishCost + moveinCost;
 
     // 선택비용 인풋 양방향 동기화
     if (fromModal) {
-      if (fpInpOptionalCost) fpInpOptionalCost.value = formatMoney(optionalCost);
+      if (fpInpOptionalCost) fpInpOptionalCost.value = formatMoney(refurbishCost);
+      if (fpInpMoveinCost) fpInpMoveinCost.value = formatMoney(moveinCost);
     } else {
-      if (modalFpInpOptionalCost) modalFpInpOptionalCost.value = formatMoney(optionalCost);
+      if (modalFpInpOptionalCost) modalFpInpOptionalCost.value = formatMoney(refurbishCost);
+      if (modalFpInpMoveinCost) modalFpInpMoveinCost.value = formatMoney(moveinCost);
     }
 
     // 체크 상태에 따른 실제 반영 부대비용
@@ -2770,85 +2824,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fpBoxOptionalInput) fpBoxOptionalInput.style.display = includeOptional ? 'flex' : 'none';
     if (modalFpBoxOptionalInput) modalFpBoxOptionalInput.style.display = includeOptional ? 'flex' : 'none';
 
-    // 2. ② 금융기관 예금액 및 ⑧ 대출액 실무형 100만 원 단위 절사(버림) 자동 계산
-    let depSavings = 0;
-    let mortgage = parseMoney(fromModal ? modalFpInpMortgage?.value : fpInpMortgage?.value);
-    let loanRemainder = 0;
+    // 2. ② 금융기관 예금액 및 ⑧ 주택담보대출 직접 입력 파싱 및 양방향 동기화
+    const depSavings = parseMoney(fromModal ? modalFpInpDepositSavings?.value : fpInpDepositSavings?.value);
+    baseDepositSavings = depSavings;
+    const mortgage = parseMoney(fromModal ? modalFpInpMortgage?.value : fpInpMortgage?.value);
 
     // 상단 추가 보유현금: 대출을 최대한 안 받고 필요한 현금 규모를 확인하는 시뮬레이션 용도
     const holdingCash = parseMoney(fromModal ? modalFpInpHoldingCash?.value : fpInpHoldingCash?.value);
     if (fromModal) {
       if (fpInpHoldingCash) fpInpHoldingCash.value = formatMoney(holdingCash);
+      if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(depSavings);
+      if (fpInpMortgage) fpInpMortgage.value = formatMoney(mortgage);
     } else {
       if (modalFpInpHoldingCash) modalFpInpHoldingCash.value = formatMoney(holdingCash);
-    }
-
-    if (isDepSavingsManual) {
-      const typedVal = parseMoney(fromModal ? modalFpInpDepositSavings?.value : fpInpDepositSavings?.value);
-      depSavings = typedVal;
-      baseDepositSavings = includeExpenses ? (typedVal + totalExpenses) : typedVal;
-      if (fromModal) {
-        if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(depSavings);
-      } else {
-        if (modalFpInpDepositSavings) modalFpInpDepositSavings.value = formatMoney(depSavings);
-      }
-      const selfTotalTmp = depSavings + stockCrypto + gift + cashOther + realEstate + holdingCash;
-      if (!isMortgageManual) {
-        const rawM = Math.max(0, totalDeal - selfTotalTmp - otherLoans);
-        mortgage = Math.floor(rawM / 1000000) * 1000000;
-        loanRemainder = rawM - mortgage;
-        if (fpInpMortgage) fpInpMortgage.value = formatMoney(mortgage);
-        if (modalFpInpMortgage) modalFpInpMortgage.value = formatMoney(mortgage);
-      }
-    } else if (isMortgageManual) {
-      if (fromModal) {
-        if (fpInpMortgage) fpInpMortgage.value = formatMoney(mortgage);
-      } else {
-        if (modalFpInpMortgage) modalFpInpMortgage.value = formatMoney(mortgage);
-      }
-      if (includeExpenses) {
-        depSavings = Math.max(0, baseDepositSavings - totalExpenses);
-      } else {
-        depSavings = Math.max(0, baseDepositSavings);
-      }
-      if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(depSavings);
       if (modalFpInpDepositSavings) modalFpInpDepositSavings.value = formatMoney(depSavings);
-    } else {
-      // 일반적인 자동 계산 모드: 은행 실무 100만 원 단위 절사(버림 대출) 및 끝전 상계 정산
-      const baseSelfTotal = baseDepositSavings + stockCrypto + gift + cashOther + realEstate + holdingCash;
-      let rawMortgage = 0;
-      if (includeExpenses) {
-        // 총 필요 예산(매매가 + 부대비용)에서 순자산 차감
-        rawMortgage = Math.max(0, (totalDeal + totalExpenses) - baseSelfTotal - otherLoans);
-      } else {
-        rawMortgage = Math.max(0, totalDeal - baseSelfTotal - otherLoans);
-      }
-
-      // 금융 실무 기준 100만 원 단위 절사(버림 대출)
-      mortgage = Math.floor(rawMortgage / 1000000) * 1000000;
-      loanRemainder = rawMortgage - mortgage; // 100만 원 미만 끝전 잔금 (예: 320,000원)
-
-      // 서식상 매매가(totalDeal)를 정확히 맞추기 위해, 대출이 절사된 만큼(loanRemainder) 예금에서 매매자금으로 정산 충당
-      if (includeExpenses) {
-        depSavings = Math.max(0, baseDepositSavings - totalExpenses + loanRemainder);
-      } else {
-        depSavings = Math.max(0, baseDepositSavings + loanRemainder);
-      }
-
-      if (fpInpMortgage) fpInpMortgage.value = formatMoney(mortgage);
       if (modalFpInpMortgage) modalFpInpMortgage.value = formatMoney(mortgage);
-      if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(depSavings);
-      if (modalFpInpDepositSavings) modalFpInpDepositSavings.value = formatMoney(depSavings);
     }
 
-    // ② 예금액 차감 뱃지 표시
+    // ② 예금액 부대비용 참고 뱃지 표시
     if (fpTxtDepositSubnotice) {
       if (includeExpenses && totalExpenses > 0) {
-        if (loanRemainder > 0) {
-          fpTxtDepositSubnotice.textContent = `부대비용 대출충당 반영 (끝전 -${fmt(loanRemainder)} 잔금정산)`;
-        } else {
-          fpTxtDepositSubnotice.textContent = `부대비용 -${fmt(totalExpenses)} 차감됨`;
-        }
+        fpTxtDepositSubnotice.textContent = `부대비용 약 ${fmt(totalExpenses)} 소요 예상`;
         fpTxtDepositSubnotice.classList.remove('hidden');
       } else {
         fpTxtDepositSubnotice.classList.add('hidden');
@@ -2856,19 +2852,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (modalFpTxtDepositSubnotice) {
       if (includeExpenses && totalExpenses > 0) {
-        if (loanRemainder > 0) {
-          modalFpTxtDepositSubnotice.textContent = `100만 절사정산`;
-        } else {
-          modalFpTxtDepositSubnotice.textContent = `-${fmt(totalExpenses)} 차감`;
-        }
+        modalFpTxtDepositSubnotice.textContent = `부대비용 약 ${fmt(totalExpenses)}`;
         modalFpTxtDepositSubnotice.classList.remove('hidden');
       } else {
         modalFpTxtDepositSubnotice.classList.add('hidden');
       }
     }
 
-    // 3. 자기자금 소계 (⑦ = ②+③+④+⑤+⑥+보유현금)
-    const selfTotal = depSavings + stockCrypto + gift + cashOther + realEstate + holdingCash;
+    // 3. 자기자금 소계 (⑦ = ②+③+④+⑤+⑥)
+    // * 보유현금(holdingCash)은 집값(⑭) 조달 서식 외 별도 보유 자산이므로 서식 소계(⑦) 및 총 조달금액(⑬)에 합산하지 않음
+    const selfTotal = depSavings + stockCrypto + gift + cashOther + realEstate;
 
     const mortgageType = fromModal ? modalFpSelMortgageType?.value : fpSelMortgageType?.value;
 
@@ -2890,35 +2883,35 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fpTxtGrandTotal) fpTxtGrandTotal.textContent = grandTotalStr;
     if (modalFpTxtGrandTotal) modalFpTxtGrandTotal.textContent = grandTotalStr;
 
-    // 우측 '시뮬레이터 연동 매핑' 열 텍스트 동적 업데이트 (부대비용 활성화 시 '집값 투입액 vs 총 순자산' 차이 명확화)
+    // 우측 '시뮬레이터 연동 매핑' 열 텍스트 동적 업데이트
     if (includeExpenses && totalExpenses > 0) {
       if (fpTxtDepSavingsMapping) {
-        fpTxtDepSavingsMapping.innerHTML = '<div>➔ 금융 예적금 (집값분)</div><div class="text-[10px] text-slate-500 font-normal mt-0.5">(사이드바: 총 6,000만 원)</div>';
+        fpTxtDepSavingsMapping.innerHTML = '<div>➔ 금융 예적금·현금</div><div class="text-[10px] text-slate-500 font-normal mt-0.5">(부대비용 약 ' + fmt(totalExpenses) + ' 별도 고려)</div>';
       }
       if (fpTxtSelfTotalMapping) {
-        fpTxtSelfTotalMapping.innerHTML = '<div>➔ 매매 투입 자기자금</div><div class="text-[10px] text-purple-700 font-normal mt-0.5">(부대비용 제외 / 사이드바 총 순자산 3.7억 보존)</div>';
+        fpTxtSelfTotalMapping.innerHTML = '<div>➔ 자기자금 소계</div>';
       }
       if (fpTxtMortgageMapping) {
-        fpTxtMortgageMapping.innerHTML = '<div>➔ 필요 주택담보대출</div><div class="text-[10px] text-emerald-700 font-bold mt-0.5">(100만 절사 / 사이드바 대출 일치)</div>';
+        fpTxtMortgageMapping.innerHTML = '<div>➔ 목표 주담대 대출액</div>';
       }
 
       if (modalFpTxtDepSavingsMapping) {
-        modalFpTxtDepSavingsMapping.innerHTML = '<div>➔ 예적금 (집값분)</div><div class="text-[9.5px] text-slate-500 font-normal mt-0.5">(총 6,000만)</div>';
+        modalFpTxtDepSavingsMapping.innerHTML = '<div>➔ 금융 예적금·현금</div>';
       }
       if (modalFpTxtSelfTotalMapping) {
-        modalFpTxtSelfTotalMapping.innerHTML = '<div>➔ 매매 투입 자기자금</div><div class="text-[9.5px] text-purple-700 font-normal mt-0.5">(부대비용 제외 / 총 3.7억)</div>';
+        modalFpTxtSelfTotalMapping.innerHTML = '<div>➔ 자기자금 소계</div>';
       }
       if (modalFpTxtMortgageMapping) {
-        modalFpTxtMortgageMapping.innerHTML = '<div>➔ 필요 주택담보대출</div><div class="text-[9.5px] text-emerald-700 font-bold mt-0.5">(사이드바 대출 일치)</div>';
+        modalFpTxtMortgageMapping.innerHTML = '<div>➔ 목표 주담대 대출액</div>';
       }
     } else {
       if (fpTxtDepSavingsMapping) fpTxtDepSavingsMapping.textContent = '➔ 금융 예적금·현금';
       if (fpTxtSelfTotalMapping) fpTxtSelfTotalMapping.textContent = '➔ 보유 순자산(총액)';
-      if (fpTxtMortgageMapping) fpTxtMortgageMapping.textContent = '➔ 필요 주택담보대출';
+      if (fpTxtMortgageMapping) fpTxtMortgageMapping.textContent = '➔ 목표 주담대 대출액';
 
       if (modalFpTxtDepSavingsMapping) modalFpTxtDepSavingsMapping.textContent = '➔ 금융 예적금·현금';
       if (modalFpTxtSelfTotalMapping) modalFpTxtSelfTotalMapping.textContent = '➔ 보유 순자산(총액)';
-      if (modalFpTxtMortgageMapping) modalFpTxtMortgageMapping.textContent = '➔ 필요 주택담보대출';
+      if (modalFpTxtMortgageMapping) modalFpTxtMortgageMapping.textContent = '➔ 목표 주담대 대출액';
     }
 
     // 검증 뱃지 업데이트 (⑬ 조달금액 합계와 ⑭ 총 거래금액의 실제 서식 차액 기준 정확 판정)
@@ -2927,14 +2920,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fpMatchBadge) {
       if (dealDiff === 0) {
         fpMatchBadge.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs text-emerald-900 font-bold';
-        if (includeExpenses && loanRemainder > 0) {
-          fpMatchBadge.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><span>✓ 조달금액 합계(⑬)와 총 거래금액(⑭)이 일치하며, 대출액(${fmt(mortgage)})은 은행 실무 기준 100만 원 단위 절사(버림)되고 끝전 잔금(${fmt(loanRemainder)})은 예금으로 정산되었습니다 (차액 0원)</span>`;
-        } else if (includeExpenses && holdingCash > 0) {
-          fpMatchBadge.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><span>✓ 조달금액 합계(⑬)와 총 거래금액(⑭)이 일치하며, 부대비용(${fmt(totalExpenses)})은 ② 예금액에서 차감되고 보유현금(${fmt(holdingCash)}) 투입으로 대출이 절감되었습니다 (차액 0원)</span>`;
-        } else if (includeExpenses) {
-          fpMatchBadge.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><span>✓ 조달금액 합계(⑬)와 총 거래금액(⑭)이 완벽히 일치합니다 (부대비용 ${fmt(totalExpenses)}은 ② 예금액 차감 및 ⑧ 대출 충당 완료)</span>`;
-        } else if (holdingCash > 0) {
-          fpMatchBadge.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><span>✓ 조달금액 합계(⑬)와 총 거래금액(⑭)이 일치하며, 보유현금(${fmt(holdingCash)}) 투입으로 대출액이 ${fmt(holdingCash)} 절감되었습니다 (차액 0원)</span>`;
+        if (includeExpenses && totalExpenses > 0) {
+          fpMatchBadge.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><span>✓ 조달금액 합계(⑬)와 총 거래금액(⑭)이 완벽히 일치합니다 (부대비용 약 ${fmt(totalExpenses)} 소요 예상 / 차액 0원)</span>`;
         } else {
           fpMatchBadge.innerHTML = '<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><span>✓ 조달금액 합계(⑬)와 총 거래금액(⑭)이 완벽히 일치합니다 (차액 0원)</span>';
         }
@@ -2951,15 +2938,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modalFpMatchBadge) {
       if (dealDiff === 0) {
         modalFpMatchBadge.className = 'px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1';
-        if (includeExpenses && loanRemainder > 0) {
-          modalFpMatchBadge.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i><span>100만 단위 절사 대출 완료 (차액 0원)</span>`;
-        } else if (includeExpenses) {
-          modalFpMatchBadge.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i><span>부대비용 예금차감 완료 (차액 0원)</span>`;
-        } else if (holdingCash > 0) {
-          modalFpMatchBadge.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i><span>보유현금 ${fmt(holdingCash)} 투입 (대출 차감 완료)</span>`;
-        } else {
-          modalFpMatchBadge.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i><span>차액 0원 (합계 일치)</span>';
-        }
+        modalFpMatchBadge.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i><span>차액 0원 (합계 일치)</span>';
       } else if (dealDiff > 0) {
         modalFpMatchBadge.className = 'px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1';
         modalFpMatchBadge.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i><span>초과 충당 (+${fmt(dealDiff)})</span>`;
@@ -3033,6 +3012,7 @@ document.addEventListener('DOMContentLoaded', () => {
         companyLoan: parseMoney(fpInpCompanyLoan?.value || 0),
         otherLoan: parseMoney(fpInpOtherLoan?.value || 0),
         optionalCost: parseMoney(fpInpOptionalCost ? fpInpOptionalCost.value : (modalFpInpOptionalCost?.value || 0)),
+        moveinCost: parseMoney(fpInpMoveinCost ? fpInpMoveinCost.value : (modalFpInpMoveinCost?.value || 0)),
         holdingCash: parseMoney(fpInpHoldingCash ? fpInpHoldingCash.value : (modalFpInpHoldingCash?.value || 0)),
         totalDeal: parseMoney(fpInpTotalDeal ? fpInpTotalDeal.value : (modalFpInpTotalDeal?.value || 0)),
         accountTransfer: parseMoney(fpInpAccountTransfer?.value || 0),
@@ -3103,6 +3083,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (fpInpOptionalCost) fpInpOptionalCost.value = formatMoney(data.optionalCost);
         if (modalFpInpOptionalCost) modalFpInpOptionalCost.value = formatMoney(data.optionalCost);
       }
+      if (data.moveinCost !== undefined) {
+        if (fpInpMoveinCost) fpInpMoveinCost.value = formatMoney(data.moveinCost);
+        if (modalFpInpMoveinCost) modalFpInpMoveinCost.value = formatMoney(data.moveinCost);
+      }
       if (data.holdingCash !== undefined) {
         if (fpInpHoldingCash) fpInpHoldingCash.value = formatMoney(data.holdingCash);
         if (modalFpInpHoldingCash) modalFpInpHoldingCash.value = formatMoney(data.holdingCash);
@@ -3165,7 +3149,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const cashOther = parseMoney(fpInpCashOther ? fpInpCashOther.value : (modalFpInpCashOther?.value || 0));
       const gift = parseMoney(fpInpGift ? fpInpGift.value : (modalFpInpGift?.value || 0));
       const totalDeal = parseMoney(fpInpTotalDeal ? fpInpTotalDeal.value : (modalFpInpTotalDeal?.value || 0));
-      const optionalCost = parseMoney(fpInpOptionalCost ? fpInpOptionalCost.value : (modalFpInpOptionalCost?.value || 0));
+      const refurbishCost = parseMoney(fpInpOptionalCost ? fpInpOptionalCost.value : (modalFpInpOptionalCost?.value || 0));
+      const moveinCost = parseMoney(fpInpMoveinCost ? fpInpMoveinCost.value : (modalFpInpMoveinCost?.value || 0));
+      const optionalCost = refurbishCost + moveinCost;
       const holdingCash = parseMoney(fpInpHoldingCash ? fpInpHoldingCash.value : (modalFpInpHoldingCash?.value || 0));
       const includeMandatory = fpChkIncludeMandatory ? fpChkIncludeMandatory.checked : (modalFpChkIncludeMandatory?.checked ?? true);
       const includeOptional = fpChkIncludeOptional ? fpChkIncludeOptional.checked : (modalFpChkIncludeOptional?.checked ?? true);
@@ -3183,22 +3169,26 @@ document.addEventListener('DOMContentLoaded', () => {
       // 2. 자산 세부 구성 매핑:
       // ⑥ 부동산 처분대금 등 ➔ 기존 전세보증금
       if (inpEquityDeposit) inpEquityDeposit.value = formatMoney(realEstate);
-      // ② 예금액 + ③ 주식·채권 + ⑤ 현금 등 + 상단 추가 보유현금 ➔ 금융 예적금·현금
-      // (자금조달계획서에서 부대비용 체크 시 ② 예금액은 서식 맞춤용으로 차감되지만,
-      // 사용자의 실제 보유 금융자산은 원금(baseDepositSavings)이므로, 사이드바 순자산 계산 시에는 원금을 기준으로 매핑하여 3.7억을 온전히 유지합니다)
-      const actualDepSavings = includeExpenses ? baseDepositSavings : depSavings;
-      const totalSavings = actualDepSavings + stockCrypto + cashOther + holdingCash;
+      // ② 금융기관 예금액 + ③ 주식·채권·가상화폐 매각대금 + 보유현금 (+ ⑤ 현금 등) ➔ 사이드바 금융 예적금·현금
+      const totalSavings = depSavings + stockCrypto + holdingCash + cashOther;
       if (inpEquitySavings) inpEquitySavings.value = formatMoney(totalSavings);
       // ④ 증여·상속 ➔ 증여·가족지원
       if (inpEquityGift) inpEquityGift.value = formatMoney(gift);
 
-      // 3. 선택비용(인테리어/수리비) 연동: 사이드바 입주·수리비 예산 필드로 동기화
-      if (inpCustomExtra && optionalCost >= 0) {
-        inpCustomExtra.value = formatMoney(optionalCost);
-        state.customExtra = optionalCost;
-        state.customRefurbishCost = optionalCost;
+      // 3. 선택비용(인테리어/수리비 + 이사비) 연동: 사이드바 입주·수리비 및 이사비 예산 필드로 동기화
+      if (inpCustomExtra && refurbishCost >= 0) {
+        inpCustomExtra.value = formatMoney(refurbishCost);
+        state.customExtra = refurbishCost;
+        state.customRefurbishCost = refurbishCost;
         if (txtCustomExtraDisplay && typeof ScenarioEngine !== 'undefined') {
-          txtCustomExtraDisplay.textContent = ScenarioEngine.formatKoreanMoney(optionalCost);
+          txtCustomExtraDisplay.textContent = ScenarioEngine.formatKoreanMoney(refurbishCost);
+        }
+      }
+      if (inpMoveinExtra && moveinCost >= 0) {
+        inpMoveinExtra.value = formatMoney(moveinCost);
+        state.moveinExtra = moveinCost;
+        if (txtMoveinExtraDisplay && typeof ScenarioEngine !== 'undefined') {
+          txtMoveinExtraDisplay.textContent = ScenarioEngine.formatKoreanMoney(moveinCost);
         }
       }
 
@@ -3222,6 +3212,25 @@ document.addEventListener('DOMContentLoaded', () => {
         txtEquityDisplay.textContent = ScenarioEngine.formatKoreanMoney(total);
       }
 
+      // 6. 주택담보대출 계획 연동: 자금조달계획서의 ⑧ 금융기관 대출액(mortgage)을 시뮬레이터 목표 대출 한도로 연동 및 고정 모드 자동 활성화
+      const planMortgage = parseMoney(fpInpMortgage ? fpInpMortgage.value : (modalFpInpMortgage?.value || 0));
+      if (planMortgage > 0) {
+        if (inpLoanCapAmount) {
+          inpLoanCapAmount.value = formatMoney(planMortgage);
+        }
+        state.loanCapAmount = planMortgage;
+        if (chkLoanCapMode) {
+          chkLoanCapMode.checked = true;
+        }
+        state.isLoanCapped = true;
+        if (containerLoanCapInput) {
+          containerLoanCapInput.classList.remove('hidden');
+        }
+        if (txtLoanCapStatus && typeof ScenarioEngine !== 'undefined') {
+          txtLoanCapStatus.textContent = `목표 한도: ${ScenarioEngine.formatKoreanMoney(planMortgage)}`;
+        }
+      }
+
       recalculate();
       saveEquityToStorage();
 
@@ -3242,35 +3251,51 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 표준 자금조달계획서 기본값 프리셋 주입 (국토교통부 표준 예시 서식 기준, 사이드바 순자산 3.7억 및 대출 1.5억과 완벽 정렬)
+  // 표준 자금조달계획서 기본값 프리셋 주입 (총 거래금액 5.15억, 주담대 1.7억, 예금 1,200만, 수리 2,500만, 보유현금 2,500만)
   function loadPreset52ToFundPlan() {
-    baseDepositSavings = 37000000;
-    if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(37000000);
+    baseDepositSavings = 12000000;
+    if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(12000000);
+    if (modalFpInpDepositSavings) modalFpInpDepositSavings.value = formatMoney(12000000);
     if (fpInpStockCrypto) fpInpStockCrypto.value = formatMoney(23000000);
+    if (modalFpInpStockCrypto) modalFpInpStockCrypto.value = formatMoney(23000000);
     if (fpInpGift) fpInpGift.value = formatMoney(110000000);
+    if (modalFpInpGift) modalFpInpGift.value = formatMoney(110000000);
     if (fpSelGiftRelation) fpSelGiftRelation.value = '부부';
+    if (modalFpSelGiftRelation) modalFpSelGiftRelation.value = '부부';
     if (fpInpCashOther) fpInpCashOther.value = '0';
+    if (modalFpInpCashOther) modalFpInpCashOther.value = '0';
     if (fpInpRealEstate) fpInpRealEstate.value = formatMoney(200000000);
+    if (modalFpInpRealEstate) modalFpInpRealEstate.value = formatMoney(200000000);
     if (fpSelRealEstateType) fpSelRealEstateType.value = '임대보증금';
+    if (modalFpSelRealEstateType) modalFpSelRealEstateType.value = '임대보증금';
 
-    if (fpInpMortgage) fpInpMortgage.value = formatMoney(150000000);
+    if (fpInpMortgage) fpInpMortgage.value = formatMoney(170000000);
+    if (modalFpInpMortgage) modalFpInpMortgage.value = formatMoney(170000000);
     if (fpSelMortgageType) fpSelMortgageType.value = '주택담보대출';
+    if (modalFpSelMortgageType) modalFpSelMortgageType.value = '주택담보대출';
     if (fpInpLeaseDeposit) fpInpLeaseDeposit.value = '0';
     if (fpInpCompanyLoan) fpInpCompanyLoan.value = '0';
     if (fpInpOtherLoan) fpInpOtherLoan.value = '0';
+    if (modalFpInpOtherLoansSum) modalFpInpOtherLoansSum.value = '0';
 
-    if (fpInpTotalDeal) fpInpTotalDeal.value = formatMoney(520000000);
-    if (fpInpAccountTransfer) fpInpAccountTransfer.value = formatMoney(520000000);
+    if (fpInpTotalDeal) fpInpTotalDeal.value = formatMoney(515000000);
+    if (modalFpInpTotalDeal) modalFpInpTotalDeal.value = formatMoney(515000000);
+    if (fpInpAccountTransfer) fpInpAccountTransfer.value = formatMoney(515000000);
     if (fpInpTakeoverLoan) fpInpTakeoverLoan.value = '0';
-    if (fpInpOptionalCost) fpInpOptionalCost.value = formatMoney(10000000);
-    if (modalFpInpOptionalCost) modalFpInpOptionalCost.value = formatMoney(10000000);
-    if (fpInpHoldingCash) fpInpHoldingCash.value = '0';
-    if (modalFpInpHoldingCash) modalFpInpHoldingCash.value = '0';
+    if (fpInpCashPay) fpInpCashPay.value = '0';
+    if (fpInpOptionalCost) fpInpOptionalCost.value = formatMoney(25000000);
+    if (modalFpInpOptionalCost) modalFpInpOptionalCost.value = formatMoney(25000000);
+    if (fpInpMoveinCost) fpInpMoveinCost.value = '0';
+    if (modalFpInpMoveinCost) modalFpInpMoveinCost.value = '0';
+    if (fpInpHoldingCash) fpInpHoldingCash.value = formatMoney(25000000);
+    if (modalFpInpHoldingCash) modalFpInpHoldingCash.value = formatMoney(25000000);
 
     if (fpChkIncludeMandatory) fpChkIncludeMandatory.checked = true;
     if (modalFpChkIncludeMandatory) modalFpChkIncludeMandatory.checked = true;
     if (fpChkIncludeOptional) fpChkIncludeOptional.checked = true;
     if (modalFpChkIncludeOptional) modalFpChkIncludeOptional.checked = true;
+
+    saveFundPlanToStorage();
 
     // 제출인(매수인) 및 대상주택 정보 기본 예시값 셋팅
     const defaultBuyerName = '홍길동';
@@ -3343,49 +3368,57 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnModalFpPreset52) btnModalFpPreset52.addEventListener('click', loadPreset52ToFundPlan);
 
   // ② 금융기관 예금액 직접 입력 (사용자가 직접 타이핑 시 baseDepositSavings 갱신 및 덮어쓰기 방지)
+  // ② 금융기관 예금액 직접 입력 바인딩
   if (fpInpDepositSavings) {
-    bindMoneyInput(fpInpDepositSavings, () => calculateFundPlanTotals(false, false, false, true));
+    bindMoneyInput(fpInpDepositSavings, () => calculateFundPlanTotals(false));
   }
   if (modalFpInpDepositSavings) {
-    bindMoneyInput(modalFpInpDepositSavings, () => calculateFundPlanTotals(true, false, false, true));
+    bindMoneyInput(modalFpInpDepositSavings, () => calculateFundPlanTotals(true));
   }
 
-  // 모든 인풋 필드에 bindMoneyInput 바인딩 (매매계약가 또는 자기자금 변경 시 ⑧ 대출액 및 ⑮ 계좌이체 자동 계산)
+  // 모든 자기자금 및 차입금 인풋 필드에 bindMoneyInput 바인딩
   [
     fpInpStockCrypto, fpInpGift, fpInpCashOther,
     fpInpRealEstate, fpInpLeaseDeposit, fpInpCompanyLoan,
     fpInpOtherLoan, fpInpTakeoverLoan, fpInpCashPay
   ].forEach(inp => {
-    if (inp) bindMoneyInput(inp, () => calculateFundPlanTotals(false, false, false));
+    if (inp) bindMoneyInput(inp, () => calculateFundPlanTotals(false));
   });
 
   if (fpInpTotalDeal) {
-    bindMoneyInput(fpInpTotalDeal, () => calculateFundPlanTotals(false, false, false));
+    bindMoneyInput(fpInpTotalDeal, () => calculateFundPlanTotals(false));
   }
 
   if (fpInpAccountTransfer) {
     bindMoneyInput(fpInpAccountTransfer, () => calculateFundPlanTotals(false, false, true));
   }
 
+  // ⑧ 주택담보대출 직접 입력 바인딩 (다른 필드와 동일하게 입력값 유지)
   if (fpInpMortgage) {
-    bindMoneyInput(fpInpMortgage, () => calculateFundPlanTotals(false, true));
+    bindMoneyInput(fpInpMortgage, () => calculateFundPlanTotals(false));
   }
   if (fpInpOptionalCost) {
-    bindMoneyInput(fpInpOptionalCost, () => calculateFundPlanTotals(false, false));
+    bindMoneyInput(fpInpOptionalCost, () => calculateFundPlanTotals(false));
+  }
+  if (fpInpMoveinCost) {
+    bindMoneyInput(fpInpMoveinCost, () => calculateFundPlanTotals(false));
   }
 
   [
     modalFpInpStockCrypto, modalFpInpGift, modalFpInpCashOther,
     modalFpInpRealEstate, modalFpInpOtherLoansSum, modalFpInpTotalDeal
   ].forEach(inp => {
-    if (inp) bindMoneyInput(inp, () => calculateFundPlanTotals(true, false));
+    if (inp) bindMoneyInput(inp, () => calculateFundPlanTotals(true));
   });
 
   if (modalFpInpMortgage) {
-    bindMoneyInput(modalFpInpMortgage, () => calculateFundPlanTotals(true, true));
+    bindMoneyInput(modalFpInpMortgage, () => calculateFundPlanTotals(true));
   }
   if (modalFpInpOptionalCost) {
-    bindMoneyInput(modalFpInpOptionalCost, () => calculateFundPlanTotals(true, false));
+    bindMoneyInput(modalFpInpOptionalCost, () => calculateFundPlanTotals(true));
+  }
+  if (modalFpInpMoveinCost) {
+    bindMoneyInput(modalFpInpMoveinCost, () => calculateFundPlanTotals(true));
   }
 
   // 상단 추가 보유현금 입력 바인딩 (서식 ⑤번과 분리, 필요 대출액 ⑧만 직접 차감)
@@ -3690,7 +3723,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const realEstateType = fpSelRealEstateType?.value || modalFpSelRealEstateType?.value || '임대보증금';
     const holdingCash = parseMoney(fpInpHoldingCash ? fpInpHoldingCash.value : (modalFpInpHoldingCash?.value || 0));
 
-    const selfTotal = depSavings + stockCrypto + gift + cashOther + realEstate + holdingCash;
+    const selfTotal = depSavings + stockCrypto + gift + cashOther + realEstate;
 
     const mortgage = parseMoney(fpInpMortgage ? fpInpMortgage.value : (modalFpInpMortgage?.value || 0));
     const mortgageType = fpSelMortgageType?.value || modalFpSelMortgageType?.value || '주택담보대출';
@@ -3720,7 +3753,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTxt('print-fp-stock-crypto', `${formatMoney(stockCrypto)} 원`);
     setTxt('print-fp-gift', `${formatMoney(gift)} 원`);
     setTxt('print-fp-gift-relation', giftRel);
-    setTxt('print-fp-cash-other', `${formatMoney(cashOther + holdingCash)} 원`);
+    setTxt('print-fp-cash-other', `${formatMoney(cashOther)} 원`);
     setTxt('print-fp-real-estate', `${formatMoney(realEstate)} 원`);
     setTxt('print-fp-real-estate-type', realEstateType);
     setTxt('print-fp-self-total', `${formatMoney(selfTotal)} 원`);
@@ -4387,6 +4420,38 @@ document.addEventListener('DOMContentLoaded', () => {
   bindMoneyInput(inpCustomExtra, () => recalculate());
   if (inpMoveinExtra) {
     bindMoneyInput(inpMoveinExtra, () => recalculate());
+  }
+
+  // 5-6-2) 대출 한도 고정 및 추가 부족자금 분리 모드 이벤트 바인딩
+  if (chkLoanCapMode) {
+    chkLoanCapMode.addEventListener('change', () => {
+      if (containerLoanCapInput) {
+        containerLoanCapInput.classList.toggle('hidden', !chkLoanCapMode.checked);
+      }
+      recalculate();
+    });
+  }
+  if (inpLoanCapAmount) {
+    bindMoneyInput(inpLoanCapAmount, () => recalculate());
+  }
+  if (btnSyncFundPlanLoan) {
+    btnSyncFundPlanLoan.addEventListener('click', () => {
+      const planMortgage = parseMoney(fpInpMortgage ? fpInpMortgage.value : (modalFpInpMortgage?.value || 150000000));
+      if (inpLoanCapAmount) {
+        inpLoanCapAmount.value = formatMoney(planMortgage);
+      }
+      state.loanCapAmount = planMortgage;
+      if (chkLoanCapMode) {
+        chkLoanCapMode.checked = true;
+      }
+      state.isLoanCapped = true;
+      if (containerLoanCapInput) {
+        containerLoanCapInput.classList.remove('hidden');
+      }
+      recalculate();
+      const fmt = typeof ScenarioEngine !== 'undefined' ? ScenarioEngine.formatKoreanMoney : formatMoney;
+      showToast(`🎯 계획서 대출금액(${fmt(planMortgage)})으로 한도가 동기화되었습니다.`);
+    });
   }
 
   // 5-7) 필수/선택 비용 포함 여부 토글 체크박스

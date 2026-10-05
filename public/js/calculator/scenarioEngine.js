@@ -89,12 +89,29 @@ const ScenarioEngine = {
     const rawFullRequiredLoan = Math.max(0, fullTotalBudget - equity);
     const pureRequiredLoan = Math.floor(rawPureRequiredLoan / 1000000) * 1000000;
     const fullRequiredLoan = Math.floor(rawFullRequiredLoan / 1000000) * 1000000;
-    const requiredLoan = fullRequiredLoan;
-    const loanRemainder = rawFullRequiredLoan - requiredLoan; // 100만 원 단위 절사로 인한 끝전 잔금 (현금 정산액)
+    const baseLoanRemainder = rawFullRequiredLoan - fullRequiredLoan; // 100만 원 단위 절사로 인한 끝전 잔금 (현금 정산액)
+
+    // [신규 기능] 대출 한도 고정 및 추가 부족자금 분리 모드 (isLoanCapped)
+    const isLoanCapped = params.isLoanCapped === true;
+    const loanCapAmount = (params.loanCapAmount && params.loanCapAmount > 0) ? params.loanCapAmount : 150000000;
+    const normalizedLoanCap = Math.floor(loanCapAmount / 1000000) * 1000000;
+
+    let requiredLoan = fullRequiredLoan;
+    let loanRemainder = baseLoanRemainder;
+    let loanExcess = 0; // 한도 초과 주담대 부족분
+    let isCappedApplied = false; // 실제로 한도 초과가 발생하여 캡이 적용되었는지 여부
+
+    if (isLoanCapped && fullRequiredLoan > normalizedLoanCap) {
+      isCappedApplied = true;
+      requiredLoan = normalizedLoanCap;
+      loanExcess = fullRequiredLoan - normalizedLoanCap;
+      // 추가 준비 필요 자금 = 한도 초과 부족분(loanExcess) + 100만 절사 끝전(baseLoanRemainder)
+      loanRemainder = loanExcess + baseLoanRemainder;
+    }
 
     const pureLtv = LoanCalculator.calculateLTV(pureRequiredLoan, price);
     const fullLtv = LoanCalculator.calculateLTV(fullRequiredLoan, price);
-    const ltv = fullLtv;
+    const ltv = LoanCalculator.calculateLTV(requiredLoan, price);
 
     // 3. 월 원리금 상환액 및 건전성
     const monthlyPayment = LoanCalculator.calculateFirstMonthPayment(requiredLoan, loanRate, loanYears, repayType);
@@ -200,6 +217,13 @@ const ScenarioEngine = {
       pureRequiredLoan,
       fullRequiredLoan,
       rawRequiredLoan: rawFullRequiredLoan,
+      isLoanCapped,
+      loanCapAmount,
+      normalizedLoanCap,
+      isCappedApplied,
+      loanExcess,
+      baseLoanRemainder,
+      extraRequiredFund: loanRemainder,
       loanRemainder,
       requiredLoan,
       pureLtv,
@@ -276,12 +300,28 @@ const ScenarioEngine = {
     const rawFullRequiredLoan = Math.max(0, fullTotalBudget - equity);
     const pureRequiredLoan = Math.floor(rawPureRequiredLoan / 1000000) * 1000000;
     const fullRequiredLoan = Math.floor(rawFullRequiredLoan / 1000000) * 1000000;
-    const requiredLoan = fullRequiredLoan;
-    const loanRemainder = rawFullRequiredLoan - requiredLoan;
+    const baseLoanRemainder = rawFullRequiredLoan - fullRequiredLoan;
+
+    // [신규 기능] 대출 한도 고정 및 추가 부족자금 분리 모드 (isLoanCapped)
+    const isLoanCapped = params.isLoanCapped === true;
+    const loanCapAmount = (params.loanCapAmount && params.loanCapAmount > 0) ? params.loanCapAmount : 150000000;
+    const normalizedLoanCap = Math.floor(loanCapAmount / 1000000) * 1000000;
+
+    let requiredLoan = fullRequiredLoan;
+    let loanRemainder = baseLoanRemainder;
+    let loanExcess = 0;
+    let isCappedApplied = false;
+
+    if (isLoanCapped && fullRequiredLoan > normalizedLoanCap) {
+      isCappedApplied = true;
+      requiredLoan = normalizedLoanCap;
+      loanExcess = fullRequiredLoan - normalizedLoanCap;
+      loanRemainder = loanExcess + baseLoanRemainder;
+    }
 
     const pureLtv = LoanCalculator.calculateLTV(pureRequiredLoan, price);
     const fullLtv = LoanCalculator.calculateLTV(fullRequiredLoan, price);
-    const ltv = fullLtv;
+    const ltv = LoanCalculator.calculateLTV(requiredLoan, price);
 
     // 3. 월 상환액 및 DSR
     const monthlyPayment = LoanCalculator.calculateFirstMonthPayment(requiredLoan, loanRate, loanYears, repayType);
@@ -369,6 +409,13 @@ const ScenarioEngine = {
       pureRequiredLoan,
       fullRequiredLoan,
       rawRequiredLoan: rawFullRequiredLoan,
+      isLoanCapped,
+      loanCapAmount,
+      normalizedLoanCap,
+      isCappedApplied,
+      loanExcess,
+      baseLoanRemainder,
+      extraRequiredFund: loanRemainder,
       loanRemainder,
       requiredLoan,
       pureLtv,

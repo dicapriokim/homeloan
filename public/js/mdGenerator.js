@@ -102,8 +102,13 @@ const MarkdownGenerator = {
       if (parts.length > 0) resaleEquityNote = parts.join(' \\+ ');
     }
     md += `| **보유 순자산 (전세보증금/현금)** | ${equityWon} | ${resaleEquityNote} |\n`;
-    md += `| **필요 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (100만 원 단위 절사 대출 실행${s.loanRemainder > 0 ? `, 끝전 ${formatWon(s.loanRemainder)} 제외` : ''}) |\n`;
-    md += `| **${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}** | **${formatWon(s.loanRemainder || 0)}** | ${s.loanRemainder > 0 ? `대출 100만 원 단위 절사(버림)로 인해 잔금일 본인 현금/예금으로 정산하는 금액 (총 소요 예산 ${budgetWon} 100% 완결)` : `총 소요 예산(${budgetWon}) 전액이 [보유 순자산 + 주담대]로 100% 완벽 충당됨`} |\n`;
+    if (s.isCappedApplied) {
+      md += `| **필요 주택담보대출 (한도 고정)** | **${loanWon}** | LTV 약 ${s.ltv}% (목표 대출한도 ${loanWon} 고정 적용, 전체 필요 주담대 ${formatWon(s.fullRequiredLoan)} 중 초과액 분리) |\n`;
+      md += `| **추가 준비 필요 자금 (초과 부족분)** | **${formatWon(s.loanRemainder || 0)}** | 한도 초과 부족분 ${formatWon(s.loanExcess)}${s.baseLoanRemainder > 0 ? ` + 100만 절사 끝전 ${formatWon(s.baseLoanRemainder)}` : ''} (신용대출·가족차입 등으로 별도 조달 필요) |\n`;
+    } else {
+      md += `| **필요 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (100만 원 단위 절사 대출 실행${s.loanRemainder > 0 ? `, 끝전 ${formatWon(s.loanRemainder)} 제외` : ''}) |\n`;
+      md += `| **${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}** | **${formatWon(s.loanRemainder || 0)}** | ${s.loanRemainder > 0 ? `대출 100만 원 단위 절사(버림)로 인해 잔금일 본인 현금/예금으로 정산하는 금액 (총 소요 예산 ${budgetWon} 100% 완결)` : `총 소요 예산(${budgetWon}) 전액이 [보유 순자산 + 주담대]로 100% 완벽 충당됨`} |\n`;
+    }
     md += `| **월 원리금 상환액** | ${monthlyPayWon} | ${s.loanYears}년 만기 원리금균등 (금리 연 ${s.loanRate}% 기준) |\n`;
     md += `| **소득 대비 주거비 비중** | 약 ${s.housingRatio}% | 월 실수령액 ${monthlyNetWon} 기준 (최상급 안정권) |\n`;
     md += `| **DSR (총부채원리금상환비율)** | 약 ${s.dsr}% | ${incomePrefix} ${annualIncomeWon} 기준 (규제 한도 40% 대비 초안전) |\n\n`;
@@ -269,8 +274,13 @@ const MarkdownGenerator = {
       if (parts.length > 0) presaleEquityNote = parts.join(' \\+ ');
     }
     md += `| **보유 순자산 (전세보증금/현금)** | ${equityWon} | ${presaleEquityNote} |\n`;
-    md += `| **필요 잔금 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (100만 원 단위 절사 대출 실행${s.loanRemainder > 0 ? `, 끝전 ${formatWon(s.loanRemainder)} 제외` : ''}) |\n`;
-    md += `| **${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}** | **${formatWon(s.loanRemainder || 0)}** | ${s.loanRemainder > 0 ? `대출 100만 원 단위 절사로 인한 잔금일 현금 정산액 (총 소요 예산 ${budgetWon} 100% 충당)` : `총 분양·입주 소요 예산(${budgetWon}) 전액이 [보유 순자산 + 잔금대출]로 100% 완벽 충당됨`} |\n`;
+    if (s.isCappedApplied) {
+      md += `| **필요 잔금 주택담보대출 (한도 고정)** | **${loanWon}** | LTV 약 ${s.ltv}% (목표 대출한도 ${loanWon} 고정 적용, 전체 필요 주담대 ${formatWon(s.fullRequiredLoan)} 중 초과액 분리) |\n`;
+      md += `| **추가 준비 필요 자금 (초과 부족분)** | **${formatWon(s.loanRemainder || 0)}** | 한도 초과 부족분 ${formatWon(s.loanExcess)}${s.baseLoanRemainder > 0 ? ` + 100만 절사 끝전 ${formatWon(s.baseLoanRemainder)}` : ''} (신용대출·가족지원 등으로 별도 조달 필요) |\n`;
+    } else {
+      md += `| **필요 잔금 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (100만 원 단위 절사 대출 실행${s.loanRemainder > 0 ? `, 끝전 ${formatWon(s.loanRemainder)} 제외` : ''}) |\n`;
+      md += `| **${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}** | **${formatWon(s.loanRemainder || 0)}** | ${s.loanRemainder > 0 ? `대출 100만 원 단위 절사로 인한 잔금일 현금 정산액 (총 소요 예산 ${budgetWon} 100% 충당)` : `총 분양·입주 소요 예산(${budgetWon}) 전액이 [보유 순자산 + 잔금대출]로 100% 완벽 충당됨`} |\n`;
+    }
     md += `| **월 원리금 상환액** | ${monthlyPayWon} | ${s.loanYears}년 만기 원리금균등 (연 ${s.loanRate}% 기준) |\n`;
     md += `| **가계 소득 대비 주거비 부담율** | 약 ${s.housingRatio}% | 월 실수령액 ${monthlyNetWon} 기준 (초안정 구간) |\n`;
     md += `| **DSR (총부채원리금상환비율)** | 약 ${s.dsr}% | ${incomePrefix} ${annualIncomeWon} 기준 (법정 한도 40% 대비 초안전) |\n\n`;
