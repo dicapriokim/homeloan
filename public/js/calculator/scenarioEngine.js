@@ -100,13 +100,20 @@ const ScenarioEngine = {
     let loanRemainder = baseLoanRemainder;
     let loanExcess = 0; // 한도 초과 주담대 부족분
     let isCappedApplied = false; // 실제로 한도 초과가 발생하여 캡이 적용되었는지 여부
+    let isCapSurplus = false; // 목표 한도가 실제 필요 대출보다 여유/과다한지 여부
+    let loanSurplus = 0; // 필요 대출 대비 여유/과다 계획 금액
 
-    if (isLoanCapped && fullRequiredLoan > normalizedLoanCap) {
-      isCappedApplied = true;
-      requiredLoan = normalizedLoanCap;
-      loanExcess = fullRequiredLoan - normalizedLoanCap;
-      // 추가 준비 필요 자금 = 한도 초과 부족분(loanExcess) + 100만 절사 끝전(baseLoanRemainder)
-      loanRemainder = loanExcess + baseLoanRemainder;
+    if (isLoanCapped) {
+      if (fullRequiredLoan > normalizedLoanCap) {
+        isCappedApplied = true;
+        requiredLoan = normalizedLoanCap;
+        loanExcess = fullRequiredLoan - normalizedLoanCap;
+        // 추가 준비 필요 자금 = 한도 초과 부족분(loanExcess) + 100만 절사 끝전(baseLoanRemainder)
+        loanRemainder = loanExcess + baseLoanRemainder;
+      } else if (normalizedLoanCap > fullRequiredLoan) {
+        isCapSurplus = true;
+        loanSurplus = normalizedLoanCap - fullRequiredLoan;
+      }
     }
 
     const pureLtv = LoanCalculator.calculateLTV(pureRequiredLoan, price);
@@ -138,6 +145,17 @@ const ScenarioEngine = {
       monthlySaving: Math.max(0, monthlyPayment - didimdolPayment),
       totalInterestSaving: Math.max(0, commercial30YrTotalInterest - didimdol30YrTotalInterest)
     };
+
+    // 3-3. 과다 대출 계획 시 이자 및 월 납입금 절감액 산출
+    let capSurplusMonthlySaving = 0;
+    let capSurplusTotalInterestSaving = 0;
+    if (isLoanCapped && isCapSurplus && loanSurplus > 0) {
+      const capMonthlyPayment = LoanCalculator.calculateFirstMonthPayment(normalizedLoanCap, loanRate, loanYears, repayType);
+      const capTotalInterest = Math.max(0, (capMonthlyPayment * loanYears * 12) - normalizedLoanCap);
+      const actualTotalInterest = Math.max(0, (monthlyPayment * loanYears * 12) - requiredLoan);
+      capSurplusMonthlySaving = Math.max(0, capMonthlyPayment - monthlyPayment);
+      capSurplusTotalInterestSaving = Math.max(0, capTotalInterest - actualTotalInterest);
+    }
 
     // 4. 4단계 타임라인 세부 수치 계산
     // 1단계: 계약금 10%
@@ -221,6 +239,8 @@ const ScenarioEngine = {
       loanCapAmount,
       normalizedLoanCap,
       isCappedApplied,
+      isCapSurplus,
+      loanSurplus,
       loanExcess,
       baseLoanRemainder,
       extraRequiredFund: loanRemainder,
@@ -240,12 +260,17 @@ const ScenarioEngine = {
       creditLoanMonthlyInterest,
       combinedDSR,
       isMoveinIncluded: expenseData.isMoveinIncluded,
+      capSurplusMonthlySaving,
+      capSurplusTotalInterestSaving,
       step3: {
         mortgage: step3_mortgage,
         deposit: step3_deposit,
         remainPrice: step3_remainPrice,
         creditLoanPayoff: step3_creditLoanPayoff,
-        expenses: step3_expenses
+        expenses: step3_expenses,
+        extraFund: loanRemainder,
+        loanExcess,
+        baseLoanRemainder
       },
       livingCostDesc: isCouple ? '200만~230만 원' : '120만~150만 원',
       surplusMin,
@@ -311,12 +336,19 @@ const ScenarioEngine = {
     let loanRemainder = baseLoanRemainder;
     let loanExcess = 0;
     let isCappedApplied = false;
+    let isCapSurplus = false;
+    let loanSurplus = 0;
 
-    if (isLoanCapped && fullRequiredLoan > normalizedLoanCap) {
-      isCappedApplied = true;
-      requiredLoan = normalizedLoanCap;
-      loanExcess = fullRequiredLoan - normalizedLoanCap;
-      loanRemainder = loanExcess + baseLoanRemainder;
+    if (isLoanCapped) {
+      if (fullRequiredLoan > normalizedLoanCap) {
+        isCappedApplied = true;
+        requiredLoan = normalizedLoanCap;
+        loanExcess = fullRequiredLoan - normalizedLoanCap;
+        loanRemainder = loanExcess + baseLoanRemainder;
+      } else if (normalizedLoanCap > fullRequiredLoan) {
+        isCapSurplus = true;
+        loanSurplus = normalizedLoanCap - fullRequiredLoan;
+      }
     }
 
     const pureLtv = LoanCalculator.calculateLTV(pureRequiredLoan, price);
@@ -332,6 +364,18 @@ const ScenarioEngine = {
     const housingRatio = LoanCalculator.calculateHousingCostRatio(monthlyPayment, monthlyNetIncome);
 
     const didimdolPayment = LoanCalculator.calculateFirstMonthPayment(requiredLoan, 3.0, loanYears, repayType);
+
+    // 3-3. 과다 대출 계획 시 이자 및 월 납입금 절감액 산출
+    let capSurplusMonthlySaving = 0;
+    let capSurplusTotalInterestSaving = 0;
+    if (isLoanCapped && isCapSurplus && loanSurplus > 0) {
+      const capMonthlyPayment = LoanCalculator.calculateFirstMonthPayment(normalizedLoanCap, loanRate, loanYears, repayType);
+      const capTotalInterest = Math.max(0, (capMonthlyPayment * loanYears * 12) - normalizedLoanCap);
+      const actualTotalInterest = Math.max(0, (monthlyPayment * loanYears * 12) - requiredLoan);
+      capSurplusMonthlySaving = Math.max(0, capMonthlyPayment - monthlyPayment);
+      capSurplusTotalInterestSaving = Math.max(0, capTotalInterest - actualTotalInterest);
+    }
+
     // 4. 4단계 타임라인
     const downPayment = Math.floor(price * 0.1);
     const creditLoanMonthlyInterest = Math.round(downPayment * (creditLoanRate / 100) / 12);
@@ -413,6 +457,8 @@ const ScenarioEngine = {
       loanCapAmount,
       normalizedLoanCap,
       isCappedApplied,
+      isCapSurplus,
+      loanSurplus,
       loanExcess,
       baseLoanRemainder,
       extraRequiredFund: loanRemainder,
@@ -432,15 +478,21 @@ const ScenarioEngine = {
       finalBalancePayment,
       creditLoanMonthlyInterest,
       isMoveinIncluded: expenseData.isMoveinIncluded,
+      capSurplusMonthlySaving,
+      capSurplusTotalInterestSaving,
       step3: {
         inflowMortgage: requiredLoan,
         inflowDeposit: equity,
-        inflowTotal: inflowTotal,
+        inflowExtra: loanRemainder,
+        inflowTotal: inflowTotal + (loanRemainder > 0 ? loanRemainder : 0),
         outflowMiddle: outflowMiddle,
         outflowRemain: outflowRemain,
         outflowCreditLoan: outflowCreditLoan,
         outflowExpense: outflowExpense,
-        outflowTotal: outflowTotal
+        outflowTotal: outflowTotal,
+        extraFund: loanRemainder,
+        loanExcess,
+        baseLoanRemainder
       },
       livingCostDesc: isCouple ? '200만~230만 원' : '120만~150만 원',
       surplusMin,

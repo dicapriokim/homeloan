@@ -105,6 +105,9 @@ const MarkdownGenerator = {
     if (s.isCappedApplied) {
       md += `| **필요 주택담보대출 (한도 고정)** | **${loanWon}** | LTV 약 ${s.ltv}% (목표 대출한도 ${loanWon} 고정 적용, 전체 필요 주담대 ${formatWon(s.fullRequiredLoan)} 중 초과액 분리) |\n`;
       md += `| **추가 준비 필요 자금 (초과 부족분)** | **${formatWon(s.loanRemainder || 0)}** | 한도 초과 부족분 ${formatWon(s.loanExcess)}${s.baseLoanRemainder > 0 ? ` + 100만 절사 끝전 ${formatWon(s.baseLoanRemainder)}` : ''} (신용대출·가족차입 등으로 별도 조달 필요) |\n`;
+    } else if (s.isLoanCapped && s.isCapSurplus && s.loanSurplus > 0) {
+      md += `| **필요 주택담보대출 (최적 절감 실행)** | **${loanWon}** | LTV 약 ${s.ltv}% (목표 한도 ${formatWon(s.normalizedLoanCap)} 대비 **${formatWon(s.loanSurplus)} 불필요 대출 미실행 방어**, 실제 필요액만 100만 단위 절사 실행) |\n`;
+      md += `| **${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}** | **${formatWon(s.loanRemainder || 0)}** | ${s.loanRemainder > 0 ? `100만 원 절사로 인한 잔금일 현금 정산액 (${formatWon(s.loanSurplus)} 과다 대출 방지로 이자 절감 달성)` : `과다 대출 방지 완료 (${formatWon(s.loanSurplus)} 불필요 차입 차단, 총 소요 예산 100% 충당)`} |\n`;
     } else {
       md += `| **필요 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (100만 원 단위 절사 대출 실행${s.loanRemainder > 0 ? `, 끝전 ${formatWon(s.loanRemainder)} 제외` : ''}) |\n`;
       md += `| **${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}** | **${formatWon(s.loanRemainder || 0)}** | ${s.loanRemainder > 0 ? `대출 100만 원 단위 절사(버림)로 인해 잔금일 본인 현금/예금으로 정산하는 금액 (총 소요 예산 ${budgetWon} 100% 완결)` : `총 소요 예산(${budgetWon}) 전액이 [보유 순자산 + 주담대]로 100% 완벽 충당됨`} |\n`;
@@ -150,6 +153,9 @@ const MarkdownGenerator = {
     md += `| 오전 11:00 | 기존 전셋집 이삿짐 반출 및 임대인으로부터 보증금 수령 | ${formatWon(s.step3.deposit)} | 보유 순자산 통장으로 전액 회수 유입 |\n`;
     md += `| 오전 11:30 | 회수한 보증금 중 매매 잔여 대금을 매도인 계좌로 송금 | ${formatWon(s.step3.remainPrice)} | 기지급 계약금(${downPaymentWon}) \\+ 주담대(${loanWon}) \\+ 잔여금(${formatWon(s.step3.remainPrice)}) \\= **매매가 ${priceWon} 완납** |\n`;
     md += `| 오후 12:00 | 전세금 잔여분으로 계약 시 실행한 신용대출 전액 완납 및 계좌 해지 | ${formatWon(s.step3.creditLoanPayoff)} | 단기 부채 완전 변제 (DSR 및 신용점수 원상 회복) |\n`;
+    if (s.step3 && s.step3.extraFund > 0) {
+      md += `| 오후 12:30 | 추가 준비 자금 정산 투입 (대출한도 고정 초과 부족분${s.step3.baseLoanRemainder > 0 ? ' \\+ 끝전' : ''}) | ${formatWon(s.step3.extraFund)} | 별도 조달 자금(신용대출·가족지원 등)으로 한도 부족분 정산 및 부대비용 완납 충당 |\n`;
+    }
     md += `| 오후 01:00 | 남은 전세금 잔액으로 세금/등기/중개보수 정산 및 키 수령 | 약 ${formatWon(s.step3.expenses)} | 취득세 납부 및 법무사 소유권 이전 등기 접수, 입주 완료 |\n\n`;
 
     md += `### **4단계: 입주 후 가계 재무 안착**\n\n`;
@@ -277,6 +283,9 @@ const MarkdownGenerator = {
     if (s.isCappedApplied) {
       md += `| **필요 잔금 주택담보대출 (한도 고정)** | **${loanWon}** | LTV 약 ${s.ltv}% (목표 대출한도 ${loanWon} 고정 적용, 전체 필요 주담대 ${formatWon(s.fullRequiredLoan)} 중 초과액 분리) |\n`;
       md += `| **추가 준비 필요 자금 (초과 부족분)** | **${formatWon(s.loanRemainder || 0)}** | 한도 초과 부족분 ${formatWon(s.loanExcess)}${s.baseLoanRemainder > 0 ? ` + 100만 절사 끝전 ${formatWon(s.baseLoanRemainder)}` : ''} (신용대출·가족지원 등으로 별도 조달 필요) |\n`;
+    } else if (s.isLoanCapped && s.isCapSurplus && s.loanSurplus > 0) {
+      md += `| **필요 잔금 주택담보대출 (최적 절감 실행)** | **${loanWon}** | LTV 약 ${s.ltv}% (목표 한도 ${formatWon(s.normalizedLoanCap)} 대비 **${formatWon(s.loanSurplus)} 불필요 과다 대출 방어**, 실제 필요액만 100만 단위 절사 실행) |\n`;
+      md += `| **${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}** | **${formatWon(s.loanRemainder || 0)}** | ${s.loanRemainder > 0 ? `100만 원 절사로 인한 잔금일 현금 정산액 (${formatWon(s.loanSurplus)} 과다 대출 방지로 총 이자 절감 달성)` : `불필요 과다 대출 방지 완료 (${formatWon(s.loanSurplus)} 과다 차입 차단, 총 분양 예산 100% 충당)`} |\n`;
     } else {
       md += `| **필요 잔금 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (100만 원 단위 절사 대출 실행${s.loanRemainder > 0 ? `, 끝전 ${formatWon(s.loanRemainder)} 제외` : ''}) |\n`;
       md += `| **${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}** | **${formatWon(s.loanRemainder || 0)}** | ${s.loanRemainder > 0 ? `대출 100만 원 단위 절사로 인한 잔금일 현금 정산액 (총 소요 예산 ${budgetWon} 100% 충당)` : `총 분양·입주 소요 예산(${budgetWon}) 전액이 [보유 순자산 + 잔금대출]로 100% 완벽 충당됨`} |\n`;
@@ -317,6 +326,10 @@ const MarkdownGenerator = {
     md += `| **기존 전세보증금 회수 (퇴거)** | ${equityWon} | 분양 잔금 완납 (30%) | ${finalBalancePaymentWon} |\n`;
     md += `| — | — | 계약금용 신용대출 전액 상환 및 해지 | ${downPaymentWon} |\n`;
     md += `| — | — | 취득세(생애최초) 및 발코니/옵션/등기 정산 | 약 ${expenseWon} |\n`;
+    if (s.step3 && s.step3.extraFund > 0) {
+      const extraLabel = s.isCappedApplied ? `추가 준비 자금 정산 투입 (대출한도 고정 초과 부족분${s.step3.baseLoanRemainder > 0 ? ' \\+ 끝전' : ''})` : `대출 100만 원 단위 절사 끝전 잔금 현금 정산`;
+      md += `| **${extraLabel}** | ${formatWon(s.step3.extraFund)} | 대출 한도 초과 부족분 및 끝전 현금 직접 충당 | ${formatWon(s.step3.extraFund)} |\n`;
+    }
     md += `| **자금 유입 합계** | **${budgetWon}** | **총 정산 지출 합계** | **${budgetWon}** |\n\n`;
     md += `> * **핵심 성과:** 전세보증금 반환금으로 계약 시 활용했던 신용대출(${downPaymentWon})을 입주 당일 즉시 전액 상환하고 한도를 해지합니다. 이로써 단기 고금리 리스크와 DSR 잠식 요인을 100% 제거하고, 저리의 장기 주택담보대출(${loanWon}) 단일 채무 구조로 개편됩니다.\n\n`;
 

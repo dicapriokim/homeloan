@@ -230,7 +230,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const containerLoanCapInput = document.getElementById('container-loan-cap-input');
   const inpLoanCapAmount = document.getElementById('inp-loan-cap-amount');
   const txtLoanCapStatus = document.getElementById('txt-loan-cap-status');
+  const btnFitLoanCap = document.getElementById('btn-fit-loan-cap');
   const btnSyncFundPlanLoan = document.getElementById('btn-sync-fund-plan-loan');
+  const boxLoanCapNotice = document.getElementById('box-loan-cap-notice');
+  const btnResetSimulatorDefaults = document.getElementById('btn-reset-simulator-defaults');
+  const btnGotoAmortSchedule = document.getElementById('btn-goto-amort-schedule');
 
   const lblRateTitle = document.getElementById('lbl-rate-title');
   const txtRateDisplay = document.getElementById('txt-rate-display');
@@ -452,6 +456,127 @@ document.addEventListener('DOMContentLoaded', () => {
       return true;
     } catch (e) {
       console.warn('순자산 세부 구성 로컬 복원 실패:', e);
+      return false;
+    }
+  }
+
+  // 3-3-2. 사이드바 및 시뮬레이터 전체 설정 로컬스토리지 영구 보존 유틸리티 (새로고침 시 입력값 유지)
+  const STORAGE_KEY_SIMULATOR = 'homeloan_simulator_state';
+
+  function saveSimulatorStateToStorage() {
+    try {
+      const data = {
+        price: state.price,
+        isLoanCapped: state.isLoanCapped,
+        loanCapAmount: state.loanCapAmount,
+        customExtra: state.customExtra,
+        moveinExtra: state.moveinExtra,
+        includeMandatory: state.includeMandatory,
+        includeMovein: state.includeMovein,
+        loanRate: state.loanRate,
+        loanYears: state.loanYears,
+        repayType: state.repayType,
+        annualIncome: state.annualIncome,
+        monthlyNetIncome: state.monthlyNetIncome,
+        isFirstHome: state.isFirstHome,
+        isHomeless: state.isHomeless,
+        creditLoanRate: state.creditLoanRate,
+        householdType: state.householdType,
+        marriagePeriod: state.marriagePeriod,
+        childCount: state.childCount,
+        incomeType: state.incomeType,
+        activeProfile: state.activeProfile,
+        simMode: state.simMode
+      };
+      localStorage.setItem(STORAGE_KEY_SIMULATOR, JSON.stringify(data));
+    } catch (e) {
+      console.warn('시뮬레이터 상태 로컬 저장 실패:', e);
+    }
+  }
+
+  function loadSimulatorStateFromStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_SIMULATOR);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (!data || typeof data !== 'object') return false;
+
+      if (data.price !== undefined && inpPrice) {
+        state.price = Number(data.price) || 520000000;
+        inpPrice.value = formatMoney(state.price);
+      }
+      if (data.isLoanCapped !== undefined && chkLoanCapMode) {
+        state.isLoanCapped = !!data.isLoanCapped;
+        chkLoanCapMode.checked = state.isLoanCapped;
+        if (containerLoanCapInput) {
+          containerLoanCapInput.classList.toggle('hidden', !state.isLoanCapped);
+        }
+      }
+      if (data.loanCapAmount !== undefined && inpLoanCapAmount) {
+        state.loanCapAmount = Number(data.loanCapAmount) || 150000000;
+        inpLoanCapAmount.value = formatMoney(state.loanCapAmount);
+      }
+      if (data.customExtra !== undefined && inpCustomExtra) {
+        state.customExtra = data.customExtra;
+        state.customRefurbishCost = data.customExtra;
+        inpCustomExtra.value = data.customExtra ? formatMoney(data.customExtra) : '';
+      }
+      if (data.moveinExtra !== undefined && inpMoveinExtra) {
+        state.moveinExtra = Number(data.moveinExtra) || 0;
+        inpMoveinExtra.value = data.moveinExtra ? formatMoney(data.moveinExtra) : '0';
+      }
+      if (data.includeMandatory !== undefined && chkIncludeMandatory) {
+        state.includeMandatory = !!data.includeMandatory;
+        chkIncludeMandatory.checked = state.includeMandatory;
+      }
+      if (data.includeMovein !== undefined && chkIncludeMovein) {
+        state.includeMovein = !!data.includeMovein;
+        chkIncludeMovein.checked = state.includeMovein;
+      }
+      if (data.loanRate !== undefined) {
+        state.loanRate = Number(data.loanRate) || 4.8;
+        if (inpRate) inpRate.value = state.loanRate;
+        if (rngRate) rngRate.value = state.loanRate;
+        syncRateToRadios(state.loanRate);
+      }
+      if (data.loanYears !== undefined && selLoanYears) {
+        state.loanYears = Number(data.loanYears) || 30;
+        selLoanYears.value = String(state.loanYears);
+      }
+      if (data.repayType !== undefined && selRepayType) {
+        state.repayType = data.repayType || 'equal-payment';
+        selRepayType.value = state.repayType;
+      }
+      if (data.annualIncome !== undefined && inpAnnualIncome) {
+        state.annualIncome = Number(data.annualIncome) || 77000000;
+        inpAnnualIncome.value = formatMoney(state.annualIncome);
+      }
+      if (data.monthlyNetIncome !== undefined && inpMonthlyIncome) {
+        state.monthlyNetIncome = Number(data.monthlyNetIncome) || 5300000;
+        inpMonthlyIncome.value = formatMoney(state.monthlyNetIncome);
+      }
+      if (data.isFirstHome !== undefined && chkFirstHome) {
+        state.isFirstHome = !!data.isFirstHome;
+        chkFirstHome.checked = state.isFirstHome;
+      }
+      if (data.isHomeless !== undefined && chkHomeless) {
+        state.isHomeless = !!data.isHomeless;
+        chkHomeless.checked = state.isHomeless;
+      }
+      if (data.creditLoanRate !== undefined && inpCreditRate) {
+        state.creditLoanRate = Number(data.creditLoanRate) || 4.5;
+        inpCreditRate.value = state.creditLoanRate;
+      }
+      if (data.householdType !== undefined) state.householdType = data.householdType;
+      if (data.marriagePeriod !== undefined) state.marriagePeriod = data.marriagePeriod;
+      if (data.childCount !== undefined) state.childCount = data.childCount;
+      if (data.incomeType !== undefined) state.incomeType = data.incomeType;
+      if (data.activeProfile !== undefined) state.activeProfile = data.activeProfile;
+      if (data.simMode !== undefined) state.simMode = data.simMode;
+
+      return true;
+    } catch (e) {
+      console.warn('시뮬레이터 상태 로컬 복원 실패:', e);
       return false;
     }
   }
@@ -1276,7 +1401,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // Initialize with current values
       if (amortAmount) {
         let loanAmt = 100000000;
-        if (state.simMode) {
+        if (state.lastScenario && state.lastScenario.requiredLoan) {
+          loanAmt = state.lastScenario.requiredLoan;
+        } else if (state.simMode) {
           const simPrice = state.price || 520000000;
           const simEquity = state.equity || 370000000;
           if (simPrice > simEquity) {
@@ -1287,7 +1414,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (amortRate) amortRate.value = state.loanRate || 4.8;
       if (amortType && selRepayType) amortType.value = selRepayType.value;
-      if (amortTerm) amortTerm.value = state.loanYears || 10;
+      if (amortTerm) amortTerm.value = state.loanYears || 30;
       if (amortDate && !amortDate.value) {
         const today = new Date();
         amortDate.value = today.toISOString().split('T')[0];
@@ -1987,15 +2114,99 @@ document.addEventListener('DOMContentLoaded', () => {
       markdownRenderedContent.textContent = state.generatedMarkdown;
     }
 
+    saveSimulatorStateToStorage();
     refreshIcons();
+  }
+
+  // 대출 한도 고정 사이드바 상태 및 여유/부족 알림 실시간 동기화
+  function updateLoanCapSidebarStatus(s) {
+    if (!txtLoanCapStatus || !boxLoanCapNotice) return;
+    const formatWon = ScenarioEngine.formatKoreanMoney;
+    const formatTenMan = ScenarioEngine.formatTenThousand;
+
+    if (!s || !s.isLoanCapped) {
+      boxLoanCapNotice.classList.add('hidden');
+      if (btnFitLoanCap) btnFitLoanCap.classList.add('hidden');
+      txtLoanCapStatus.textContent = `계획 대출액: ${formatWon(state.loanCapAmount || 150000000)}`;
+      return;
+    }
+
+    const cap = s.normalizedLoanCap;
+    const fullReq = s.fullRequiredLoan;
+
+    if (s.isCappedApplied) {
+      // 1) 한도 초과: 대출 제한 및 부족분 분리
+      txtLoanCapStatus.innerHTML = `목표 한도: <strong>${formatWon(cap)}</strong> <span class="text-amber-700 font-bold">(부족 ${formatWon(s.loanExcess)})</span>`;
+      boxLoanCapNotice.className = 'text-[10px] p-2 rounded-lg leading-tight transition bg-amber-50 border border-amber-200 text-amber-950 font-medium space-y-1.5';
+      boxLoanCapNotice.innerHTML = `
+        <div>⚠️ 실제 필요 대출(<strong>${formatWon(fullReq)}</strong>)보다 한도가 <strong>${formatWon(s.loanExcess)} 부족</strong>하여 '추가 준비 자금'으로 분리되었습니다.</div>
+        <div class="flex justify-end pt-0.5">
+          <button type="button" id="btn-increase-cap-to-full" class="px-2 py-0.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-[9.5px] font-bold transition flex items-center gap-0.5 shadow-2xs cursor-pointer">
+            <span>필요액(${formatWon(fullReq)})으로 한도 증액</span>
+          </button>
+        </div>
+      `;
+      boxLoanCapNotice.classList.remove('hidden');
+      const btnIncreaseCap = boxLoanCapNotice.querySelector('#btn-increase-cap-to-full');
+      if (btnIncreaseCap) {
+        btnIncreaseCap.onclick = () => {
+          if (inpLoanCapAmount) {
+            inpLoanCapAmount.value = formatMoney(fullReq);
+            state.loanCapAmount = fullReq;
+            recalculate();
+            showToast(`✨ 목표 한도를 실제 필요 대출액(${formatWon(fullReq)})으로 증액하여 부족분을 해소했습니다.`);
+          }
+        };
+      }
+      if (btnFitLoanCap) btnFitLoanCap.classList.add('hidden');
+    } else if (s.isCapSurplus && s.loanSurplus > 0) {
+      // 2) 한도 여유: 필요 대출보다 더 많이 계획됨 (불필요한 과다 대출 및 이자 낭비 방지 안내)
+      const savingMonthlyStr = s.capSurplusMonthlySaving > 0 ? `월 상환액 약 ${formatTenMan(s.capSurplusMonthlySaving)} 절감` : '';
+      const savingTotalInterestStr = s.capSurplusTotalInterestSaving > 0 ? `30년 총이자 약 ${formatWon(s.capSurplusTotalInterestSaving)} 낭비 방지` : '';
+      const savingTip = [savingMonthlyStr, savingTotalInterestStr].filter(Boolean).join(', ');
+
+      txtLoanCapStatus.innerHTML = `목표 한도: <strong>${formatWon(cap)}</strong> <span class="text-blue-700 font-bold">(+${formatWon(s.loanSurplus)} 여유)</span>`;
+      boxLoanCapNotice.className = 'text-[10px] p-2 rounded-lg leading-tight transition bg-blue-50 border border-blue-200 text-blue-950 font-medium space-y-1';
+      boxLoanCapNotice.innerHTML = `
+        <div class="flex items-center gap-1 font-bold text-blue-900">
+          <span>💡 불필요한 과다 대출 계획 감지</span>
+        </div>
+        <div>실제 필요 대출(<strong>${formatWon(fullReq)}</strong>)보다 목표 한도가 <strong>+${formatWon(s.loanSurplus)} 더 많이 계획</strong>되어 있습니다.</div>
+        ${savingTip ? `<div class="text-[9.5px] text-blue-900 font-semibold bg-blue-100/70 p-1 rounded border border-blue-200/80">💰 필요액 맞춤 시: <strong>${savingTip}</strong></div>` : ''}
+        <div class="text-[9.5px] text-blue-700 font-normal">* [필요액 맞춤] 버튼을 누르면 불필요한 이자 낭비를 즉시 방지할 수 있습니다.</div>
+      `;
+      boxLoanCapNotice.classList.remove('hidden');
+      if (btnFitLoanCap) {
+        btnFitLoanCap.classList.remove('hidden');
+        btnFitLoanCap.title = `목표 한도를 실제 필요 대출액(${formatWon(fullReq)})으로 즉시 맞춥니다.`;
+        btnFitLoanCap.onclick = () => {
+          if (inpLoanCapAmount) {
+            inpLoanCapAmount.value = formatMoney(fullReq);
+            state.loanCapAmount = fullReq;
+            recalculate();
+            showToast(`✨ 목표 한도를 실제 필요 대출액(${formatWon(fullReq)})으로 맞췄습니다.`);
+          }
+        };
+      }
+    } else {
+      // 3) 한도와 필요액 100% 일치
+      txtLoanCapStatus.innerHTML = `목표 한도: <strong>${formatWon(cap)}</strong> <span class="text-emerald-700 font-bold">(100% 일치)</span>`;
+      boxLoanCapNotice.className = 'text-[10px] p-2 rounded-lg leading-tight transition bg-emerald-50 border border-emerald-200 text-emerald-950 font-medium';
+      boxLoanCapNotice.innerHTML = `✓ 목표 한도와 실제 필요 대출액(<strong>${formatWon(fullReq)}</strong>)이 <strong>100% 일치</strong>합니다 (최적 조달 계획).`;
+      boxLoanCapNotice.classList.remove('hidden');
+      if (btnFitLoanCap) btnFitLoanCap.classList.add('hidden');
+    }
   }
 
   // 8. 대시보드 렌더링 세부 함수
   function renderDashboard(s) {
+    state.lastScenario = s;
     const formatWon = ScenarioEngine.formatKoreanMoney;
     const formatTenMan = ScenarioEngine.formatTenThousand;
     const isCouple = s.householdType === 'couple';
     const incomeLabel = isCouple ? '부부합산 연소득' : '단독 연소득';
+
+    updateLoanCapSidebarStatus(s);
 
     const surplusMinMan = Math.floor(s.surplusMin / 10000);
     const surplusMaxMan = Math.floor(s.surplusMax / 10000);
@@ -2228,6 +2439,8 @@ document.addEventListener('DOMContentLoaded', () => {
       cardRequiredLoan.textContent = formatWon(s.requiredLoan);
       if (s.isCappedApplied) {
         cardLtvBadge.textContent = `LTV ${s.ltv}% (목표한도 ${formatWon(s.requiredLoan)} 고정 / 초과 부족분 ${formatWon(s.loanExcess)} 별도 분리)`;
+      } else if (s.isLoanCapped && s.isCapSurplus && s.loanSurplus > 0) {
+        cardLtvBadge.textContent = `LTV ${s.ltv}% (목표한도 ${formatWon(s.normalizedLoanCap)} 대비 +${formatWon(s.loanSurplus)} 불필요 과다 대출 방지)`;
       } else if (s.loanRemainder > 0) {
         cardLtvBadge.textContent = `LTV ${s.ltv}% (100만 단위 절사 / 끝전 ${formatWon(s.loanRemainder)} 잔금 현금 정산)`;
       } else {
@@ -2305,6 +2518,17 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-4 py-3 font-extrabold text-amber-950">추가 준비 필요 자금 (초과 부족분${s.baseLoanRemainder > 0 ? ' + 끝전' : ''})</td>
           <td class="px-4 py-3 text-right font-black text-amber-700 whitespace-nowrap">${formatWon(s.loanRemainder || 0)}</td>
           <td class="px-4 py-3 text-amber-950 font-bold">한도 초과 부족분 ${formatWon(s.loanExcess)}${s.baseLoanRemainder > 0 ? ` + 100만 절사 끝전 ${formatWon(s.baseLoanRemainder)}` : ''} ➔ 신용대출·가족차입 등으로 별도 조달 필요</td>
+        </tr>
+        ` : (s.isLoanCapped && s.isCapSurplus && s.loanSurplus > 0) ? `
+        <tr class="bg-blue-50/50">
+          <td class="px-4 py-3 font-bold text-blue-900">필요 주택담보대출</td>
+          <td class="px-4 py-3 text-right font-extrabold text-blue-700">${formatWon(s.requiredLoan)}</td>
+          <td class="px-4 py-3 text-blue-950 font-medium">LTV 약 ${s.ltv}% (목표 한도 ${formatWon(s.normalizedLoanCap)} 대비 <strong class="text-blue-700">+${formatWon(s.loanSurplus)} 여유</strong> ➔ 불필요한 과다 대출 방지)</td>
+        </tr>
+        <tr class="bg-emerald-50/50">
+          <td class="px-4 py-3 font-bold text-emerald-950">${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}</td>
+          <td class="px-4 py-3 text-right font-extrabold text-emerald-700 whitespace-nowrap">${formatWon(s.loanRemainder || 0)}</td>
+          <td class="px-4 py-3 text-emerald-900 font-medium">${s.loanRemainder > 0 ? `대출 100만 원 절사 끝전 ${formatWon(s.loanRemainder)}만 현금 정산 (목표 한도보다 ${formatWon(s.loanSurplus)} 덜 빌려 이자 절감)` : `목표 한도(${formatWon(s.normalizedLoanCap)})보다 ${formatWon(s.loanSurplus)} 적은 ${formatWon(s.requiredLoan)} 대출로 총 예산 100% 충당 완결`}</td>
         </tr>
         ` : `
         <tr class="bg-purple-50/40">
@@ -2463,6 +2687,14 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-3 py-2.5 text-right font-extrabold text-emerald-700">${formatWon(s.step3.creditLoanPayoff)}</td>
           <td class="px-3 py-2.5 text-emerald-800 font-medium">단기 부채 완전 변제 (DSR 및 신용점수 원상 회복)</td>
         </tr>
+        ${(s.step3 && s.step3.extraFund > 0) ? `
+        <tr class="bg-amber-50/70 border-t border-b border-amber-200">
+          <td class="px-3 py-2.5 text-center font-bold text-amber-700">오후 12:30</td>
+          <td class="px-3 py-2.5 font-bold text-amber-950">추가 준비 자금 정산 투입 (대출한도 고정 초과 부족분${s.step3.baseLoanRemainder > 0 ? ' + 끝전' : ''})</td>
+          <td class="px-3 py-2.5 text-right font-black text-amber-700">${formatWon(s.step3.extraFund)}</td>
+          <td class="px-3 py-2.5 text-amber-900 font-medium">별도 조달 자금(신용대출·가족지원 등)으로 한도 부족분 정산 및 부대비용 완납 충당</td>
+        </tr>
+        ` : ''}
         <tr>
           <td class="px-3 py-2.5 text-center font-bold text-slate-500">오후 01:00</td>
           <td class="px-3 py-2.5 font-semibold text-slate-800">남은 전세금 잔액으로 세금/등기/중개보수 정산 및 키 수령</td>
@@ -2513,6 +2745,8 @@ document.addEventListener('DOMContentLoaded', () => {
       cardRequiredLoan.textContent = formatWon(s.requiredLoan);
       if (s.isCappedApplied) {
         cardLtvBadge.textContent = `LTV ${s.ltv}% (목표한도 ${formatWon(s.requiredLoan)} 고정 / 초과 부족분 ${formatWon(s.loanExcess)} 별도 분리)`;
+      } else if (s.isLoanCapped && s.isCapSurplus && s.loanSurplus > 0) {
+        cardLtvBadge.textContent = `LTV ${s.ltv}% (목표한도 ${formatWon(s.normalizedLoanCap)} 대비 +${formatWon(s.loanSurplus)} 불필요 과다 대출 방지)`;
       } else if (s.loanRemainder > 0) {
         cardLtvBadge.textContent = `LTV ${s.ltv}% (100만 단위 절사 / 끝전 ${formatWon(s.loanRemainder)} 잔금 현금 정산)`;
       } else {
@@ -2585,6 +2819,17 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-4 py-3 font-extrabold text-amber-950">추가 준비 필요 자금 (초과 부족분${s.baseLoanRemainder > 0 ? ' + 끝전' : ''})</td>
           <td class="px-4 py-3 text-right font-black text-amber-700 whitespace-nowrap">${formatWon(s.loanRemainder || 0)}</td>
           <td class="px-4 py-3 text-amber-950 font-bold">한도 초과 부족분 ${formatWon(s.loanExcess)}${s.baseLoanRemainder > 0 ? ` + 100만 절사 끝전 ${formatWon(s.baseLoanRemainder)}` : ''} ➔ 신용대출·가족지원 등으로 별도 조달 필요</td>
+        </tr>
+        ` : (s.isLoanCapped && s.isCapSurplus && s.loanSurplus > 0) ? `
+        <tr class="bg-indigo-50/50">
+          <td class="px-4 py-3 font-bold text-indigo-900">필요 잔금 주택담보대출</td>
+          <td class="px-4 py-3 text-right font-extrabold text-indigo-700">${formatWon(s.requiredLoan)}</td>
+          <td class="px-4 py-3 text-indigo-950 font-medium">LTV 약 ${s.ltv}% (목표 한도 ${formatWon(s.normalizedLoanCap)} 대비 <strong class="text-indigo-700">+${formatWon(s.loanSurplus)} 여유</strong> ➔ 불필요한 과다 대출 방지)</td>
+        </tr>
+        <tr class="bg-emerald-50/50">
+          <td class="px-4 py-3 font-bold text-emerald-950">${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}</td>
+          <td class="px-4 py-3 text-right font-extrabold text-emerald-700 whitespace-nowrap">${formatWon(s.loanRemainder || 0)}</td>
+          <td class="px-4 py-3 text-emerald-900 font-medium">${s.loanRemainder > 0 ? `대출 100만 원 절사 끝전 ${formatWon(s.loanRemainder)}만 현금 정산 (목표 한도보다 ${formatWon(s.loanSurplus)} 덜 빌려 이자 절감)` : `목표 한도(${formatWon(s.normalizedLoanCap)})보다 ${formatWon(s.loanSurplus)} 적은 ${formatWon(s.requiredLoan)} 대출로 총 분양 예산 100% 충당 완결`}</td>
         </tr>
         ` : `
         <tr class="bg-purple-50/40">
@@ -2675,12 +2920,12 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-3 py-2.5 font-semibold text-slate-800">취득세(생애최초) 및 발코니/옵션/등기 정산</td>
           <td class="px-3 py-2.5 text-right font-bold text-slate-700">약 ${formatWon(s.step3.outflowExpense)}</td>
         </tr>
-        ${s.loanRemainder > 0 ? `
-        <tr class="bg-emerald-50/60">
-          <td class="px-3 py-2.5 font-bold text-emerald-950">대출 절사분 현금 정산</td>
-          <td class="px-3 py-2.5 text-right font-extrabold text-emerald-700">${formatWon(s.loanRemainder)}</td>
-          <td class="px-3 py-2.5 font-semibold text-slate-800">100만 단위 절사 대출에 따른 끝전 잔금 현금 추가 투입</td>
-          <td class="px-3 py-2.5 text-right font-bold text-slate-900">${formatWon(s.loanRemainder)}</td>
+        ${(s.step3 && s.step3.extraFund > 0) ? `
+        <tr class="${s.isCappedApplied ? 'bg-amber-50/70 border-t border-b border-amber-200' : 'bg-emerald-50/60'}">
+          <td class="px-3 py-2.5 font-bold ${s.isCappedApplied ? 'text-amber-950' : 'text-emerald-950'}">${s.isCappedApplied ? `추가 준비 자금 정산 투입 (한도초과${s.step3.baseLoanRemainder > 0 ? '+끝전' : ''})` : '대출 절사분 현금 정산'}</td>
+          <td class="px-3 py-2.5 text-right font-extrabold ${s.isCappedApplied ? 'text-amber-700' : 'text-emerald-700'}">${formatWon(s.step3.extraFund)}</td>
+          <td class="px-3 py-2.5 font-semibold text-slate-800">${s.isCappedApplied ? '대출 한도 초과 부족분 및 절사 끝전 현금 직접 충당' : '100만 단위 절사 대출에 따른 끝전 잔금 현금 추가 투입'}</td>
+          <td class="px-3 py-2.5 text-right font-bold text-slate-900">${formatWon(s.step3.extraFund)}</td>
         </tr>
         ` : ''}
         <tr class="bg-slate-100 font-extrabold">
@@ -2925,13 +3170,57 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           fpMatchBadge.innerHTML = '<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><span>✓ 조달금액 합계(⑬)와 총 거래금액(⑭)이 완벽히 일치합니다 (차액 0원)</span>';
         }
-      } else if (dealDiff > 0) {
-        fpMatchBadge.className = 'p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs text-emerald-900 font-bold';
-        fpMatchBadge.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i><span>✓ 조달금액 합계(⑬)가 총 거래금액(⑭)을 초과 충당합니다 (+${fmt(dealDiff)})</span>`;
       } else {
-        const shortage = totalDeal - grandTotal;
-        fpMatchBadge.className = 'p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2 text-xs text-amber-950 font-bold';
-        fpMatchBadge.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 flex-shrink-0"></i><span>⚠️ 조달금액 합계(⑬)가 총 거래금액(⑭)보다 부족합니다 (부족: ${fmt(shortage)})</span>`;
+        const isSurplus = dealDiff > 0;
+        const diffAbs = Math.abs(dealDiff);
+        const signText = isSurplus ? '-' : '+';
+        const statusClass = isSurplus ? 'bg-blue-50 border-blue-200 text-blue-950' : 'bg-amber-50 border-amber-200 text-amber-950';
+        const iconName = isSurplus ? 'info' : 'alert-triangle';
+        const iconColor = isSurplus ? 'text-blue-600' : 'text-amber-600';
+        const labelText = isSurplus
+          ? `✓ 조달금액 합계(⑬)가 총 거래금액(⑭)을 초과 충당합니다 (+${fmt(diffAbs)})`
+          : `⚠️ 조달금액 합계(⑬)가 총 거래금액(⑭)보다 부족합니다 (부족: ${fmt(diffAbs)})`;
+
+        fpMatchBadge.className = `p-3 ${statusClass} border rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-2.5 text-xs font-bold`;
+        fpMatchBadge.innerHTML = `
+          <div class="flex items-center gap-2">
+            <i data-lucide="${iconName}" class="w-4 h-4 ${iconColor} flex-shrink-0"></i>
+            <span>${labelText}</span>
+          </div>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-[11px] font-semibold text-slate-500">원클릭 합계 일치:</span>
+            <button type="button" id="btn-balance-to-mortgage" class="px-2 py-1 bg-white hover:bg-slate-50 border border-slate-300 rounded text-[11px] font-bold text-slate-800 shadow-xs transition flex items-center gap-1 cursor-pointer">
+              <span>⑧ 주담대로 맞춤 (${signText}${fmt(diffAbs)})</span>
+            </button>
+            <button type="button" id="btn-balance-to-deposit" class="px-2 py-1 bg-white hover:bg-slate-50 border border-slate-300 rounded text-[11px] font-bold text-slate-800 shadow-xs transition flex items-center gap-1 cursor-pointer">
+              <span>② 예금액으로 맞춤 (${signText}${fmt(diffAbs)})</span>
+            </button>
+          </div>
+        `;
+
+        const btnBalMortgage = document.getElementById('btn-balance-to-mortgage');
+        if (btnBalMortgage) {
+          btnBalMortgage.onclick = () => {
+            const currentMortgage = parseMoney(fromModal ? modalFpInpMortgage?.value : fpInpMortgage?.value);
+            const newMortgage = Math.max(0, currentMortgage - dealDiff);
+            if (fpInpMortgage) fpInpMortgage.value = formatMoney(newMortgage);
+            if (modalFpInpMortgage) modalFpInpMortgage.value = formatMoney(newMortgage);
+            calculateFundPlanTotals(fromModal);
+            showToast(`✨ ⑧ 주택담보대출을 ${fmt(newMortgage)}으로 조정하여 서식 총액을 100% 일치시켰습니다.`);
+          };
+        }
+
+        const btnBalDeposit = document.getElementById('btn-balance-to-deposit');
+        if (btnBalDeposit) {
+          btnBalDeposit.onclick = () => {
+            const currentDep = parseMoney(fromModal ? modalFpInpDepositSavings?.value : fpInpDepositSavings?.value);
+            const newDep = Math.max(0, currentDep - dealDiff);
+            if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(newDep);
+            if (modalFpInpDepositSavings) modalFpInpDepositSavings.value = formatMoney(newDep);
+            calculateFundPlanTotals(fromModal);
+            showToast(`✨ ② 금융기관 예금액을 ${fmt(newDep)}으로 조정하여 서식 총액을 100% 일치시켰습니다.`);
+          };
+        }
       }
     }
 
@@ -2939,13 +3228,45 @@ document.addEventListener('DOMContentLoaded', () => {
       if (dealDiff === 0) {
         modalFpMatchBadge.className = 'px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1';
         modalFpMatchBadge.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i><span>차액 0원 (합계 일치)</span>';
-      } else if (dealDiff > 0) {
-        modalFpMatchBadge.className = 'px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold flex items-center gap-1';
-        modalFpMatchBadge.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i><span>초과 충당 (+${fmt(dealDiff)})</span>`;
       } else {
-        const shortage = totalDeal - grandTotal;
-        modalFpMatchBadge.className = 'px-2.5 py-1 bg-amber-100 text-amber-900 rounded-lg text-xs font-bold flex items-center gap-1';
-        modalFpMatchBadge.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-600"></i><span>부족: ${fmt(shortage)}</span>`;
+        const isSurplus = dealDiff > 0;
+        const diffAbs = Math.abs(dealDiff);
+        const statusClass = isSurplus ? 'bg-blue-100 text-blue-900 border border-blue-200' : 'bg-amber-100 text-amber-950 border border-amber-200';
+        const signText = isSurplus ? '+' : '-';
+        modalFpMatchBadge.className = `px-2.5 py-1 ${statusClass} rounded-lg text-xs font-bold flex items-center gap-1.5 flex-wrap`;
+        modalFpMatchBadge.innerHTML = `
+          <span>${isSurplus ? `초과 충당 (+${fmt(diffAbs)})` : `부족: ${fmt(diffAbs)}`}</span>
+          <div class="flex items-center gap-1 ml-1">
+            <button type="button" id="modal-btn-balance-mortgage" class="px-1.5 py-0.5 bg-white hover:bg-slate-50 text-[10.5px] font-bold text-slate-800 rounded border border-slate-300 shadow-xs cursor-pointer" title="⑧ 주택담보대출로 서식 일치">⑧ 주담대 맞춤</button>
+            <button type="button" id="modal-btn-balance-deposit" class="px-1.5 py-0.5 bg-white hover:bg-slate-50 text-[10.5px] font-bold text-slate-800 rounded border border-slate-300 shadow-xs cursor-pointer" title="② 예금액으로 서식 일치">② 예금 맞춤</button>
+          </div>
+        `;
+
+        const mBtnMortgage = document.getElementById('modal-btn-balance-mortgage');
+        if (mBtnMortgage) {
+          mBtnMortgage.onclick = (e) => {
+            e.stopPropagation();
+            const currentMortgage = parseMoney(modalFpInpMortgage?.value || fpInpMortgage?.value);
+            const newMortgage = Math.max(0, currentMortgage - dealDiff);
+            if (fpInpMortgage) fpInpMortgage.value = formatMoney(newMortgage);
+            if (modalFpInpMortgage) modalFpInpMortgage.value = formatMoney(newMortgage);
+            calculateFundPlanTotals(true);
+            showToast(`✨ ⑧ 주택담보대출을 ${fmt(newMortgage)}으로 조정하여 합계를 맞췄습니다.`);
+          };
+        }
+
+        const mBtnDeposit = document.getElementById('modal-btn-balance-deposit');
+        if (mBtnDeposit) {
+          mBtnDeposit.onclick = (e) => {
+            e.stopPropagation();
+            const currentDep = parseMoney(modalFpInpDepositSavings?.value || fpInpDepositSavings?.value);
+            const newDep = Math.max(0, currentDep - dealDiff);
+            if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(newDep);
+            if (modalFpInpDepositSavings) modalFpInpDepositSavings.value = formatMoney(newDep);
+            calculateFundPlanTotals(true);
+            showToast(`✨ ② 금융기관 예금액을 ${fmt(newDep)}으로 조정하여 합계를 맞췄습니다.`);
+          };
+        }
       }
     }
 
@@ -4454,6 +4775,98 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // 5-6-3) 목표 한도 간편 증감 버튼 바 클릭 바인딩
+  document.querySelectorAll('.loan-cap-adjust-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const delta = Number(btn.dataset.delta || 0);
+      const current = parseMoney(inpLoanCapAmount?.value || 170000000);
+      const next = Math.max(0, current + delta);
+      if (inpLoanCapAmount) {
+        inpLoanCapAmount.value = formatMoney(next);
+      }
+      state.loanCapAmount = next;
+      recalculate();
+    });
+  });
+
+  // 5-6-4) 대시보드 월 상환액 카드 [상환일정표 ➔] 바로가기 버튼 바인딩
+  if (btnGotoAmortSchedule) {
+    btnGotoAmortSchedule.addEventListener('click', () => {
+      setMode('amortization');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  // 5-6-5) 사이드바 [기본값 복원] 버튼 바인딩
+  if (btnResetSimulatorDefaults) {
+    btnResetSimulatorDefaults.addEventListener('click', () => {
+      try {
+        localStorage.removeItem(STORAGE_KEY_SIMULATOR);
+        localStorage.removeItem(STORAGE_KEY_EQUITY);
+      } catch (e) {
+        console.warn('로컬스토리지 초기화 실패:', e);
+      }
+
+      state.mode = 'resale';
+      state.price = 520000000;
+      state.equity = 370000000;
+      state.equityDeposit = 200000000;
+      state.equitySavings = 60000000;
+      state.equityGift = 110000000;
+      state.equityBreakdown = { deposit: 200000000, savings: 60000000, gift: 110000000 };
+      state.annualIncome = 77000000;
+      state.monthlyNetIncome = 5100000;
+      state.loanYears = 30;
+      state.loanRate = 4.8;
+      state.repayType = 'equal-payment';
+      state.isFirstHome = true;
+      state.isHomeless = true;
+      state.includeMandatory = true;
+      state.includeMovein = true;
+      state.customExtra = 25000000;
+      state.customRefurbishCost = 25000000;
+      state.moveinExtra = 0;
+      state.isLoanCapped = false;
+      state.loanCapAmount = 170000000;
+      state.householdType = 'couple';
+      state.marriagePeriod = 'under7';
+      state.childCount = 0;
+      state.incomeType = 'double';
+      state.creditLoanRate = 4.5;
+
+      // UI 입력 폼 반영
+      if (inpPrice) inpPrice.value = formatMoney(520000000);
+      if (inpEquity) inpEquity.value = formatMoney(370000000);
+      if (inpEquityDeposit) inpEquityDeposit.value = formatMoney(200000000);
+      if (inpEquitySavings) inpEquitySavings.value = formatMoney(60000000);
+      if (inpEquityGift) inpEquityGift.value = formatMoney(110000000);
+      if (inpAnnualIncome) inpAnnualIncome.value = formatMoney(77000000);
+      if (inpMonthlyIncome) inpMonthlyIncome.value = formatMoney(5100000);
+      if (selLoanYears) selLoanYears.value = '30';
+      if (selRepayType) selRepayType.value = 'equal-payment';
+      if (chkFirstHome) chkFirstHome.checked = true;
+      if (chkHomeless) chkHomeless.checked = true;
+      if (chkIncludeMandatory) chkIncludeMandatory.checked = true;
+      if (chkIncludeMovein) chkIncludeMovein.checked = true;
+      if (inpCustomExtra) inpCustomExtra.value = formatMoney(25000000);
+      if (inpMoveinExtra) inpMoveinExtra.value = '0';
+      if (chkLoanCapMode) chkLoanCapMode.checked = false;
+      if (containerLoanCapInput) containerLoanCapInput.classList.add('hidden');
+      if (inpLoanCapAmount) inpLoanCapAmount.value = formatMoney(170000000);
+      if (inpRate) inpRate.value = 4.8;
+      if (rngRate) rngRate.value = 4.8;
+      syncRateToRadios(4.8);
+      setHouseholdType('couple', false);
+      updateMarriagePeriodUI('under7');
+      updateChildCountUI(0);
+      updateIncomeTypeUI('double');
+
+      setMode('resale');
+      recalculate();
+      showToast('🔄 시뮬레이터가 초기 기본값(5.2억 매매 / 순자산 3.7억 / 4.8%)으로 복원되었습니다.');
+    });
+  }
+
   // 5-7) 필수/선택 비용 포함 여부 토글 체크박스
   if (chkIncludeMandatory) {
     chkIncludeMandatory.addEventListener('change', () => recalculate());
@@ -4841,11 +5254,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 1. 로컬스토리지에 저장된 자금 세부 구성 및 자금조달계획서 복원
+  // 1. 로컬스토리지에 저장된 자금 세부 구성, 자금조달계획서 및 시뮬레이터 전체 상태 복원
   loadEquityFromStorage();
   loadFundPlanFromStorage();
+  loadSimulatorStateFromStorage();
 
   // 2. 서버 금리 동기화 및 메인 모드 초기 실행
   syncRatesFromServer(true);
-  setMode('resale');
+  setMode(state.simMode || 'resale');
 });

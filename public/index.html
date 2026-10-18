@@ -120,9 +120,15 @@
               <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500"></i>
               실전 시나리오 프리셋
             </span>
-            <span id="preset-mode-badge" class="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-              매매 모드
-            </span>
+            <div class="flex items-center gap-1.5">
+              <button type="button" id="btn-reset-simulator-defaults" class="px-1.5 py-0.5 text-[9.5px] font-semibold text-slate-500 hover:text-red-600 bg-slate-100 hover:bg-red-50 border border-slate-200 hover:border-red-200 rounded transition flex items-center gap-0.5 cursor-pointer" title="입력된 모든 설정을 초기 기본값으로 리셋합니다">
+                <i data-lucide="rotate-ccw" class="w-2.5 h-2.5"></i>
+                <span>기본값 복원</span>
+              </button>
+              <span id="preset-mode-badge" class="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                매매 모드
+              </span>
+            </div>
           </div>
 
           <!-- 매매 모드 프리셋 -->
@@ -311,13 +317,29 @@
                     <span class="absolute right-2 top-0.5 text-[10px] text-slate-400">원</span>
                   </div>
                 </div>
+                <!-- 대출 한도 간편 증감 버튼 바 -->
+                <div class="flex gap-1">
+                  <button type="button" class="loan-cap-adjust-btn flex-1 py-0.5 text-[9.5px] font-medium bg-white hover:bg-indigo-100 border border-indigo-200 rounded text-indigo-900 transition cursor-pointer" data-delta="-10000000">-1천만</button>
+                  <button type="button" class="loan-cap-adjust-btn flex-1 py-0.5 text-[9.5px] font-medium bg-white hover:bg-indigo-100 border border-indigo-200 rounded text-indigo-900 transition cursor-pointer" data-delta="-5000000">-500만</button>
+                  <button type="button" class="loan-cap-adjust-btn flex-1 py-0.5 text-[9.5px] font-medium bg-white hover:bg-indigo-100 border border-indigo-200 rounded text-indigo-900 transition cursor-pointer" data-delta="-1000000">-100만</button>
+                  <button type="button" class="loan-cap-adjust-btn flex-1 py-0.5 text-[9.5px] font-medium bg-white hover:bg-indigo-100 border border-indigo-200 rounded text-indigo-900 transition cursor-pointer" data-delta="1000000">+100만</button>
+                  <button type="button" class="loan-cap-adjust-btn flex-1 py-0.5 text-[9.5px] font-medium bg-white hover:bg-indigo-100 border border-indigo-200 rounded text-indigo-900 transition cursor-pointer" data-delta="5000000">+500만</button>
+                  <button type="button" class="loan-cap-adjust-btn flex-1 py-0.5 text-[9.5px] font-medium bg-white hover:bg-indigo-100 border border-indigo-200 rounded text-indigo-900 transition cursor-pointer" data-delta="10000000">+1천만</button>
+                </div>
                 <div class="flex items-center justify-between text-[9.5px]">
                   <span id="txt-loan-cap-status" class="text-indigo-700 font-semibold">계획 대출액: 1억 5,000만 원</span>
-                  <button type="button" id="btn-sync-fund-plan-loan" class="px-1.5 py-0.5 bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-[9.5px] font-bold transition flex items-center gap-0.5 shadow-2xs cursor-pointer">
-                    <i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i>
-                    <span>계획서 대출 연동</span>
-                  </button>
+                  <div class="flex items-center gap-1">
+                    <button type="button" id="btn-fit-loan-cap" class="hidden px-1.5 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[9.5px] font-bold transition flex items-center gap-0.5 shadow-2xs cursor-pointer" title="실제 필요 대출액으로 목표 한도 자동 맞춤">
+                      <span>필요액 맞춤</span>
+                    </button>
+                    <button type="button" id="btn-sync-fund-plan-loan" class="px-1.5 py-0.5 bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-[9.5px] font-bold transition flex items-center gap-0.5 shadow-2xs cursor-pointer">
+                      <i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i>
+                      <span>계획서 대출 연동</span>
+                    </button>
+                  </div>
                 </div>
+                <!-- 실시간 한도 여유/부족 상세 안내 배너 -->
+                <div id="box-loan-cap-notice" class="hidden text-[10px] p-2 rounded-lg leading-tight transition"></div>
               </div>
             </div>
           </div>
@@ -601,8 +623,14 @@
                 <i data-lucide="coins" class="w-4 h-4 text-emerald-200"></i>
               </div>
               <div id="card-monthly-payment" class="text-xl font-extrabold tracking-tight">약 55만 원</div>
-              <div id="card-monthly-payment-detail" class="text-[11px] text-yellow-200 mt-1 hidden font-bold">마지막 달: 0만 원</div>
-              <div id="card-housing-ratio" class="text-[11px] text-emerald-100 mt-1">실수령액의 10.4% (최상급 안정)</div>
+              <div id="card-monthly-payment-detail" class="text-[11px] text-yellow-200 mt-0.5 hidden font-bold">마지막 달: 0만 원</div>
+              <div class="flex items-center justify-between text-[11px] text-emerald-100 mt-1">
+                <span id="card-housing-ratio">실수령액의 10.4% (최상급 안정)</span>
+                <button type="button" id="btn-goto-amort-schedule" class="text-[9.5px] font-bold text-white bg-white/20 hover:bg-white/30 px-1.5 py-0.5 rounded transition flex items-center gap-0.5 cursor-pointer whitespace-nowrap" title="월별 상환일정표(원금/이자/잔금) 상세 조회">
+                  <span>상환일정표</span>
+                  <i data-lucide="chevron-right" class="w-2.5 h-2.5"></i>
+                </button>
+              </div>
             </div>
 
             <div class="bg-gradient-to-br from-amber-500 to-orange-500 p-4 rounded-2xl text-white shadow-md shadow-amber-500/10">
