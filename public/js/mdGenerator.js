@@ -70,7 +70,8 @@ const MarkdownGenerator = {
     if (extraCostTotal > 0) {
       md += `> * **준비해야 할 부가 비용:** **약 ${formatWon(extraCostTotal)}** (대출 외 별도 현금 준비 필요)  \n`;
     }
-    md += `> * **입주 후 월 상환액:** **${monthlyPayWon}** (${s.loanYears}년 만기 원리금균등, 연 ${s.loanRate}% 기준 / 디딤돌 연 3.0% 적용 시 ${didimdolPayWon})  \n`;
+    const repayLabel = s.repayType === 'equal-principal' ? '원금균등(체감식)' : (s.repayType === 'graduated' ? '체증식' : (s.repayType === 'interest-only' ? '만기일시' : '원리금균등'));
+    md += `> * **입주 후 월 상환액:** **${monthlyPayWon}** (${s.loanYears}년 만기 ${repayLabel}, 연 ${s.loanRate}% 기준 / 디딤돌 연 3.0% 적용 시 ${didimdolPayWon})  \n`;
     md += `> * **가계 재무 평가:** 월 실수령액(${monthlyNetWon}) 대비 주거비 지출 비중이 **약 ${s.housingRatio}%**에 불과하여, 매월 약 ${Math.floor(s.surplusMin / 10000)}만 원 이상의 순수 잉여 저축 여력을 완벽 확보\n\n`;
 
     // 1. 일반 매매 자금 조달 구조 및 건전성 지표
@@ -112,7 +113,7 @@ const MarkdownGenerator = {
       md += `| **필요 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (100만 원 단위 절사 대출 실행${s.loanRemainder > 0 ? `, 끝전 ${formatWon(s.loanRemainder)} 제외` : ''}) |\n`;
       md += `| **${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}** | **${formatWon(s.loanRemainder || 0)}** | ${s.loanRemainder > 0 ? `대출 100만 원 단위 절사(버림)로 인해 잔금일 본인 현금/예금으로 정산하는 금액 (총 소요 예산 ${budgetWon} 100% 완결)` : `총 소요 예산(${budgetWon}) 전액이 [보유 순자산 + 주담대]로 100% 완벽 충당됨`} |\n`;
     }
-    md += `| **월 원리금 상환액** | ${monthlyPayWon} | ${s.loanYears}년 만기 원리금균등 (금리 연 ${s.loanRate}% 기준) |\n`;
+    md += `| **${s.repayType === 'equal-principal' ? '첫 달 원리금 상환액' : '월 원리금 상환액'}** | ${monthlyPayWon} | ${s.loanYears}년 만기 ${repayLabel} (금리 연 ${s.loanRate}% 기준) |\n`;
     md += `| **소득 대비 주거비 비중** | 약 ${s.housingRatio}% | 월 실수령액 ${monthlyNetWon} 기준 (최상급 안정권) |\n`;
     md += `| **DSR (총부채원리금상환비율)** | 약 ${s.dsr}% | ${incomePrefix} ${annualIncomeWon} 기준 (규제 한도 40% 대비 초안전) |\n\n`;
 
@@ -122,7 +123,7 @@ const MarkdownGenerator = {
     md += `| 적용 대출 조건 | 월 원리금 상환액 | 월 실수령액 대비 비중 | 세부 특징 및 활용 방안   |\n`;
     md += `| :---: | :---: | :---: | :---- |\n`;
     s.comparisonMatrix.forEach(row => {
-      md += `| 연 ${row.rate.toFixed(1)}% / ${row.years}년 만기 | 약 ${row.monthlyPaymentTenThousand}만 원 | ${row.ratio}% | ${row.desc} |\n`;
+      md += `| 연 ${Number.isInteger(row.rate) ? row.rate.toFixed(1) : Number(row.rate.toFixed(2))}% / ${row.years}년 만기 | 약 ${row.monthlyPaymentTenThousand}만 원 | ${row.ratio}% | ${row.desc} |\n`;
     });
     md += `\n`;
 
@@ -249,7 +250,8 @@ const MarkdownGenerator = {
     if (presaleExtraCostTotal > 0) {
       md += `> * **준비해야 할 부가 비용:** **약 ${formatWon(presaleExtraCostTotal)}** (대출 외 별도 현금 준비 필요)  \n`;
     }
-    md += `> * **입주 후 상환 부담:** ${s.loanYears}년 만기 원리금균등분할상환(금리 ${s.loanRate}% 기준) 시 월 원리금 ${monthlyPayWon}으로, 가계 실수령액의 ${s.housingRatio}% 수준에 불과하여 월 ${Math.floor(s.surplusMin / 10000)}만 원 이상의 여유 저축 여력을 확보.\n\n`;
+    const presaleRepayLabel = s.repayType === 'equal-principal' ? '원금균등(체감식)분할상환' : (s.repayType === 'graduated' ? '체증식분할상환' : (s.repayType === 'interest-only' ? '만기일시상환' : '원리금균등분할상환'));
+    md += `> * **입주 후 상환 부담:** ${s.loanYears}년 만기 ${presaleRepayLabel}(금리 ${s.loanRate}% 기준) 시 월 원리금 ${monthlyPayWon}으로, 가계 실수령액의 ${s.housingRatio}% 수준에 불과하여 월 ${Math.floor(s.surplusMin / 10000)}만 원 이상의 여유 저축 여력을 확보.\n\n`;
 
     // 1. 목표 분양가 및 기본 재무 지표
     md += `## **1\\. 목표 분양가 및 기본 재무 지표**\n\n`;
@@ -290,7 +292,7 @@ const MarkdownGenerator = {
       md += `| **필요 잔금 주택담보대출** | **${loanWon}** | LTV 약 ${s.ltv}% (100만 원 단위 절사 대출 실행${s.loanRemainder > 0 ? `, 끝전 ${formatWon(s.loanRemainder)} 제외` : ''}) |\n`;
       md += `| **${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}** | **${formatWon(s.loanRemainder || 0)}** | ${s.loanRemainder > 0 ? `대출 100만 원 단위 절사로 인한 잔금일 현금 정산액 (총 소요 예산 ${budgetWon} 100% 충당)` : `총 분양·입주 소요 예산(${budgetWon}) 전액이 [보유 순자산 + 잔금대출]로 100% 완벽 충당됨`} |\n`;
     }
-    md += `| **월 원리금 상환액** | ${monthlyPayWon} | ${s.loanYears}년 만기 원리금균등 (연 ${s.loanRate}% 기준) |\n`;
+    md += `| **${s.repayType === 'equal-principal' ? '첫 달 원리금 상환액' : '월 원리금 상환액'}** | ${monthlyPayWon} | ${s.loanYears}년 만기 ${presaleRepayLabel} (연 ${s.loanRate}% 기준) |\n`;
     md += `| **가계 소득 대비 주거비 부담율** | 약 ${s.housingRatio}% | 월 실수령액 ${monthlyNetWon} 기준 (초안정 구간) |\n`;
     md += `| **DSR (총부채원리금상환비율)** | 약 ${s.dsr}% | ${incomePrefix} ${annualIncomeWon} 기준 (법정 한도 40% 대비 초안전) |\n\n`;
 
@@ -300,7 +302,7 @@ const MarkdownGenerator = {
     md += `| 적용 대출 조건 | 월 원리금 상환액 | 소득 대비 주거비 비중 (월 ${monthlyNetWon} 기준) | 비고 및 추천 정책모기지   |\n`;
     md += `| :---: | :---: | :---: | ----- |\n`;
     s.comparisonMatrix.forEach(row => {
-      md += `| 연 ${row.rate.toFixed(1)}% / ${row.years}년 만기 | 약 ${row.monthlyPaymentTenThousand}만 원 | ${row.ratio}% | ${row.desc} |\n`;
+      md += `| 연 ${Number.isInteger(row.rate) ? row.rate.toFixed(1) : Number(row.rate.toFixed(2))}% / ${row.years}년 만기 | 약 ${row.monthlyPaymentTenThousand}만 원 | ${row.ratio}% | ${row.desc} |\n`;
     });
     md += `\n`;
 

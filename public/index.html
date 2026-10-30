@@ -326,17 +326,13 @@
                   <button type="button" class="loan-cap-adjust-btn flex-1 py-0.5 text-[9.5px] font-medium bg-white hover:bg-indigo-100 border border-indigo-200 rounded text-indigo-900 transition cursor-pointer" data-delta="5000000">+500만</button>
                   <button type="button" class="loan-cap-adjust-btn flex-1 py-0.5 text-[9.5px] font-medium bg-white hover:bg-indigo-100 border border-indigo-200 rounded text-indigo-900 transition cursor-pointer" data-delta="10000000">+1천만</button>
                 </div>
-                <div class="flex items-center justify-between text-[9.5px]">
-                  <span id="txt-loan-cap-status" class="text-indigo-700 font-semibold">계획 대출액: 1억 5,000만 원</span>
-                  <div class="flex items-center gap-1">
-                    <button type="button" id="btn-fit-loan-cap" class="hidden px-1.5 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[9.5px] font-bold transition flex items-center gap-0.5 shadow-2xs cursor-pointer" title="실제 필요 대출액으로 목표 한도 자동 맞춤">
-                      <span>필요액 맞춤</span>
-                    </button>
-                    <button type="button" id="btn-sync-fund-plan-loan" class="px-1.5 py-0.5 bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-[9.5px] font-bold transition flex items-center gap-0.5 shadow-2xs cursor-pointer">
-                      <i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i>
-                      <span>계획서 대출 연동</span>
-                    </button>
-                  </div>
+                <div class="flex items-center justify-between gap-1 text-[9.5px]">
+                  <span id="txt-loan-cap-status" class="text-indigo-900 font-semibold truncate leading-none">목표 한도: 1억 3,300만 원 (100% 일치)</span>
+                  <!-- 하나의 단일 토글 버튼 (동일한 크기 규격 유지) -->
+                  <button type="button" id="btn-toggle-loan-cap" class="shrink-0 h-6 px-2.5 text-[10px] font-bold rounded-md bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 transition flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap shadow-2xs" title="대출 조달 전략 원클릭 토글">
+                    <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                    <span>계획서 대출 연동</span>
+                  </button>
                 </div>
                 <!-- 실시간 한도 여유/부족 상세 안내 배너 -->
                 <div id="box-loan-cap-notice" class="hidden text-[10px] p-2 rounded-lg leading-tight transition"></div>
@@ -432,9 +428,9 @@
 
             <!-- 금리 슬라이더 / 수치 입력 -->
             <div class="flex items-center gap-2 pt-0.5">
-              <input type="range" id="rng-rate" min="1.5" max="7.0" step="0.1" value="4.8" class="w-full accent-purple-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer">
+              <input type="range" id="rng-rate" min="1.5" max="7.0" step="0.01" value="4.8" class="w-full accent-purple-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer">
               <div class="relative w-20 flex-shrink-0">
-                <input type="number" id="inp-rate" min="1.0" max="15.0" step="0.1" value="4.8" class="w-full pl-1.5 pr-5 py-0.5 bg-slate-50 border border-slate-200 rounded text-xs font-bold text-right focus:outline-none focus:ring-1 focus:ring-purple-500">
+                <input type="number" id="inp-rate" min="1.0" max="15.0" step="0.01" value="4.8" class="w-full pl-1.5 pr-5 py-0.5 bg-slate-50 border border-slate-200 rounded text-xs font-bold text-right focus:outline-none focus:ring-1 focus:ring-purple-500">
                 <span class="absolute right-1.5 top-0.5 text-xs text-slate-400 font-semibold">%</span>
               </div>
             </div>
@@ -550,7 +546,7 @@
               <div>
                 <label class="text-[10.5px] font-medium text-slate-600 block mb-0.5">계약금 단기 신용대출 금리</label>
                 <div class="relative">
-                  <input type="number" id="inp-credit-rate" value="4.5" step="0.1" class="w-full pl-2 pr-5 py-1 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-right">
+                  <input type="number" id="inp-credit-rate" value="4.5" step="0.01" class="w-full pl-2 pr-5 py-1 bg-slate-50 border border-slate-200 rounded-md text-xs font-semibold text-right">
                   <span class="absolute right-2 top-1 text-[10px] text-slate-400">%</span>
                 </div>
               </div>
@@ -645,7 +641,133 @@
           </div>
 
           <!-- 1. 자금 조달 구조 및 건전성 지표 (테이블) -->
-          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <!-- 0. 대출 조달 전략 2-Way 실전 정밀 비교 섹션 (계획서 한도 vs 필요액 맞춤) -->
+          <div id="section-loan-strategy-comparison" class="hidden bg-white p-6 rounded-2xl border-2 border-indigo-200/80 shadow-sm space-y-4 mb-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2">
+                <div class="p-2 rounded-xl bg-indigo-100 text-indigo-700">
+                  <i data-lucide="scale" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                    대출 조달 전략 2-Way 한눈에 비교
+                    <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">실시간 대조</span>
+                  </h2>
+                  <p class="text-xs text-slate-500 mt-0.5">계획서 대출 한도 고정 방식과 실제 필요액 전액 대출 방식의 금융 비용 및 자금 흐름을 한눈에 비교합니다.</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-xs text-slate-500 font-medium">적용 조건:</span>
+                <span id="compare-badge-rate" class="text-xs font-black text-purple-700 ml-1">연 4.8%</span>
+                <span class="text-xs text-slate-400">/</span>
+                <span id="compare-badge-years" class="text-xs font-bold text-slate-700">30년 만기</span>
+              </div>
+            </div>
+
+            <!-- 2열 비교 카드 그리드 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+              
+              <!-- 옵션 A: 계획서 대출 한도 고정 -->
+              <div id="card-compare-plan" class="p-4 rounded-xl border-2 border-indigo-300 bg-indigo-50/40 space-y-3 relative transition flex flex-col justify-between">
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-black px-2 py-0.5 rounded bg-indigo-600 text-white flex items-center gap-1">
+                      <span>옵션 A</span>
+                      <span class="font-normal opacity-80">| 계획서 한도 고정</span>
+                    </span>
+                    <span id="tag-compare-plan-applied" class="text-[10.5px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-md">현재 적용 중</span>
+                  </div>
+
+                  <div class="border-b border-indigo-100 pb-2">
+                    <div class="text-xs text-slate-500 font-medium">실행 주택담보대출</div>
+                    <div id="compare-plan-loan" class="text-2xl font-black text-indigo-700 tracking-tight">1억 7,000만 원</div>
+                    <div id="compare-plan-ltv" class="text-[11px] text-indigo-900 font-semibold mt-0.5">LTV 32.7% (목표 대출금 고정)</div>
+                  </div>
+
+                  <div class="space-y-1.5 text-xs">
+                    <div class="flex justify-between items-center py-1 border-b border-indigo-100/60">
+                      <span class="text-slate-600 font-medium">월 원리금 상환액</span>
+                      <span id="compare-plan-monthly" class="font-extrabold text-slate-900 text-sm">약 89.2만 원</span>
+                    </div>
+                    <div class="flex justify-between items-center py-1 border-b border-indigo-100/60">
+                      <span class="text-slate-600 font-medium">추가 준비 필요 자금</span>
+                      <span id="compare-plan-extra" class="font-black text-amber-700 text-sm">823만 원</span>
+                    </div>
+                    <div class="flex justify-between items-center py-1">
+                      <span class="text-slate-600 font-medium">30년 만기 총이자</span>
+                      <span id="compare-plan-interest" class="font-bold text-slate-800">약 1억 5,119만 원</span>
+                    </div>
+                  </div>
+
+                  <div id="compare-plan-merit" class="p-2.5 rounded-lg bg-indigo-100/70 border border-indigo-200 text-xs text-indigo-950 font-medium leading-relaxed">
+                    💰 <strong>이자 절감 최적화:</strong> 주담대를 덜 빌려 월 상환액 및 30년 총이자를 대폭 절감합니다. (단, 부족분은 별도 조달 필요)
+                  </div>
+                </div>
+
+                <button type="button" id="btn-apply-plan-to-sim" class="mt-3 w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition shadow-xs flex items-center justify-center gap-1 cursor-pointer">
+                  <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                  <span>이 방식(계획서 한도)으로 시뮬레이션 적용</span>
+                </button>
+              </div>
+
+              <!-- 옵션 B: 실제 필요액 전액 대출 맞춤 -->
+              <div id="card-compare-fitted" class="p-4 rounded-xl border-2 border-emerald-300 bg-emerald-50/40 space-y-3 relative transition flex flex-col justify-between">
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-black px-2 py-0.5 rounded bg-emerald-700 text-white flex items-center gap-1">
+                      <span>옵션 B</span>
+                      <span class="font-normal opacity-80">| 실제 필요액 맞춤</span>
+                    </span>
+                    <span id="tag-compare-fitted-applied" class="text-[10.5px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">현재 적용 중</span>
+                  </div>
+
+                  <div class="border-b border-emerald-100 pb-2">
+                    <div class="text-xs text-slate-500 font-medium">실행 주택담보대출</div>
+                    <div id="compare-fitted-loan" class="text-2xl font-black text-emerald-700 tracking-tight">1억 7,800만 원</div>
+                    <div id="compare-fitted-ltv" class="text-[11px] text-emerald-900 font-semibold mt-0.5">LTV 34.2% (부대비용 전액 포함 조달)</div>
+                  </div>
+
+                  <div class="space-y-1.5 text-xs">
+                    <div class="flex justify-between items-center py-1 border-b border-emerald-100/60">
+                      <span class="text-slate-600 font-medium">월 원리금 상환액</span>
+                      <span id="compare-fitted-monthly" class="font-extrabold text-slate-900 text-sm">약 93.4만 원</span>
+                    </div>
+                    <div class="flex justify-between items-center py-1 border-b border-emerald-100/60">
+                      <span class="text-slate-600 font-medium">추가 준비 필요 자금</span>
+                      <span id="compare-fitted-extra" class="font-black text-emerald-700 text-sm">23만 원 (끝전 정산)</span>
+                    </div>
+                    <div class="flex justify-between items-center py-1">
+                      <span class="text-slate-600 font-medium">30년 만기 총이자</span>
+                      <span id="compare-fitted-interest" class="font-bold text-slate-800">약 1억 5,830만 원</span>
+                    </div>
+                  </div>
+
+                  <div id="compare-fitted-merit" class="p-2.5 rounded-lg bg-emerald-100/70 border border-emerald-200 text-xs text-emerald-950 font-medium leading-relaxed">
+                    🚀 <strong>원스톱 완결성:</strong> 별도 신용대출 없이 주담대 하나로 취득·입주 전액 100% 깔끔 완결합니다.
+                  </div>
+                </div>
+
+                <button type="button" id="btn-apply-fitted-to-sim" class="mt-3 w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-xs flex items-center justify-center gap-1 cursor-pointer">
+                  <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                  <span>이 방식(필요액 맞춤)으로 시뮬레이션 적용</span>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- 하단 의사결정 가이드 배너 -->
+            <div id="compare-decision-compass" class="p-3 bg-slate-900 text-white rounded-xl text-xs space-y-1">
+              <div class="font-bold text-amber-300 flex items-center gap-1.5">
+                <i data-lucide="compass" class="w-4 h-4"></i>
+                <span>💡 전문가 의사결정 나침반: 두 방식의 핵심 차이 및 추천 선택</span>
+              </div>
+              <div id="compare-decision-desc" class="text-slate-300 leading-relaxed text-[11.5px] pt-0.5">
+                <!-- 동적 해설 -->
+              </div>
+            </div>
+          </div>
+
+<div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <h2 id="title-funding-section" class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
               <i data-lucide="pie-chart" class="w-5 h-5 text-blue-600"></i>
               자금 조달 구조 및 핵심 재무 지표
@@ -1558,13 +1680,13 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <div>
             <label class="text-xs font-bold text-slate-700 block mb-1">대출금액 (원)</label>
-            <input type="text" inputmode="numeric" id="amort-amount" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-right" value="100,000,000">
+            <input type="text" inputmode="numeric" id="amort-amount" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-right" value="170,000,000">
           </div>
           <div>
             <label class="text-xs font-bold text-slate-700 block mb-1">상환방식</label>
             <select id="amort-type" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="equal-principal">체감식(원금균등)분할상환</option>
-              <option value="equal-payment">원리금균등분할상환</option>
+              <option value="equal-payment" selected>원리금균등분할상환</option>
               <option value="graduated">체증식 분할상환</option>
               <option value="interest-only">만기일시상환 (월 이자만)</option>
             </select>
@@ -1583,7 +1705,7 @@
           </div>
           <div>
             <label class="text-xs font-bold text-slate-700 block mb-1">대출기간 (년)</label>
-            <input type="number" id="amort-term" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-right" value="10">
+            <input type="number" id="amort-term" class="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-right" value="30">
           </div>
           <div>
             <label class="text-xs font-bold text-slate-700 block mb-1">거치기간 (년)</label>
@@ -1598,27 +1720,124 @@
         </div>
       </div>
       
+      <!-- ======================================================== -->
+      <!-- [신규] 상환 방식 비교 & 원금 vs 이자 추이 그래프 카드 -->
+      <!-- ======================================================== -->
+      <div id="amort-comparison-container" class="hidden bg-slate-900 text-slate-100 p-6 md:p-8 rounded-2xl border border-slate-800 shadow-xl space-y-7">
+        
+        <!-- 섹션 1: 상환 방식 비교 -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="scale" class="w-5 h-5 text-indigo-400"></i>
+              상환 방식 비교
+            </h3>
+          </div>
+          <p id="amort-current-type-label" class="text-xs text-slate-400 mb-4">
+            현재 선택한 상환방식: 원리금균등상환
+          </p>
+
+          <!-- 상환방식 3종 비교 테이블 -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr class="text-slate-400 border-b border-slate-800 text-[11px]">
+                  <th class="py-2.5 px-3 font-semibold">상환방식</th>
+                  <th class="py-2.5 px-3 font-semibold text-right">초기월납입액</th>
+                  <th class="py-2.5 px-3 font-semibold text-right">총 이자액</th>
+                  <th class="py-2.5 px-3 font-semibold text-right">비고</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-amort-comparison" class="divide-y divide-slate-800/80">
+                <!-- JS 동적 렌더링 -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 스마트 팁 알림 박스 (Tip Box) -->
+          <div id="amort-comparison-tip-box" class="mt-4 p-3.5 bg-slate-800/90 border border-slate-700/60 rounded-xl text-xs text-slate-200 flex items-start gap-2.5">
+            <span class="text-base leading-none">💡</span>
+            <div id="amort-comparison-tip-text" class="leading-relaxed">
+              <!-- JS 동적 생성 -->
+            </div>
+          </div>
+
+          <!-- 상환방식 원클릭 전환 버튼 바 (2열 그리드) -->
+          <div id="amort-switch-buttons-container" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <!-- JS 동적 렌더링: 미선택 2개 방식에 대한 버튼 -->
+          </div>
+        </div>
+
+        <!-- 구분선 -->
+        <div class="border-t border-slate-800"></div>
+
+        <!-- 섹션 2: 원금 vs 이자 추이 그래프 -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="bar-chart-3" class="w-5 h-5 text-emerald-400"></i>
+              원금 vs 이자 추이 그래프
+            </h3>
+            <span id="amort-chart-subtitle" class="text-xs text-slate-400 font-normal">
+              연차별 연간 납입금 구성비
+            </span>
+          </div>
+
+          <!-- 가로 누적 막대 차트 컨테이너 -->
+          <div id="amort-chart-bars-container" class="space-y-3">
+            <!-- JS 동적 렌더링: 1년, 5년, 10년, 15년, 20년, 25년, 30년 행 -->
+          </div>
+
+          <!-- X축 스케일 눈금 라벨 바 -->
+          <div id="amort-chart-x-axis" class="mt-3 pt-2 border-t border-slate-800 flex justify-between text-[10.5px] text-slate-400 pl-11">
+            <!-- JS 동적 렌더링: 0원, 300만원, 600만원, 900만원, 1,200만원 -->
+          </div>
+
+          <!-- 하단 범례 (Legend) -->
+          <div class="mt-4 flex items-center justify-center gap-6 text-xs text-slate-300">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 bg-blue-600 rounded-sm inline-block"></span>
+              <span class="font-medium">원금</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 bg-emerald-500 rounded-sm inline-block"></span>
+              <span class="font-medium">이자</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 결과 테이블 -->
-      <div id="amort-result-container" class="hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto scroll-mt-48">
-        <h3 class="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <i data-lucide="table" class="w-4 h-4 text-blue-600"></i>
-          월별 상환일정표
-        </h3>
-        <table class="w-full text-xs text-right border-collapse">
-          <thead class="bg-slate-100 text-slate-700 font-bold border-y-2 border-slate-300">
-            <tr>
-              <th class="px-3 py-2.5 text-center">회차</th>
-              <th class="px-3 py-2.5 text-center">상환일</th>
-              <th class="px-3 py-2.5">납입원금</th>
-              <th class="px-3 py-2.5">이자</th>
-              <th class="px-3 py-2.5">월상환금</th>
-              <th class="px-3 py-2.5">잔금</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-amort-result" class="divide-y divide-slate-100">
-            <!-- JS 동적 생성 -->
-          </tbody>
-        </table>
+      <div id="amort-result-container" class="hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-sm scroll-mt-48">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="table" class="w-4 h-4 text-blue-600"></i>
+            <span>월별 상환일정표</span>
+          </h3>
+          <span id="amort-table-count-badge" class="text-xs text-slate-600 font-medium bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg self-start sm:self-auto flex items-center gap-1.5 shadow-2xs">
+            <i data-lucide="list-ordered" class="w-3.5 h-3.5 text-blue-600"></i>
+            <span>20라인 표시 · 스크롤하여 전체 회차 조회</span>
+          </span>
+        </div>
+        
+        <!-- 20라인 기준 스크롤 뷰포트 + 헤더 고정(Sticky Header) -->
+        <div class="overflow-x-auto overflow-y-auto max-h-[680px] border border-slate-200 rounded-xl relative shadow-2xs">
+          <table class="w-full text-xs text-right border-collapse">
+            <thead class="bg-slate-100 text-slate-700 font-bold border-b-2 border-slate-300 sticky top-0 z-10 shadow-2xs">
+              <tr>
+                <th class="px-3 py-2.5 text-center bg-slate-100">회차</th>
+                <th class="px-3 py-2.5 text-center bg-slate-100">상환일</th>
+                <th class="px-3 py-2.5 bg-slate-100">납입원금</th>
+                <th class="px-3 py-2.5 bg-slate-100">이자</th>
+                <th class="px-3 py-2.5 bg-slate-100">월상환금</th>
+                <th class="px-3 py-2.5 bg-slate-100">잔금</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-amort-result" class="divide-y divide-slate-100">
+              <!-- JS 동적 생성 -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -1707,6 +1926,7 @@
                 <td class="py-2 px-3 font-semibold text-slate-800">
                   <div class="flex items-center gap-1.5 flex-wrap">
                     <span>금융기관 예금액</span>
+                    <span id="fp-badge-deposit-auto" class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 font-bold px-1.5 py-0.5 rounded">보유현금 연동 자동계산</span>
                     <span id="fp-txt-deposit-subnotice" class="text-[10px] text-purple-700 bg-purple-100 font-bold px-1.5 py-0.5 rounded hidden">부대비용 차감됨</span>
                   </div>
                 </td>
@@ -2155,6 +2375,7 @@
                 <td class="py-1.5 px-3 font-semibold text-slate-800">
                   <div class="flex items-center gap-1.5 flex-wrap">
                     <span>금융기관 예금액</span>
+                    <span id="modal-fp-badge-deposit-auto" class="text-[9.5px] text-emerald-700 bg-emerald-50 border border-emerald-200 font-bold px-1 py-0.2 rounded">보유현금 연동</span>
                     <span id="modal-fp-txt-deposit-subnotice" class="text-[10px] text-purple-700 bg-purple-100 font-bold px-1 py-0.2 rounded hidden">차감됨</span>
                   </div>
                 </td>
@@ -2768,12 +2989,12 @@
     </div>
   </footer>
 
-  <!-- 앱 스크립트 모듈 로드 -->
-  <script src="js/data/interestRates.js"></script>
-  <script src="js/calculator/taxCalc.js"></script>
-  <script src="js/calculator/loanCalc.js"></script>
-  <script src="js/calculator/scenarioEngine.js"></script>
-  <script src="js/mdGenerator.js"></script>
-  <script src="js/app.js"></script>
+  <!-- 앱 스크립트 모듈 로드 (캐시 버스팅 v2.9.18) -->
+  <script src="js/data/interestRates.js?v=2.9.18"></script>
+  <script src="js/calculator/taxCalc.js?v=2.9.18"></script>
+  <script src="js/calculator/loanCalc.js?v=2.9.18"></script>
+  <script src="js/calculator/scenarioEngine.js?v=2.9.18"></script>
+  <script src="js/mdGenerator.js?v=2.9.18"></script>
+  <script src="js/app.js?v=2.9.18"></script>
 </body>
 </html>

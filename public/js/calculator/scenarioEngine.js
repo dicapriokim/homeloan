@@ -112,7 +112,9 @@ const ScenarioEngine = {
         loanRemainder = loanExcess + baseLoanRemainder;
       } else if (normalizedLoanCap > fullRequiredLoan) {
         isCapSurplus = true;
+        requiredLoan = normalizedLoanCap; // 사용자가 설정한 목표 한도로 실제 시뮬레이션 대출액 반영
         loanSurplus = normalizedLoanCap - fullRequiredLoan;
+        loanRemainder = 0; // 충분한 대출로 잔금 부족분 0원
       }
     }
 
@@ -132,8 +134,8 @@ const ScenarioEngine = {
     const didimdolPayment = LoanCalculator.calculateFirstMonthPayment(requiredLoan, 3.0, loanYears, repayType);
 
     // 3-2. 가이드 V5 맞벌이(시중은행) vs 외벌이/무직(디딤돌) 금융비용 정밀 비교
-    const commercial30YrTotalInterest = Math.max(0, (monthlyPayment * loanYears * 12) - requiredLoan);
-    const didimdol30YrTotalInterest = Math.max(0, (didimdolPayment * loanYears * 12) - requiredLoan);
+    const commercial30YrTotalInterest = LoanCalculator.calculateTotalInterest(requiredLoan, loanRate, loanYears, repayType);
+    const didimdol30YrTotalInterest = LoanCalculator.calculateTotalInterest(requiredLoan, 3.0, loanYears, repayType);
     const strategyComparison = {
       loanAmount: requiredLoan,
       commercialRate: loanRate,
@@ -151,8 +153,8 @@ const ScenarioEngine = {
     let capSurplusTotalInterestSaving = 0;
     if (isLoanCapped && isCapSurplus && loanSurplus > 0) {
       const capMonthlyPayment = LoanCalculator.calculateFirstMonthPayment(normalizedLoanCap, loanRate, loanYears, repayType);
-      const capTotalInterest = Math.max(0, (capMonthlyPayment * loanYears * 12) - normalizedLoanCap);
-      const actualTotalInterest = Math.max(0, (monthlyPayment * loanYears * 12) - requiredLoan);
+      const capTotalInterest = LoanCalculator.calculateTotalInterest(normalizedLoanCap, loanRate, loanYears, repayType);
+      const actualTotalInterest = LoanCalculator.calculateTotalInterest(requiredLoan, loanRate, loanYears, repayType);
       capSurplusMonthlySaving = Math.max(0, capMonthlyPayment - monthlyPayment);
       capSurplusTotalInterestSaving = Math.max(0, capTotalInterest - actualTotalInterest);
     }
@@ -180,7 +182,7 @@ const ScenarioEngine = {
     const surplusMax = monthlyNetIncome - monthlyPayment - estimatedLivingCostMin;
 
     // 금리/만기 비교 매트릭스
-    const comparisonMatrix = LoanCalculator.generateComparisonMatrix(requiredLoan, monthlyNetIncome, price);
+    const comparisonMatrix = LoanCalculator.generateComparisonMatrix(requiredLoan, monthlyNetIncome, price, repayType);
 
     // 가이드 V5 심사 팩트 기반 적격성 진단
     const userProfile = {
@@ -224,6 +226,7 @@ const ScenarioEngine = {
       monthlyNetIncome,
       loanRate,
       loanYears,
+      repayType,
       isFirstHome,
       expenseData,
       mandatoryExpense,
@@ -347,7 +350,9 @@ const ScenarioEngine = {
         loanRemainder = loanExcess + baseLoanRemainder;
       } else if (normalizedLoanCap > fullRequiredLoan) {
         isCapSurplus = true;
+        requiredLoan = normalizedLoanCap; // 사용자가 설정한 목표 한도로 실제 시뮬레이션 대출액 반영
         loanSurplus = normalizedLoanCap - fullRequiredLoan;
+        loanRemainder = 0; // 충분한 대출로 잔금 부족분 0원
       }
     }
 
@@ -370,8 +375,8 @@ const ScenarioEngine = {
     let capSurplusTotalInterestSaving = 0;
     if (isLoanCapped && isCapSurplus && loanSurplus > 0) {
       const capMonthlyPayment = LoanCalculator.calculateFirstMonthPayment(normalizedLoanCap, loanRate, loanYears, repayType);
-      const capTotalInterest = Math.max(0, (capMonthlyPayment * loanYears * 12) - normalizedLoanCap);
-      const actualTotalInterest = Math.max(0, (monthlyPayment * loanYears * 12) - requiredLoan);
+      const capTotalInterest = LoanCalculator.calculateTotalInterest(normalizedLoanCap, loanRate, loanYears, repayType);
+      const actualTotalInterest = LoanCalculator.calculateTotalInterest(requiredLoan, loanRate, loanYears, repayType);
       capSurplusMonthlySaving = Math.max(0, capMonthlyPayment - monthlyPayment);
       capSurplusTotalInterestSaving = Math.max(0, capTotalInterest - actualTotalInterest);
     }
@@ -398,7 +403,7 @@ const ScenarioEngine = {
     const surplusMax = monthlyNetIncome - monthlyPayment - estimatedLivingCostMin;
 
     // 금리/만기 비교 매트릭스
-    const comparisonMatrix = LoanCalculator.generateComparisonMatrix(requiredLoan, monthlyNetIncome, price);
+    const comparisonMatrix = LoanCalculator.generateComparisonMatrix(requiredLoan, monthlyNetIncome, price, repayType);
 
     // 가이드 V5 심사 팩트 기반 적격성 진단
     const userProfile = {
@@ -442,6 +447,7 @@ const ScenarioEngine = {
       monthlyNetIncome,
       loanRate,
       loanYears,
+      repayType,
       isFirstHome,
       expenseData,
       mandatoryExpense,

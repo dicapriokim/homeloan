@@ -125,9 +125,41 @@ const LoanCalculator = {
   },
 
   /**
+   * 상환방식별 총 대출이자 정밀 산출
+   */
+  calculateTotalInterest: function(principal, annualRate, years, repayType = 'equal-payment') {
+    if (!principal || principal <= 0 || !annualRate || annualRate <= 0 || !years || years <= 0) return 0;
+    const totalMonths = years * 12;
+    const monthlyRate = (annualRate / 100) / 12;
+    if (repayType === 'equal-principal') {
+      return Math.max(0, Math.round(principal * monthlyRate * (totalMonths + 1) / 2));
+    }
+    if (repayType === 'interest-only') {
+      return Math.max(0, Math.round(principal * (annualRate / 100) * years));
+    }
+    if (repayType === 'graduated') {
+      const g = 0.002;
+      let pmt1 = 0;
+      if (monthlyRate === g) {
+        pmt1 = principal * (1 + monthlyRate) / totalMonths;
+      } else {
+        const q = (1 + g) / (1 + monthlyRate);
+        pmt1 = principal * (1 + monthlyRate) * (1 - q) / (1 - Math.pow(q, totalMonths));
+      }
+      let totalPaid = 0;
+      for (let m = 0; m < totalMonths; m++) {
+        totalPaid += pmt1 * Math.pow(1 + g, m);
+      }
+      return Math.max(0, Math.round(totalPaid - principal));
+    }
+    const monthly = this.calculateEqualPayment(principal, annualRate, years);
+    return Math.max(0, Math.round((monthly * totalMonths) - principal));
+  },
+
+  /**
    * 매매/분양 금리 및 만기 조건별 비교 매트릭스 산출
    */
-  generateComparisonMatrix: function(loanAmount, monthlyNetIncome, housePrice) {
+  generateComparisonMatrix: function(loanAmount, monthlyNetIncome, housePrice, repayType = 'equal-payment') {
     const conditions = [
       { rate: 4.8, years: 30, desc: '시중 1금융권 일반 주택담보대출 기본 모델' },
       { rate: 3.8, years: 30, desc: 'HF 한국주택금융공사 일반 보금자리론 또는 우대금리 적용 시' },
@@ -143,7 +175,7 @@ const LoanCalculator = {
     ];
 
     return conditions.map(cond => {
-      const monthlyPayment = this.calculateEqualPayment(loanAmount, cond.rate, cond.years);
+      const monthlyPayment = this.calculateFirstMonthPayment(loanAmount, cond.rate, cond.years, repayType);
       const ratio = this.calculateHousingCostRatio(monthlyPayment, monthlyNetIncome);
       const rawMan = monthlyPayment / 10000;
       const roundedMan = Math.round(rawMan * 10) / 10;
@@ -153,7 +185,7 @@ const LoanCalculator = {
       return {
         rate: cond.rate,
         years: cond.years,
-        label: `연 ${cond.rate.toFixed(1)}% / ${cond.years}년 만기`,
+        label: `연 ${Number.isInteger(cond.rate) ? cond.rate.toFixed(1) : Number(cond.rate.toFixed(2))}% / ${cond.years}년 만기`,
         monthlyPayment: monthlyPayment,
         monthlyPaymentTenThousand: manStr,
         ratio: ratio,

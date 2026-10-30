@@ -230,8 +230,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const containerLoanCapInput = document.getElementById('container-loan-cap-input');
   const inpLoanCapAmount = document.getElementById('inp-loan-cap-amount');
   const txtLoanCapStatus = document.getElementById('txt-loan-cap-status');
-  const btnFitLoanCap = document.getElementById('btn-fit-loan-cap');
-  const btnSyncFundPlanLoan = document.getElementById('btn-sync-fund-plan-loan');
+  const btnToggleLoanCap = document.getElementById('btn-toggle-loan-cap');
+  const btnFitLoanCap = btnToggleLoanCap;
+  const btnSyncFundPlanLoan = btnToggleLoanCap;
   const boxLoanCapNotice = document.getElementById('box-loan-cap-notice');
   const btnResetSimulatorDefaults = document.getElementById('btn-reset-simulator-defaults');
   const btnGotoAmortSchedule = document.getElementById('btn-goto-amort-schedule');
@@ -546,6 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.repayType !== undefined && selRepayType) {
         state.repayType = data.repayType || 'equal-payment';
         selRepayType.value = state.repayType;
+        if (amortType) amortType.value = state.repayType;
       }
       if (data.annualIncome !== undefined && inpAnnualIncome) {
         state.annualIncome = Number(data.annualIncome) || 77000000;
@@ -819,7 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let matched = false;
 
     radios.forEach(r => {
-      if (r.value !== 'custom' && Math.abs(Number(r.value) - rateVal) < 0.01) {
+      if (r.value !== 'custom' && Math.abs(Number(r.value) - rateVal) < 0.005) {
         r.checked = true;
         matched = true;
       } else if (r.value !== 'custom') {
@@ -1279,7 +1281,11 @@ document.addEventListener('DOMContentLoaded', () => {
       detailsCustomExtra.classList.remove('hidden');
       lblCustomExtra.textContent = '도배/장판/샷시 정비 예산 (매매)';
 
-      selRepayType.value = 'equal-payment';
+      if (!state.repayType || state.repayType === 'interest-only') {
+        state.repayType = 'equal-payment';
+      }
+      selRepayType.value = state.repayType;
+      if (amortType) amortType.value = state.repayType;
       state.price = state.price || 520000000;
       state.equity = state.equity || 370000000;
       // 사용자가 이전에 선택한 매매 유효 금리(디딤돌 3.0, 보금자리 3.8 등)가 있으면 보존, 없으면 4.8
@@ -1318,7 +1324,11 @@ document.addEventListener('DOMContentLoaded', () => {
       detailsCustomExtra.classList.remove('hidden');
       lblCustomExtra.textContent = '발코니 확장 및 필수 옵션 예산 (분양)';
 
-      selRepayType.value = 'equal-payment';
+      if (!state.repayType || state.repayType === 'interest-only') {
+        state.repayType = 'equal-payment';
+      }
+      selRepayType.value = state.repayType;
+      if (amortType) amortType.value = state.repayType;
       state.price = state.price || 450000000;
       state.equity = state.equity || 370000000;
       const isCustomValidPresaleRate = (state.loanRate && state.loanRate >= 1.5 && state.loanRate <= 8.0 && state.loanRate !== 3.6 && state.loanRate !== 2.4 && state.loanRate !== 2.1);
@@ -1397,20 +1407,22 @@ document.addEventListener('DOMContentLoaded', () => {
       if (householdView) householdView.classList.add('hidden');
       ratesView.classList.add('hidden');
       if (amortizationView) amortizationView.classList.remove('hidden');
-      
-      // Initialize with current values
+
+      // 시나리오 최신 상태 선행 갱신
+      recalculate({ fromAmort: true });
+
+      // 좌측 사이드바 및 시나리오 설정값과 100% 동기화
       if (amortAmount) {
-        let loanAmt = 100000000;
-        if (state.lastScenario && state.lastScenario.requiredLoan) {
+        let loanAmt = 170000000;
+        if (state.isLoanCapped && state.loanCapAmount > 0) {
+          loanAmt = state.loanCapAmount;
+        } else if (state.lastScenario && state.lastScenario.requiredLoan) {
           loanAmt = state.lastScenario.requiredLoan;
-        } else if (state.simMode) {
-          const simPrice = state.price || 520000000;
-          const simEquity = state.equity || 370000000;
-          if (simPrice > simEquity) {
-            loanAmt = simPrice - simEquity;
-          }
+        } else if (state.price && state.equity && (state.price > state.equity)) {
+          loanAmt = state.price - state.equity;
         }
         amortAmount.value = loanAmt.toLocaleString();
+        state.lastSyncedAmortLoan = loanAmt;
       }
       if (amortRate) amortRate.value = state.loanRate || 4.8;
       if (amortType && selRepayType) amortType.value = selRepayType.value;
@@ -1424,11 +1436,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (amortFirstDate) amortFirstDate.value = nextMonth.toISOString().split('T')[0];
       }
       
-      setTimeout(() => {
-        if (typeof calculateAmortization === 'function') {
-          calculateAmortization(true);
-        }
-      }, 50);
+      if (typeof calculateAmortization === 'function') {
+        calculateAmortization(true);
+      }
     } else if (mode === 'fund-plan') {
       if (tabFundPlan) {
         tabFundPlan.classList.add('active');
@@ -1932,7 +1942,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 7. 메인 재계산 및 렌더링 함수
-  function recalculate() {
+  function recalculate(options = {}) {
     // 0) 가구 형태, 혼인 기간, 자녀 수, 소득 형태 DOM 최신값 실시간 동기화
     const checkedHousehold = document.querySelector('input[name="household-type"]:checked');
     if (checkedHousehold) state.householdType = checkedHousehold.value;
@@ -1972,7 +1982,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 표시 텍스트 갱신
     txtPriceDisplay.textContent = ScenarioEngine.formatKoreanMoney(state.price);
     txtEquityDisplay.textContent = ScenarioEngine.formatKoreanMoney(state.equity);
-    txtRateDisplay.textContent = `연 ${state.loanRate.toFixed(1)}%`;
+    txtRateDisplay.textContent = `연 ${Number.isInteger(state.loanRate) ? state.loanRate.toFixed(1) : Number(state.loanRate.toFixed(2))}%`;
     if (txtAnnualIncomeDisplay) {
       txtAnnualIncomeDisplay.textContent = ScenarioEngine.formatKoreanMoney(state.annualIncome);
     }
@@ -1997,11 +2007,11 @@ document.addEventListener('DOMContentLoaded', () => {
     updateRateRadioStyles();
     updateHouseholdSummaryBadge();
 
-    // 2) 시나리오 계산 엔진 실행
+    // 2) 시나리오 계산 엔진 실행 (상환일정표·자금조달계획서·가구조건·금리표 탭에서는 직전 시뮬레이션 모드 유지)
     let scenario;
-    const calcMode = (state.mode === 'household' || state.mode === 'rates')
-      ? (state.simMode || 'resale')
-      : state.mode;
+    const calcMode = (state.mode === 'resale' || state.mode === 'presale' || state.mode === 'jeonse')
+      ? state.mode
+      : (state.simMode || 'resale');
 
     const equityBreakdownParam = {
       deposit: state.equityDeposit,
@@ -2114,88 +2124,430 @@ document.addEventListener('DOMContentLoaded', () => {
       markdownRenderedContent.textContent = state.generatedMarkdown;
     }
 
+    // 5) 상환일정표 입력 폼과 좌측 사이드바 양방향 실시간 동기화
+    if (!options || !options.fromAmort) {
+      if (amortType && selRepayType && amortType.value !== selRepayType.value) {
+        amortType.value = selRepayType.value;
+      }
+      if (amortRate && state.loanRate) {
+        amortRate.value = state.loanRate;
+      }
+      if (amortTerm && state.loanYears) {
+        amortTerm.value = state.loanYears;
+      }
+      if (amortAmount) {
+        let syncLoanAmt = 170000000;
+        if (state.isLoanCapped && state.loanCapAmount > 0) {
+          syncLoanAmt = state.loanCapAmount;
+        } else if (scenario && scenario.requiredLoan > 0) {
+          syncLoanAmt = scenario.requiredLoan;
+        } else if (state.price > state.equity) {
+          syncLoanAmt = state.price - state.equity;
+        }
+        const currentAmortVal = parseMoney(amortAmount.value);
+        if (!currentAmortVal || state.lastSyncedAmortLoan === undefined || state.lastSyncedAmortLoan !== syncLoanAmt) {
+          amortAmount.value = syncLoanAmt.toLocaleString();
+          state.lastSyncedAmortLoan = syncLoanAmt;
+        }
+      }
+      if (state.mode === 'amortization' && typeof calculateAmortization === 'function') {
+        calculateAmortization(true);
+      }
+    }
+
     saveSimulatorStateToStorage();
     refreshIcons();
   }
 
-  // 대출 한도 고정 사이드바 상태 및 여유/부족 알림 실시간 동기화
+  // 총 대출이자 정밀 산출 헬퍼 함수 (원리금균등·원금균등·만기일시·체증식 4종 지원)
+  function calculateTotalInterest(principal, annualRate, years, repayType) {
+    if (typeof LoanCalculator !== 'undefined' && typeof LoanCalculator.calculateTotalInterest === 'function') {
+      return LoanCalculator.calculateTotalInterest(principal, annualRate, years, repayType);
+    }
+    if (!principal || principal <= 0 || !annualRate || annualRate <= 0 || !years || years <= 0) return 0;
+    if (repayType === 'equal-principal') {
+      const totalMonths = years * 12;
+      return Math.round(principal * (annualRate / 100 / 12) * (totalMonths + 1) / 2);
+    } else if (repayType === 'interest-only') {
+      return Math.round(principal * (annualRate / 100) * years);
+    } else {
+      const monthly = LoanCalculator.calculateEqualPayment(principal, annualRate, years);
+      return Math.max(0, Math.round((monthly * years * 12) - principal));
+    }
+  }
+
+  // 2-Way 대출 조달 전략 비교 데이터 산출 (목표/계획서 한도 vs 실제 필요액 맞춤)
+  function calculateTwoWayLoanComparison(s) {
+    if (!s) return null;
+
+    const fpMortgageVal = parseMoney(fpInpMortgage ? fpInpMortgage.value : (modalFpInpMortgage?.value || 0));
+    
+    // 실제 필요 대출 (100만 원 단위 절사)
+    let fullLoanAmount = s.fullRequiredLoan || 0;
+    if (fullLoanAmount <= 0) {
+      fullLoanAmount = Math.floor(Math.max(0, (s.fullTotalBudget || s.totalBudget) - s.equity) / 1000000) * 1000000;
+    }
+
+    // 옵션 A 대출 금액 (자금조달계획서 한도 대조군)
+    // ⚠️ 양쪽 같아지는 오류 원천 차단:
+    // 사용자가 사이드바에서 [필요액 맞춤]을 적용하여 state.loanCapAmount === fullLoanAmount가 되더라도,
+    // 옵션 A는 fullLoanAmount로 바뀌지 않고 계획서 기준 대출(1.7억 등)을 온전히 유지하여 양쪽 대출을 선명하게 맞비교!
+    let planLoanAmount = 0;
+    if (state.isLoanCapped && state.loanCapAmount > 0 && Math.abs(state.loanCapAmount - fullLoanAmount) >= 1000000) {
+      planLoanAmount = state.loanCapAmount;
+    } else if (fpMortgageVal > 0 && Math.abs(fpMortgageVal - fullLoanAmount) >= 1000000) {
+      planLoanAmount = fpMortgageVal;
+    } else if (fpMortgageVal > 0 && fpMortgageVal !== fullLoanAmount) {
+      planLoanAmount = fpMortgageVal;
+    } else {
+      planLoanAmount = 170000000;
+    }
+    planLoanAmount = Math.floor(planLoanAmount / 1000000) * 1000000;
+
+    const rate = s.loanRate || state.loanRate || 4.8;
+    const years = s.loanYears || state.loanYears || 30;
+    const repayType = s.repayType || state.repayType || 'equal_principal_interest';
+    const rawReq = s.rawRequiredLoan || (s.fullTotalBudget - s.equity);
+
+    // 옵션 A (목표 한도 또는 계획서 대출 기준)
+    const planLtv = LoanCalculator.calculateLTV(planLoanAmount, s.price);
+    const planMonthly = LoanCalculator.calculateFirstMonthPayment(planLoanAmount, rate, years, repayType);
+    const planExtraNeeded = Math.max(0, rawReq - planLoanAmount);
+    const planSurplus = Math.max(0, planLoanAmount - fullLoanAmount);
+    const planTotalInterest = calculateTotalInterest(planLoanAmount, rate, years, repayType);
+
+    // 옵션 B (실제 필요액 전액 맞춤)
+    const fullLtv = LoanCalculator.calculateLTV(fullLoanAmount, s.price);
+    const fullMonthly = LoanCalculator.calculateFirstMonthPayment(fullLoanAmount, rate, years, repayType);
+    const fullExtraNeeded = Math.max(0, rawReq - fullLoanAmount);
+    const fullTotalInterest = calculateTotalInterest(fullLoanAmount, rate, years, repayType);
+
+    // 적용 상태 판별 (실제 현재 시뮬레이션 적용 대출액 기준)
+    const isPlanApplied = state.isLoanCapped && (Math.abs(s.requiredLoan - planLoanAmount) < 500000);
+    const isFullApplied = (!state.isLoanCapped && Math.abs(s.requiredLoan - fullLoanAmount) < 500000) ||
+                          (state.isLoanCapped && Math.abs(state.loanCapAmount - fullLoanAmount) < 500000);
+
+    // 차이값
+    const diffLoan = Math.abs(fullLoanAmount - planLoanAmount);
+    const diffMonthly = Math.abs(fullMonthly - planMonthly);
+    const diffInterest = Math.abs(fullTotalInterest - planTotalInterest);
+    const diffExtra = Math.abs(fullExtraNeeded - planExtraNeeded);
+
+    return {
+      rate,
+      years,
+      repayType,
+      plan: {
+        loan: planLoanAmount,
+        ltv: planLtv,
+        monthly: planMonthly,
+        extraNeeded: planExtraNeeded,
+        surplus: planSurplus,
+        totalInterest: planTotalInterest,
+        isApplied: isPlanApplied && (!isFullApplied || planLoanAmount !== fullLoanAmount)
+      },
+      full: {
+        loan: fullLoanAmount,
+        ltv: fullLtv,
+        monthly: fullMonthly,
+        extraNeeded: fullExtraNeeded,
+        totalInterest: fullTotalInterest,
+        isApplied: isFullApplied
+      },
+      diff: {
+        loan: diffLoan,
+        monthly: diffMonthly,
+        interest: diffInterest,
+        extra: diffExtra,
+        hasDiff: diffLoan >= 1000000
+      }
+    };
+  }
+
+  // 2-Way 대출 조달 전략 메인 대시보드 렌더링
+  function renderTwoWayLoanComparison(comp, s) {
+    const section = document.getElementById('section-loan-strategy-comparison');
+    if (!section) return;
+
+    if (!comp || s.type === 'jeonse' || (comp.full.loan <= 0 && comp.plan.loan <= 0)) {
+      section.classList.add('hidden');
+      return;
+    }
+
+    section.classList.remove('hidden');
+    const formatWon = ScenarioEngine.formatKoreanMoney;
+    const formatTenMan = ScenarioEngine.formatTenThousand;
+
+    // 적용 조건 뱃지 (금리 / 만기 / 상환방식 동적 표시)
+    const badgeRate = document.getElementById('compare-badge-rate');
+    const badgeYears = document.getElementById('compare-badge-years');
+    const repayShort = comp.repayType === 'equal-principal' ? '원금균등' : (comp.repayType === 'graduated' ? '체증식' : (comp.repayType === 'interest-only' ? '만기일시' : '원리금균등'));
+    if (badgeRate) badgeRate.textContent = `연 ${Number.isInteger(comp.rate) ? comp.rate.toFixed(1) : Number(comp.rate.toFixed(2))}%`;
+    if (badgeYears) badgeYears.textContent = `${comp.years}년 만기 (${repayShort})`;
+
+    // 옵션 A: 계획서 대출 한도
+    const cardPlan = document.getElementById('card-compare-plan');
+    const tagPlanApplied = document.getElementById('tag-compare-plan-applied');
+    const txtPlanLoan = document.getElementById('compare-plan-loan');
+    const txtPlanLtv = document.getElementById('compare-plan-ltv');
+    const txtPlanMonthly = document.getElementById('compare-plan-monthly');
+    const txtPlanExtra = document.getElementById('compare-plan-extra');
+    const txtPlanInterest = document.getElementById('compare-plan-interest');
+    const txtPlanMerit = document.getElementById('compare-plan-merit');
+
+    if (txtPlanLoan) txtPlanLoan.textContent = formatWon(comp.plan.loan);
+    if (txtPlanLtv) {
+      txtPlanLtv.textContent = comp.plan.loan > comp.full.loan
+        ? `LTV ${comp.plan.ltv.toFixed(1)}% (여유 자금 확보 조달)`
+        : `LTV ${comp.plan.ltv.toFixed(1)}% (목표 대출금 고정)`;
+    }
+    if (txtPlanMonthly) {
+      txtPlanMonthly.textContent = `${comp.repayType === 'equal-principal' || comp.repayType === 'graduated' ? '첫 달 약 ' : '약 '}${formatTenMan(comp.plan.monthly)}`;
+      if (txtPlanMonthly.previousElementSibling) {
+        txtPlanMonthly.previousElementSibling.textContent = comp.repayType === 'equal-principal' ? '첫 달 상환액 (원금균등)' : (comp.repayType === 'graduated' ? '첫 달 상환액 (체증식)' : (comp.repayType === 'interest-only' ? '월 이자 상환액' : '월 원리금 상환액'));
+      }
+    }
+    if (txtPlanExtra) {
+      if (comp.plan.loan > comp.full.loan) {
+        txtPlanExtra.textContent = `+${formatWon(comp.plan.surplus)} (여유 자금 확보)`;
+        txtPlanExtra.className = 'font-black text-blue-700 text-sm';
+      } else if (comp.plan.extraNeeded > 0) {
+        txtPlanExtra.textContent = `${formatWon(comp.plan.extraNeeded)} (별도 조달)`;
+        txtPlanExtra.className = 'font-black text-amber-700 text-sm';
+      } else {
+        txtPlanExtra.textContent = '0원 (추가 필요 없음)';
+        txtPlanExtra.className = 'font-bold text-slate-700 text-sm';
+      }
+    }
+    if (txtPlanInterest) {
+      txtPlanInterest.textContent = `약 ${formatWon(comp.plan.totalInterest)}`;
+      if (txtPlanInterest.previousElementSibling) {
+        txtPlanInterest.previousElementSibling.textContent = `${comp.years}년 만기 총이자`;
+      }
+    }
+
+    if (txtPlanMerit) {
+      if (comp.plan.loan < comp.full.loan) {
+        txtPlanMerit.innerHTML = `💰 <strong>이자 절감 최적화:</strong> 주담대를 <strong>${formatWon(comp.diff.loan)}</strong> 덜 빌려 <strong>월 상환액 약 ${formatTenMan(comp.diff.monthly)}</strong> 및 <strong>총이자 약 ${formatWon(comp.diff.interest)}</strong>를 대폭 절감합니다. (단, 부족분 <strong>${formatWon(comp.plan.extraNeeded)}</strong>은 신용대출/현금 별도 조달 필요)`;
+      } else if (comp.plan.loan > comp.full.loan) {
+        txtPlanMerit.innerHTML = `💵 <strong>현금 유동성 극대화:</strong> 실제 필요액보다 <strong>${formatWon(comp.diff.loan)}</strong> 더 넉넉히 대출받아 <strong>+${formatWon(comp.plan.surplus)}</strong>의 현금 여유(비상금/인테리어)를 확보합니다. (월 상환액은 약 ${formatTenMan(comp.diff.monthly)} 증가)`;
+      } else {
+        txtPlanMerit.innerHTML = `✨ <strong>100% 최적 일치:</strong> 계획서 한도와 실제 필요 대출액이 완벽히 일치합니다.`;
+      }
+    }
+
+    if (cardPlan && tagPlanApplied) {
+      if (comp.plan.isApplied) {
+        cardPlan.className = 'p-4 rounded-xl border-2 border-indigo-500 bg-indigo-50/70 shadow-sm space-y-3 relative transition flex flex-col justify-between ring-2 ring-indigo-400';
+        tagPlanApplied.className = 'text-[10.5px] font-black text-white bg-indigo-600 px-2 py-0.5 rounded-md';
+        tagPlanApplied.textContent = '현재 적용 중';
+      } else {
+        cardPlan.className = 'p-4 rounded-xl border border-indigo-200 bg-white hover:bg-indigo-50/30 space-y-3 relative transition flex flex-col justify-between';
+        tagPlanApplied.className = 'text-[10.5px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md';
+        tagPlanApplied.textContent = '미적용';
+      }
+    }
+
+    // 옵션 B: 실제 필요액 전액 맞춤
+    const cardFitted = document.getElementById('card-compare-fitted');
+    const tagFittedApplied = document.getElementById('tag-compare-fitted-applied');
+    const txtFittedLoan = document.getElementById('compare-fitted-loan');
+    const txtFittedLtv = document.getElementById('compare-fitted-ltv');
+    const txtFittedMonthly = document.getElementById('compare-fitted-monthly');
+    const txtFittedExtra = document.getElementById('compare-fitted-extra');
+    const txtFittedInterest = document.getElementById('compare-fitted-interest');
+    const txtFittedMerit = document.getElementById('compare-fitted-merit');
+
+    if (txtFittedLoan) txtFittedLoan.textContent = formatWon(comp.full.loan);
+    if (txtFittedLtv) txtFittedLtv.textContent = `LTV ${comp.full.ltv.toFixed(1)}% (부대비용 전액 포함 조달)`;
+    if (txtFittedMonthly) {
+      txtFittedMonthly.textContent = `${comp.repayType === 'equal-principal' || comp.repayType === 'graduated' ? '첫 달 약 ' : '약 '}${formatTenMan(comp.full.monthly)}`;
+      if (txtFittedMonthly.previousElementSibling) {
+        txtFittedMonthly.previousElementSibling.textContent = comp.repayType === 'equal-principal' ? '첫 달 상환액 (원금균등)' : (comp.repayType === 'graduated' ? '첫 달 상환액 (체증식)' : (comp.repayType === 'interest-only' ? '월 이자 상환액' : '월 원리금 상환액'));
+      }
+    }
+    if (txtFittedExtra) {
+      txtFittedExtra.textContent = comp.full.extraNeeded > 0 ? `${formatWon(comp.full.extraNeeded)} (끝전 정산)` : '0원 (완벽 충당)';
+      txtFittedExtra.className = comp.full.extraNeeded > 0 ? 'font-black text-emerald-700 text-sm' : 'font-bold text-slate-700 text-sm';
+    }
+    if (txtFittedInterest) {
+      txtFittedInterest.textContent = `약 ${formatWon(comp.full.totalInterest)}`;
+      if (txtFittedInterest.previousElementSibling) {
+        txtFittedInterest.previousElementSibling.textContent = `${comp.years}년 만기 총이자`;
+      }
+    }
+
+    if (txtFittedMerit) {
+      txtFittedMerit.innerHTML = `🚀 <strong>원스톱 완결성:</strong> 취득세·부대비용까지 주담대 하나로 해결하여 별도 추가 자금 조달 없이 취득·입주를 100% 깔끔 완결합니다.`;
+    }
+
+    if (cardFitted && tagFittedApplied) {
+      if (comp.full.isApplied) {
+        cardFitted.className = 'p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/70 shadow-sm space-y-3 relative transition flex flex-col justify-between ring-2 ring-emerald-400';
+        tagFittedApplied.className = 'text-[10.5px] font-black text-white bg-emerald-600 px-2 py-0.5 rounded-md';
+        tagFittedApplied.textContent = '현재 적용 중';
+      } else {
+        cardFitted.className = 'p-4 rounded-xl border border-emerald-200 bg-white hover:bg-emerald-50/30 space-y-3 relative transition flex flex-col justify-between';
+        tagFittedApplied.className = 'text-[10.5px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md';
+        tagFittedApplied.textContent = '미적용';
+      }
+    }
+
+    // 하단 의사결정 나침반 배너
+    const txtDecisionDesc = document.getElementById('compare-decision-desc');
+    if (txtDecisionDesc) {
+      if (comp.diff.hasDiff) {
+        if (comp.plan.loan < comp.full.loan) {
+          txtDecisionDesc.innerHTML = `
+            두 방식 간 대출금 차이는 <strong>${formatWon(comp.diff.loan)}</strong>입니다.
+            <ul class="list-disc pl-4 mt-1 space-y-0.5 text-slate-200">
+              <li><strong>이자 절약 우선(옵션 A):</strong> 보유 현금이나 마이너스통장 등 여유 자금이 충분하다면 주담대를 ${formatWon(comp.plan.loan)}만 받아 <strong>월 상환액 ${formatTenMan(comp.diff.monthly)}</strong> 및 <strong>총이자 ${formatWon(comp.diff.interest)}</strong>를 아끼는 것이 경제적입니다.</li>
+              <li><strong>자금 안전 완결 우선(옵션 B):</strong> 현금 유동성을 보존하고 잔금 시 추가 자금 마련 스트레스 없이 한 번에 끝내려면 ${formatWon(comp.full.loan)} 전액 대출을 받는 것이 유리합니다.</li>
+            </ul>
+          `;
+        } else {
+          txtDecisionDesc.innerHTML = `
+            현재 목표 대출 한도(<strong>${formatWon(comp.plan.loan)}</strong>)가 실제 필요액(<strong>${formatWon(comp.full.loan)}</strong>)보다 <strong>${formatWon(comp.diff.loan)}</strong> 더 넉넉하게 설정되어 있습니다.
+            <ul class="list-disc pl-4 mt-1 space-y-0.5 text-slate-200">
+              <li><strong>여유 자금 확보(옵션 A):</strong> 입주 후 인테리어·가전이나 비상 자금으로 현금 유동성을 <strong>+${formatWon(comp.plan.surplus)}</strong> 더 쥐고 가려면 ${formatWon(comp.plan.loan)} 대출을 받는 것이 유리합니다. (월 상환액 약 ${formatTenMan(comp.diff.monthly)} 증가)</li>
+              <li><strong>이자 절약 최적화(옵션 B):</strong> 불필요한 과다 대출을 줄이고 매달 원리금 지출과 총이자를 아끼려면 ${formatWon(comp.full.loan)} 딱 맞춤 대출을 적용하세요.</li>
+            </ul>
+          `;
+        }
+      } else {
+        txtDecisionDesc.innerHTML = `
+          현재 계획서 대출 한도와 실제 필요 대출액이 <strong>${formatWon(comp.full.loan)}</strong>으로 100% 일치합니다. 추가 부족분 없이 최적의 비율로 자금조달이 설계되었습니다.
+        `;
+      }
+    }
+
+    // 옵션 A 적용 버튼 이벤트
+    const btnApplyPlan = document.getElementById('btn-apply-plan-to-sim');
+    if (btnApplyPlan) {
+      btnApplyPlan.onclick = () => {
+        if (inpLoanCapAmount) {
+          inpLoanCapAmount.value = formatMoney(comp.plan.loan);
+        }
+        state.loanCapAmount = comp.plan.loan;
+        state.isLoanCapped = true;
+        if (chkLoanCapMode) chkLoanCapMode.checked = true;
+        if (containerLoanCapInput) containerLoanCapInput.classList.remove('hidden');
+        recalculate();
+        showToast(`✨ 시뮬레이션에 [옵션 A: 한도 ${formatWon(comp.plan.loan)}] 방식이 적용되었습니다.`);
+      };
+    }
+
+    // 옵션 B 적용 버튼 이벤트
+    const btnApplyFitted = document.getElementById('btn-apply-fitted-to-sim');
+    if (btnApplyFitted) {
+      btnApplyFitted.onclick = () => {
+        if (inpLoanCapAmount) {
+          inpLoanCapAmount.value = formatMoney(comp.full.loan);
+        }
+        state.loanCapAmount = comp.full.loan;
+        state.isLoanCapped = true;
+        if (chkLoanCapMode) chkLoanCapMode.checked = true;
+        if (containerLoanCapInput) containerLoanCapInput.classList.remove('hidden');
+        recalculate();
+        showToast(`✨ 시뮬레이션에 [옵션 B: 실제 필요액 ${formatWon(comp.full.loan)}] 방식이 적용되었습니다.`);
+      };
+    }
+  }
+
+  // 대출 한도 고정 사이드바 상태 및 실시간 금융 예상치 동기화
   function updateLoanCapSidebarStatus(s) {
     if (!txtLoanCapStatus || !boxLoanCapNotice) return;
     const formatWon = ScenarioEngine.formatKoreanMoney;
     const formatTenMan = ScenarioEngine.formatTenThousand;
 
+    const fpMortgageVal = parseMoney(fpInpMortgage ? fpInpMortgage.value : (modalFpInpMortgage?.value || 0));
+    const defaultPlanLoan = fpMortgageVal > 0 ? fpMortgageVal : 170000000;
+
     if (!s || !s.isLoanCapped) {
       boxLoanCapNotice.classList.add('hidden');
-      if (btnFitLoanCap) btnFitLoanCap.classList.add('hidden');
+      boxLoanCapNotice.innerHTML = '';
+      if (btnToggleLoanCap) btnToggleLoanCap.classList.add('hidden');
       txtLoanCapStatus.textContent = `계획 대출액: ${formatWon(state.loanCapAmount || 150000000)}`;
       return;
     }
 
     const cap = s.normalizedLoanCap;
     const fullReq = s.fullRequiredLoan;
+    const rate = s.loanRate || state.loanRate || 4.8;
+    const years = s.loanYears || state.loanYears || 30;
+    const repayType = s.repayType || state.repayType || 'equal_principal_interest';
+    const capMonthly = LoanCalculator.calculateFirstMonthPayment(cap, rate, years, repayType);
+    const capLtv = LoanCalculator.calculateLTV(cap, s.price || state.price || 500000000);
 
-    if (s.isCappedApplied) {
-      // 1) 한도 초과: 대출 제한 및 부족분 분리
-      txtLoanCapStatus.innerHTML = `목표 한도: <strong>${formatWon(cap)}</strong> <span class="text-amber-700 font-bold">(부족 ${formatWon(s.loanExcess)})</span>`;
-      boxLoanCapNotice.className = 'text-[10px] p-2 rounded-lg leading-tight transition bg-amber-50 border border-amber-200 text-amber-950 font-medium space-y-1.5';
-      boxLoanCapNotice.innerHTML = `
-        <div>⚠️ 실제 필요 대출(<strong>${formatWon(fullReq)}</strong>)보다 한도가 <strong>${formatWon(s.loanExcess)} 부족</strong>하여 '추가 준비 자금'으로 분리되었습니다.</div>
-        <div class="flex justify-end pt-0.5">
-          <button type="button" id="btn-increase-cap-to-full" class="px-2 py-0.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-[9.5px] font-bold transition flex items-center gap-0.5 shadow-2xs cursor-pointer">
-            <span>필요액(${formatWon(fullReq)})으로 한도 증액</span>
-          </button>
-        </div>
-      `;
-      boxLoanCapNotice.classList.remove('hidden');
-      const btnIncreaseCap = boxLoanCapNotice.querySelector('#btn-increase-cap-to-full');
-      if (btnIncreaseCap) {
-        btnIncreaseCap.onclick = () => {
-          if (inpLoanCapAmount) {
-            inpLoanCapAmount.value = formatMoney(fullReq);
-            state.loanCapAmount = fullReq;
-            recalculate();
-            showToast(`✨ 목표 한도를 실제 필요 대출액(${formatWon(fullReq)})으로 증액하여 부족분을 해소했습니다.`);
-          }
+    // 단일 토글 버튼 (동일 규격 유지: h-6 px-2.5 text-[10px])
+    if (btnToggleLoanCap) {
+      btnToggleLoanCap.classList.remove('hidden');
+      const isFitted = Math.abs(cap - fullReq) < 500000; // 현재 실제 필요액과 일치 여부
+
+      if (isFitted) {
+        // 이미 100% 일치 상태 -> 클릭 시 계획서 대출 한도로 토글
+        btnToggleLoanCap.className = 'shrink-0 h-6 px-2.5 text-[10px] font-bold rounded-md bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-300 shadow-2xs transition flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap';
+        btnToggleLoanCap.innerHTML = `<i data-lucide="refresh-cw" class="w-3 h-3"></i><span>계획서 대출 연동</span>`;
+        btnToggleLoanCap.title = `자금조달계획서 기준 대출액(${formatWon(defaultPlanLoan)})으로 연동 전환`;
+        btnToggleLoanCap.onclick = () => {
+          if (inpLoanCapAmount) inpLoanCapAmount.value = formatMoney(defaultPlanLoan);
+          state.loanCapAmount = defaultPlanLoan;
+          recalculate();
+          showToast(`🔄 목표 한도를 자금조달계획서 대출금(${formatWon(defaultPlanLoan)})으로 전환했습니다.`);
+        };
+      } else {
+        // 실제 필요액과 다름 (부족 또는 여유) -> 클릭 시 실제 필요액 맞춤으로 토글
+        btnToggleLoanCap.className = 'shrink-0 h-6 px-2.5 text-[10px] font-bold rounded-md bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-600 shadow-2xs transition flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap';
+        btnToggleLoanCap.innerHTML = `<i data-lucide="crosshair" class="w-3 h-3"></i><span>필요액 맞춤</span>`;
+        btnToggleLoanCap.title = `목표 한도를 실제 필요 대출액(${formatWon(fullReq)})으로 즉시 맞춥니다.`;
+        btnToggleLoanCap.onclick = () => {
+          if (inpLoanCapAmount) inpLoanCapAmount.value = formatMoney(fullReq);
+          state.loanCapAmount = fullReq;
+          recalculate();
+          showToast(`🎯 목표 한도를 실제 필요 대출액(${formatWon(fullReq)})으로 맞췄습니다.`);
         };
       }
-      if (btnFitLoanCap) btnFitLoanCap.classList.add('hidden');
-    } else if (s.isCapSurplus && s.loanSurplus > 0) {
-      // 2) 한도 여유: 필요 대출보다 더 많이 계획됨 (불필요한 과다 대출 및 이자 낭비 방지 안내)
-      const savingMonthlyStr = s.capSurplusMonthlySaving > 0 ? `월 상환액 약 ${formatTenMan(s.capSurplusMonthlySaving)} 절감` : '';
-      const savingTotalInterestStr = s.capSurplusTotalInterestSaving > 0 ? `30년 총이자 약 ${formatWon(s.capSurplusTotalInterestSaving)} 낭비 방지` : '';
-      const savingTip = [savingMonthlyStr, savingTotalInterestStr].filter(Boolean).join(', ');
-
-      txtLoanCapStatus.innerHTML = `목표 한도: <strong>${formatWon(cap)}</strong> <span class="text-blue-700 font-bold">(+${formatWon(s.loanSurplus)} 여유)</span>`;
-      boxLoanCapNotice.className = 'text-[10px] p-2 rounded-lg leading-tight transition bg-blue-50 border border-blue-200 text-blue-950 font-medium space-y-1';
-      boxLoanCapNotice.innerHTML = `
-        <div class="flex items-center gap-1 font-bold text-blue-900">
-          <span>💡 불필요한 과다 대출 계획 감지</span>
-        </div>
-        <div>실제 필요 대출(<strong>${formatWon(fullReq)}</strong>)보다 목표 한도가 <strong>+${formatWon(s.loanSurplus)} 더 많이 계획</strong>되어 있습니다.</div>
-        ${savingTip ? `<div class="text-[9.5px] text-blue-900 font-semibold bg-blue-100/70 p-1 rounded border border-blue-200/80">💰 필요액 맞춤 시: <strong>${savingTip}</strong></div>` : ''}
-        <div class="text-[9.5px] text-blue-700 font-normal">* [필요액 맞춤] 버튼을 누르면 불필요한 이자 낭비를 즉시 방지할 수 있습니다.</div>
-      `;
-      boxLoanCapNotice.classList.remove('hidden');
-      if (btnFitLoanCap) {
-        btnFitLoanCap.classList.remove('hidden');
-        btnFitLoanCap.title = `목표 한도를 실제 필요 대출액(${formatWon(fullReq)})으로 즉시 맞춥니다.`;
-        btnFitLoanCap.onclick = () => {
-          if (inpLoanCapAmount) {
-            inpLoanCapAmount.value = formatMoney(fullReq);
-            state.loanCapAmount = fullReq;
-            recalculate();
-            showToast(`✨ 목표 한도를 실제 필요 대출액(${formatWon(fullReq)})으로 맞췄습니다.`);
-          }
-        };
-      }
-    } else {
-      // 3) 한도와 필요액 100% 일치
-      txtLoanCapStatus.innerHTML = `목표 한도: <strong>${formatWon(cap)}</strong> <span class="text-emerald-700 font-bold">(100% 일치)</span>`;
-      boxLoanCapNotice.className = 'text-[10px] p-2 rounded-lg leading-tight transition bg-emerald-50 border border-emerald-200 text-emerald-950 font-medium';
-      boxLoanCapNotice.innerHTML = `✓ 목표 한도와 실제 필요 대출액(<strong>${formatWon(fullReq)}</strong>)이 <strong>100% 일치</strong>합니다 (최적 조달 계획).`;
-      boxLoanCapNotice.classList.remove('hidden');
-      if (btnFitLoanCap) btnFitLoanCap.classList.add('hidden');
     }
+
+    // 좌측 상단 상태 텍스트
+    if (s.isCappedApplied) {
+      txtLoanCapStatus.innerHTML = `목표 한도: <strong>${formatWon(cap)}</strong> <span class="text-amber-700 font-bold">(부족 ${formatWon(s.loanExcess)})</span>`;
+    } else if (s.isCapSurplus && s.loanSurplus > 0) {
+      txtLoanCapStatus.innerHTML = `목표 한도: <strong>${formatWon(cap)}</strong> <span class="text-blue-700 font-bold">(+${formatWon(s.loanSurplus)} 여유)</span>`;
+    } else {
+      txtLoanCapStatus.innerHTML = `목표 한도: <strong>${formatWon(cap)}</strong> <span class="text-emerald-700 font-bold">(100% 일치)</span>`;
+    }
+
+    // 하단 실시간 금융 예상치 컴팩트 배너 (금액 변경 시 즉각 예상치 제공)
+    boxLoanCapNotice.classList.remove('hidden');
+    let statusBadge = '';
+    let statusBg = '';
+    if (s.isCappedApplied) {
+      statusBg = 'bg-amber-50/90 border-amber-200 text-amber-900';
+      statusBadge = `<span class="text-amber-700 font-bold">부족 ${formatWon(s.loanExcess)} (별도 준비)</span>`;
+    } else if (s.isCapSurplus && s.loanSurplus > 0) {
+      statusBg = 'bg-blue-50/90 border-blue-200 text-blue-900';
+      statusBadge = `<span class="text-blue-700 font-bold">+${formatWon(s.loanSurplus)} 여유 확보</span>`;
+    } else {
+      statusBg = 'bg-emerald-50/90 border-emerald-200 text-emerald-900';
+      statusBadge = `<span class="text-emerald-700 font-bold">필요액 100% 일치</span>`;
+    }
+
+    boxLoanCapNotice.className = `p-2.5 rounded-lg border text-xs space-y-1.5 transition ${statusBg}`;
+    boxLoanCapNotice.innerHTML = `
+      <div class="flex items-center justify-between font-bold">
+        <span class="flex items-center gap-1">
+          <i data-lucide="calculator" class="w-3.5 h-3.5 text-indigo-600"></i>
+          <span class="text-slate-800">${repayType === 'equal-principal' ? '첫 달 상환액(원금균등):' : (repayType === 'interest-only' ? '월 이자액(만기일시):' : (repayType === 'graduated' ? '첫 달 상환액(체증식):' : '예상 월 상환액(원리금균등):'))}</span>
+        </span>
+        <span class="text-indigo-700 text-sm font-extrabold">약 ${formatTenMan(capMonthly)}</span>
+      </div>
+      <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-200/60">
+        <span class="text-slate-600 font-medium">LTV ${capLtv.toFixed(1)}% · ${years}년 만기</span>
+        ${statusBadge}
+      </div>
+    `;
+    refreshIcons();
   }
 
   // 8. 대시보드 렌더링 세부 함수
@@ -2207,6 +2559,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const incomeLabel = isCouple ? '부부합산 연소득' : '단독 연소득';
 
     updateLoanCapSidebarStatus(s);
+
+    // 대출 조달 전략 2-Way 실전 정밀 비교 섹션 렌더링
+    const compTwoWay = calculateTwoWayLoanComparison(s);
+    renderTwoWayLoanComparison(compTwoWay, s);
 
     const surplusMinMan = Math.floor(s.surplusMin / 10000);
     const surplusMaxMan = Math.floor(s.surplusMax / 10000);
@@ -2435,12 +2791,12 @@ document.addEventListener('DOMContentLoaded', () => {
         ? `순수 취득 ${formatWon(s.pureTotalBudget)} / 입주 포함 ${formatWon(s.fullTotalBudget)}`
         : `순수 취득 ${formatWon(s.pureTotalBudget)} (입주비 미포함)`;
 
-      cardLblLoan.textContent = '필요 대출 금액';
+      cardLblLoan.textContent = s.isLoanCapped ? (s.isCappedApplied ? '한도 고정 대출금' : (s.isCapSurplus ? '목표 설정 대출금' : '설정 대출금')) : '필요 대출 금액';
       cardRequiredLoan.textContent = formatWon(s.requiredLoan);
       if (s.isCappedApplied) {
         cardLtvBadge.textContent = `LTV ${s.ltv}% (목표한도 ${formatWon(s.requiredLoan)} 고정 / 초과 부족분 ${formatWon(s.loanExcess)} 별도 분리)`;
       } else if (s.isLoanCapped && s.isCapSurplus && s.loanSurplus > 0) {
-        cardLtvBadge.textContent = `LTV ${s.ltv}% (목표한도 ${formatWon(s.normalizedLoanCap)} 대비 +${formatWon(s.loanSurplus)} 불필요 과다 대출 방지)`;
+        cardLtvBadge.textContent = `LTV ${s.ltv}% (목표한도 ${formatWon(s.normalizedLoanCap)} 대비 +${formatWon(s.loanSurplus)} 여유 자금 확보)`;
       } else if (s.loanRemainder > 0) {
         cardLtvBadge.textContent = `LTV ${s.ltv}% (100만 단위 절사 / 끝전 ${formatWon(s.loanRemainder)} 잔금 현금 정산)`;
       } else {
@@ -2523,7 +2879,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <tr class="bg-blue-50/50">
           <td class="px-4 py-3 font-bold text-blue-900">필요 주택담보대출</td>
           <td class="px-4 py-3 text-right font-extrabold text-blue-700">${formatWon(s.requiredLoan)}</td>
-          <td class="px-4 py-3 text-blue-950 font-medium">LTV 약 ${s.ltv}% (목표 한도 ${formatWon(s.normalizedLoanCap)} 대비 <strong class="text-blue-700">+${formatWon(s.loanSurplus)} 여유</strong> ➔ 불필요한 과다 대출 방지)</td>
+          <td class="px-4 py-3 text-blue-950 font-medium">LTV 약 ${s.ltv}% (목표 한도 ${formatWon(s.normalizedLoanCap)} 대비 <strong class="text-blue-700">+${formatWon(s.loanSurplus)} 여유</strong> ➔ 여유 자금 확보)</td>
         </tr>
         <tr class="bg-emerald-50/50">
           <td class="px-4 py-3 font-bold text-emerald-950">${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}</td>
@@ -2543,9 +2899,9 @@ document.addEventListener('DOMContentLoaded', () => {
         </tr>
         `}
         <tr class="border-t-2 border-slate-400">
-          <td class="px-4 py-3 pt-3.5 font-semibold text-slate-700 border-t-2 border-slate-400">월 원리금 상환액</td>
-          <td class="px-4 py-3 pt-3.5 text-right font-bold text-slate-800 border-t-2 border-slate-400">${formatTenMan(s.monthlyPayment)}</td>
-          <td class="px-4 py-3 pt-3.5 text-slate-500 border-t-2 border-slate-400">${s.loanYears}년 만기 원리금균등 (금리 연 ${s.loanRate}% 기준)</td>
+          <td class="px-4 py-3 pt-3.5 font-semibold text-slate-700 border-t-2 border-slate-400">${s.repayType === 'equal-principal' ? '첫 달 원리금 상환액 (원금균등)' : (s.repayType === 'graduated' ? '첫 달 원리금 상환액 (체증식)' : (s.repayType === 'interest-only' ? '월 이자 상환액 (만기일시)' : '월 원리금 상환액'))}</td>
+          <td class="px-4 py-3 pt-3.5 text-right font-bold text-slate-800 border-t-2 border-slate-400">${formatTenMan(s.monthlyPayment)}${(s.repayType === 'equal-principal' || s.repayType === 'graduated') && s.lastMonthlyPayment ? ` <span class="text-xs font-medium text-slate-500">(만기 약 ${formatTenMan(s.lastMonthlyPayment)})</span>` : ''}</td>
+          <td class="px-4 py-3 pt-3.5 text-slate-500 border-t-2 border-slate-400">${s.loanYears}년 만기 ${s.repayType === 'equal-principal' ? '원금균등(체감식)' : (s.repayType === 'graduated' ? '체증식' : (s.repayType === 'interest-only' ? '만기일시' : '원리금균등'))} (금리 연 ${s.loanRate}% 기준)</td>
         </tr>
         <tr>
           <td class="px-4 py-3 font-semibold text-slate-700">소득 대비 주거비 비중</td>
@@ -2706,7 +3062,7 @@ document.addEventListener('DOMContentLoaded', () => {
       timelineStep4Title.textContent = '4단계: 입주 후 가계 재무 안착 및 자산 증식';
       timelineStep4.innerHTML = `
         <div>• <strong>남은 최종 부채:</strong> 계약금 신용대출은 잔금 당일 전액 상환되어 해지되었으므로, 오직 <strong>주택담보대출 ${formatWon(s.requiredLoan)}(단일 채무)</strong>만 남습니다.</div>
-        <div>• <strong>월 원리금 부담:</strong> 매월 <strong>약 ${formatTenMan(s.monthlyPayment)}</strong> 수준 (${s.loanYears}년 원리금균등, 연 ${s.loanRate}% 기준)</div>
+        <div>• <strong>월 원리금 부담:</strong> ${s.repayType === 'equal-principal' ? `첫 달 <strong>약 ${formatTenMan(s.monthlyPayment)}</strong> → 만기 <strong>약 ${formatTenMan(s.lastMonthlyPayment)}</strong>` : `매월 <strong>약 ${formatTenMan(s.monthlyPayment)}</strong>`} 수준 (${s.loanYears}년 ${s.repayType === 'equal-principal' ? '원금균등' : (s.repayType === 'graduated' ? '체증식' : (s.repayType === 'interest-only' ? '만기일시' : '원리금균등'))}, 연 ${s.loanRate}% 기준)</div>
         <div>• <strong>가계 재무 구조의 안정성:</strong> 실수령액 대비 주거비 지출은 <strong>약 ${s.housingRatio}%</strong>로 매우 안정적이며, 생활비(${s.livingCostDesc})를 여유롭게 지출하더라도 매월 <strong>약 ${surplusMinMan}만~${surplusMaxMan}만 원의 순수 잉여 자금</strong>이 지속 발생합니다.</div>
       `;
 
@@ -2741,12 +3097,12 @@ document.addEventListener('DOMContentLoaded', () => {
         ? `순수 분양 ${formatWon(s.pureTotalBudget)} / 옵션·입주 포함 ${formatWon(s.fullTotalBudget)}`
         : `순수 분양 ${formatWon(s.pureTotalBudget)} (옵션 미포함)`;
 
-      cardLblLoan.textContent = '필요 잔금 주담대';
+      cardLblLoan.textContent = s.isLoanCapped ? (s.isCappedApplied ? '한도 고정 잔금 주담대' : (s.isCapSurplus ? '목표 설정 잔금 주담대' : '설정 잔금 주담대')) : '필요 잔금 주담대';
       cardRequiredLoan.textContent = formatWon(s.requiredLoan);
       if (s.isCappedApplied) {
         cardLtvBadge.textContent = `LTV ${s.ltv}% (목표한도 ${formatWon(s.requiredLoan)} 고정 / 초과 부족분 ${formatWon(s.loanExcess)} 별도 분리)`;
       } else if (s.isLoanCapped && s.isCapSurplus && s.loanSurplus > 0) {
-        cardLtvBadge.textContent = `LTV ${s.ltv}% (목표한도 ${formatWon(s.normalizedLoanCap)} 대비 +${formatWon(s.loanSurplus)} 불필요 과다 대출 방지)`;
+        cardLtvBadge.textContent = `LTV ${s.ltv}% (목표한도 ${formatWon(s.normalizedLoanCap)} 대비 +${formatWon(s.loanSurplus)} 여유 자금 확보)`;
       } else if (s.loanRemainder > 0) {
         cardLtvBadge.textContent = `LTV ${s.ltv}% (100만 단위 절사 / 끝전 ${formatWon(s.loanRemainder)} 잔금 현금 정산)`;
       } else {
@@ -2824,7 +3180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <tr class="bg-indigo-50/50">
           <td class="px-4 py-3 font-bold text-indigo-900">필요 잔금 주택담보대출</td>
           <td class="px-4 py-3 text-right font-extrabold text-indigo-700">${formatWon(s.requiredLoan)}</td>
-          <td class="px-4 py-3 text-indigo-950 font-medium">LTV 약 ${s.ltv}% (목표 한도 ${formatWon(s.normalizedLoanCap)} 대비 <strong class="text-indigo-700">+${formatWon(s.loanSurplus)} 여유</strong> ➔ 불필요한 과다 대출 방지)</td>
+          <td class="px-4 py-3 text-indigo-950 font-medium">LTV 약 ${s.ltv}% (목표 한도 ${formatWon(s.normalizedLoanCap)} 대비 <strong class="text-indigo-700">+${formatWon(s.loanSurplus)} 여유</strong> ➔ 여유 자금 확보)</td>
         </tr>
         <tr class="bg-emerald-50/50">
           <td class="px-4 py-3 font-bold text-emerald-950">${s.loanRemainder > 0 ? '추가 준비 필요 자금 (끝전 잔금)' : '추가 준비 필요 자금'}</td>
@@ -2844,9 +3200,9 @@ document.addEventListener('DOMContentLoaded', () => {
         </tr>
         `}
         <tr class="border-t-2 border-slate-400">
-          <td class="px-4 py-3 pt-3.5 font-semibold text-slate-700 border-t-2 border-slate-400">월 원리금 상환액</td>
-          <td class="px-4 py-3 pt-3.5 text-right font-bold text-slate-800 border-t-2 border-slate-400">${formatTenMan(s.monthlyPayment)}</td>
-          <td class="px-4 py-3 pt-3.5 text-slate-500 border-t-2 border-slate-400">${s.loanYears}년 만기 원리금균등 (금리 연 ${s.loanRate}% 기준)</td>
+          <td class="px-4 py-3 pt-3.5 font-semibold text-slate-700 border-t-2 border-slate-400">${s.repayType === 'equal-principal' ? '첫 달 원리금 상환액 (원금균등)' : (s.repayType === 'graduated' ? '첫 달 원리금 상환액 (체증식)' : (s.repayType === 'interest-only' ? '월 이자 상환액 (만기일시)' : '월 원리금 상환액'))}</td>
+          <td class="px-4 py-3 pt-3.5 text-right font-bold text-slate-800 border-t-2 border-slate-400">${formatTenMan(s.monthlyPayment)}${(s.repayType === 'equal-principal' || s.repayType === 'graduated') && s.lastMonthlyPayment ? ` <span class="text-xs font-medium text-slate-500">(만기 약 ${formatTenMan(s.lastMonthlyPayment)})</span>` : ''}</td>
+          <td class="px-4 py-3 pt-3.5 text-slate-500 border-t-2 border-slate-400">${s.loanYears}년 만기 ${s.repayType === 'equal-principal' ? '원금균등(체감식)' : (s.repayType === 'graduated' ? '체증식' : (s.repayType === 'interest-only' ? '만기일시' : '원리금균등'))} (금리 연 ${s.loanRate}% 기준)</td>
         </tr>
         <tr>
           <td class="px-4 py-3 font-semibold text-slate-700">소득 대비 주거비 비중</td>
@@ -2938,7 +3294,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       timelineStep4Title.textContent = '4단계: 입주 후 월 원리금 안착 및 가계 재무 최적화';
       timelineStep4.innerHTML = `
-        <div>• <strong>주택담보대출 최종 조건:</strong> 원금 <strong>${formatWon(s.requiredLoan)}</strong> / ${s.loanYears}년 만기 원리금균등 / 연 ${s.loanRate}% 기준</div>
+        <div>• <strong>주택담보대출 최종 조건:</strong> 원금 <strong>${formatWon(s.requiredLoan)}</strong> / ${s.loanYears}년 만기 ${s.repayType === 'equal-principal' ? '원금균등' : (s.repayType === 'graduated' ? '체증식' : (s.repayType === 'interest-only' ? '만기일시' : '원리금균등'))} / 연 ${s.loanRate}% 기준</div>
         <div>• <strong>월 원리금 상환액:</strong> <strong>${formatTenMan(s.monthlyPayment)}</strong> (실수령액 대비 약 ${s.housingRatio}%)</div>
         <div>• <strong>가계 재무 최적화:</strong> 신용대출과 중도금 대출이 모두 0원으로 정리되어 단일 장기 모기지만 남으며, 매월 <strong>약 ${surplusMinMan}만~${surplusMaxMan}만 원</strong>의 여유 저축을 지속할 수 있습니다.</div>
       `;
@@ -2966,7 +3322,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (tabHousehold) tabHousehold.addEventListener('click', () => setMode('household'));
   tabRates.addEventListener('click', () => setMode('rates'));
   if (tabAmortization) tabAmortization.addEventListener('click', () => setMode('amortization'));
-  if (tabFundPlan) tabFundPlan.addEventListener('click', () => setMode('fund-plan'));
+  if (tabFundPlan) tabFundPlan.addEventListener('click', () => {
+    setMode('fund-plan');
+    calculateFundPlanTotals(false, false, false, false);
+  });
   
   if (btnCalcAmort) {
     btnCalcAmort.addEventListener('click', () => calculateAmortization(false));
@@ -3012,7 +3371,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (modalFpChkIncludeOptional) modalFpChkIncludeOptional.checked = includeOptional;
     }
 
-    // 1) 필수비용(취득세, 중개보수 등): 세법 표준 자동 계산 (만 원 단위 정규화로 1,000원 단위 단수 오차 방지)
+    // 1) 필수비용(취득세, 중개보수 등): 세법 표준 자동 계산
     let mandatoryCost = 0;
     if (totalDeal > 0) {
       if (typeof TaxCalculator !== 'undefined' && TaxCalculator.calculateTotalResaleExpenses) {
@@ -3069,13 +3428,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fpBoxOptionalInput) fpBoxOptionalInput.style.display = includeOptional ? 'flex' : 'none';
     if (modalFpBoxOptionalInput) modalFpBoxOptionalInput.style.display = includeOptional ? 'flex' : 'none';
 
-    // 2. ② 금융기관 예금액 및 ⑧ 주택담보대출 직접 입력 파싱 및 양방향 동기화
-    const depSavings = parseMoney(fromModal ? modalFpInpDepositSavings?.value : fpInpDepositSavings?.value);
-    baseDepositSavings = depSavings;
+    // =========================================================================
+    // [사용자 핵심 지침 4대 규칙 적용]
+    // 1. ⑬ 합계 (총 조달금액)은 항상 ⑭ 총 거래금액 (매매 계약가, ex. 5억 1,500만 원)과 같도록 유지
+    // 2. ⑧ 금융기관 대출액 합계는 자동계산이 아닌 사용자 입력값 그대로 유지
+    // 3. ② 금융기관 예금액은 ⑬ 합계(⑭ 총 거래금액)에서 ⑧ 대출액 및 기타 자금을 뺀 금액으로 자동 계산
+    // 4. 보유현금은 사이드바 금융 예적금·현금 합산시에만 사용
+    // =========================================================================
+
+    // 2. ⑧ 금융기관 대출액 (사용자 입력값 보존)
     const mortgage = parseMoney(fromModal ? modalFpInpMortgage?.value : fpInpMortgage?.value);
 
-    // 상단 추가 보유현금: 대출을 최대한 안 받고 필요한 현금 규모를 확인하는 시뮬레이션 용도
-    const holdingCash = parseMoney(fromModal ? modalFpInpHoldingCash?.value : fpInpHoldingCash?.value);
+    // 3. ② 금융기관 예금액 자동 계산: ⑬ 합계(⑭ 총 거래금액) - ⑧ 대출액 - (기타 자기자금 + 기타 차입금)
+    const otherFunds = stockCrypto + gift + cashOther + realEstate + otherLoans;
+    const depSavings = Math.max(0, totalDeal - mortgage - otherFunds);
+
+    if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(depSavings);
+    if (modalFpInpDepositSavings) modalFpInpDepositSavings.value = formatMoney(depSavings);
+    baseDepositSavings = depSavings;
+
+    // 4. 보유현금: 사이드바 금융 예적금·현금 합산 시에만 사용 (② 예금액 차감 배제)
+    let holdingCash = parseMoney(fromModal ? modalFpInpHoldingCash?.value : fpInpHoldingCash?.value);
+
     if (fromModal) {
       if (fpInpHoldingCash) fpInpHoldingCash.value = formatMoney(holdingCash);
       if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(depSavings);
@@ -3086,10 +3460,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (modalFpInpMortgage) modalFpInpMortgage.value = formatMoney(mortgage);
     }
 
+    // [사이드바 순자산 무결성 보존]
+    // 자금조달계획서의 예금액(②) 계산은 서식 내부 조달용이며,
+    // 사이드바 원래 순자산(전세 2억 + 금융 6천 + 증여 1.1억 = 3.7억)은
+    // 사용자가 [시뮬레이터에 적용] 버튼을 명시적으로 눌렀을 때만 반영되도록 분리 보존
+
     // ② 예금액 부대비용 참고 뱃지 표시
     if (fpTxtDepositSubnotice) {
       if (includeExpenses && totalExpenses > 0) {
-        fpTxtDepositSubnotice.textContent = `부대비용 약 ${fmt(totalExpenses)} 소요 예상`;
+        fpTxtDepositSubnotice.textContent = `부대비용 약 ${fmt(totalExpenses)} 소요 포함`;
         fpTxtDepositSubnotice.classList.remove('hidden');
       } else {
         fpTxtDepositSubnotice.classList.add('hidden');
@@ -3097,7 +3476,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (modalFpTxtDepositSubnotice) {
       if (includeExpenses && totalExpenses > 0) {
-        modalFpTxtDepositSubnotice.textContent = `부대비용 약 ${fmt(totalExpenses)}`;
+        modalFpTxtDepositSubnotice.textContent = `부대비용 약 ${fmt(totalExpenses)} 소요 포함`;
         modalFpTxtDepositSubnotice.classList.remove('hidden');
       } else {
         modalFpTxtDepositSubnotice.classList.add('hidden');
@@ -3150,7 +3529,9 @@ document.addEventListener('DOMContentLoaded', () => {
         modalFpTxtMortgageMapping.innerHTML = '<div>➔ 목표 주담대 대출액</div>';
       }
     } else {
-      if (fpTxtDepSavingsMapping) fpTxtDepSavingsMapping.textContent = '➔ 금융 예적금·현금';
+      if (fpTxtDepSavingsMapping) {
+        fpTxtDepSavingsMapping.innerHTML = `<div>➔ 금융 예적금·현금</div><div class="text-[10px] text-emerald-700 font-semibold mt-0.5">총 거래금액(⑭) 잔여 조달액 자동계산</div>`;
+      }
       if (fpTxtSelfTotalMapping) fpTxtSelfTotalMapping.textContent = '➔ 보유 순자산(총액)';
       if (fpTxtMortgageMapping) fpTxtMortgageMapping.textContent = '➔ 목표 주담대 대출액';
 
@@ -3217,8 +3598,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const newDep = Math.max(0, currentDep - dealDiff);
             if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(newDep);
             if (modalFpInpDepositSavings) modalFpInpDepositSavings.value = formatMoney(newDep);
-            calculateFundPlanTotals(fromModal);
-            showToast(`✨ ② 금융기관 예금액을 ${fmt(newDep)}으로 조정하여 서식 총액을 100% 일치시켰습니다.`);
+            baseDepositSavings = newDep;
+
+            const curStock = parseMoney(fromModal ? modalFpInpStockCrypto?.value : fpInpStockCrypto?.value);
+            const curHolding = parseMoney(fromModal ? modalFpInpHoldingCash?.value : fpInpHoldingCash?.value);
+            const curCashOther = parseMoney(fromModal ? modalFpInpCashOther?.value : fpInpCashOther?.value);
+            const requiredTotalSavings = newDep + curStock + curHolding + curCashOther;
+            if (inpEquitySavings) inpEquitySavings.value = formatMoney(requiredTotalSavings);
+            state.equitySavings = requiredTotalSavings;
+
+            calculateFundPlanTotals(fromModal, false, false, true);
+            showToast(`✨ ② 금융기관 예금액을 ${fmt(newDep)}으로 자동계산 조정하여 서식 총액을 100% 일치시켰습니다.`);
           };
         }
       }
@@ -3263,8 +3653,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const newDep = Math.max(0, currentDep - dealDiff);
             if (fpInpDepositSavings) fpInpDepositSavings.value = formatMoney(newDep);
             if (modalFpInpDepositSavings) modalFpInpDepositSavings.value = formatMoney(newDep);
-            calculateFundPlanTotals(true);
-            showToast(`✨ ② 금융기관 예금액을 ${fmt(newDep)}으로 조정하여 합계를 맞췄습니다.`);
+            baseDepositSavings = newDep;
+
+            const curStock = parseMoney(modalFpInpStockCrypto?.value || fpInpStockCrypto?.value);
+            const curHolding = parseMoney(modalFpInpHoldingCash?.value || fpInpHoldingCash?.value);
+            const curCashOther = parseMoney(modalFpInpCashOther?.value || fpInpCashOther?.value);
+            const requiredTotalSavings = newDep + curStock + curHolding + curCashOther;
+            if (inpEquitySavings) inpEquitySavings.value = formatMoney(requiredTotalSavings);
+            state.equitySavings = requiredTotalSavings;
+
+            calculateFundPlanTotals(true, false, false, true);
+            showToast(`✨ ② 금융기관 예금액을 ${fmt(newDep)}으로 자동계산 조정하여 합계를 일치시켰습니다.`);
           };
         }
       }
@@ -3689,12 +4088,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnModalFpPreset52) btnModalFpPreset52.addEventListener('click', loadPreset52ToFundPlan);
 
   // ② 금융기관 예금액 직접 입력 (사용자가 직접 타이핑 시 baseDepositSavings 갱신 및 덮어쓰기 방지)
-  // ② 금융기관 예금액 직접 입력 바인딩
+  // ② 금융기관 예금액 직접 입력 바인딩 (사용자가 직접 타이핑 시 보유현금 역산 연동)
   if (fpInpDepositSavings) {
-    bindMoneyInput(fpInpDepositSavings, () => calculateFundPlanTotals(false));
+    bindMoneyInput(fpInpDepositSavings, () => calculateFundPlanTotals(false, false, false, true));
   }
   if (modalFpInpDepositSavings) {
-    bindMoneyInput(modalFpInpDepositSavings, () => calculateFundPlanTotals(true));
+    bindMoneyInput(modalFpInpDepositSavings, () => calculateFundPlanTotals(true, false, false, true));
   }
 
   // 모든 자기자금 및 차입금 인풋 필드에 bindMoneyInput 바인딩
@@ -3742,17 +4141,17 @@ document.addEventListener('DOMContentLoaded', () => {
     bindMoneyInput(modalFpInpMoveinCost, () => calculateFundPlanTotals(true));
   }
 
-  // 상단 추가 보유현금 입력 바인딩 (서식 ⑤번과 분리, 필요 대출액 ⑧만 직접 차감)
+  // 상단 추가 보유현금 입력 바인딩 (보유현금에 따라 ② 금융기관 예금액 자동계산)
   if (fpInpHoldingCash) {
     bindMoneyInput(fpInpHoldingCash, () => {
       if (modalFpInpHoldingCash) modalFpInpHoldingCash.value = fpInpHoldingCash.value;
-      calculateFundPlanTotals(false, false);
+      calculateFundPlanTotals(false, false, false, false);
     });
   }
   if (modalFpInpHoldingCash) {
     bindMoneyInput(modalFpInpHoldingCash, () => {
       if (fpInpHoldingCash) fpInpHoldingCash.value = modalFpInpHoldingCash.value;
-      calculateFundPlanTotals(true, false);
+      calculateFundPlanTotals(true, false, false, false);
     });
   }
 
@@ -4166,7 +4565,307 @@ document.addEventListener('DOMContentLoaded', () => {
   // 초기 자금조달계획서 자동 계산 실행 (선택비용 기본값 1,000만 원 반영)
   calculateFundPlanTotals(false, false);
   
-  function calculateAmortization(skipScroll = false) {
+
+  // 상환방식 비교 및 그래프용 상세 한국어 화폐 포맷터 (이미지 1, 2 형식 100% 일치)
+  function formatDetailWon(won) {
+    if (!won || isNaN(won)) return '0원';
+    const isNeg = won < 0;
+    const val = Math.abs(Math.round(won));
+    if (val === 0) return '0원';
+    const eok = Math.floor(val / 100000000);
+    const man = Math.floor((val % 100000000) / 10000);
+    const rem = val % 10000;
+    let res = '';
+    if (eok > 0) res += `${eok}억 `;
+    if (man > 0) {
+      res += `${man.toLocaleString()}만`;
+      if (rem === 0) {
+        res += '원';
+      } else {
+        res += ' ';
+      }
+    }
+    if (rem > 0) {
+      res += `${rem.toLocaleString()}원`;
+    }
+    return (isNeg ? '-' : '') + res.trim();
+  }
+
+  // 상환 방식 비교 카드 & 원금 vs 이자 추이 그래프 렌더링
+  function renderAmortizationComparisonAndChart(amount, annualRatePercent, termYears, currentType, yearlyScheduleData, graceYears = 0) {
+    const container = document.getElementById('amort-comparison-container');
+    const tbodyComp = document.getElementById('tbody-amort-comparison');
+    const lblCurrentType = document.getElementById('amort-current-type-label');
+    const tipBox = document.getElementById('amort-comparison-tip-box');
+    const tipText = document.getElementById('amort-comparison-tip-text');
+    const switchBtnsContainer = document.getElementById('amort-switch-buttons-container');
+    const chartBarsContainer = document.getElementById('amort-chart-bars-container');
+    const chartXAxis = document.getElementById('amort-chart-x-axis');
+
+    if (!container || !tbodyComp || !chartBarsContainer) return;
+
+    const r = (annualRatePercent / 100) / 12;
+    const N = termYears * 12;
+    const G = Math.min(Math.max(0, (Number(graceYears) || 0) * 12), Math.max(0, N - 1));
+    const payN = Math.max(1, N - G);
+
+    // --- A. 상환방식 3종 정밀 산출 (거치기간 포함) ---
+    // 1) 원리금균등
+    const factor = Math.pow(1 + r, payN);
+    const mPayment = r > 0 ? Math.round(amount * (r * factor) / (factor - 1)) : Math.round(amount / payN);
+    const graceInterestSum = Math.round(amount * r) * G;
+    const eqPayTotalInterest = Math.max(0, Math.round(mPayment * payN - amount) + graceInterestSum);
+
+    // 2) 원금균등
+    const pMonthly = amount / payN;
+    const firstPrincipalPayment = Math.round(pMonthly + (amount * r));
+    const lastPrincipalPayment = Math.round(pMonthly + (pMonthly * r));
+    const eqPrinTotalInterest = Math.max(0, Math.round(amount * r * (payN + 1) / 2) + graceInterestSum);
+
+    // 3) 만기일시
+    const monthlyInterestOnly = Math.round(amount * r);
+    const intOnlyTotalInterest = Math.round(monthlyInterestOnly * N);
+
+    const methods = [
+      {
+        type: 'equal-payment',
+        name: '원리금균등',
+        fullName: '원리금균등상환',
+        firstPaymentVal: mPayment,
+        firstPaymentMain: formatDetailWon(mPayment),
+        firstPaymentSub: '(고정)',
+        totalInterest: eqPayTotalInterest,
+        totalInterestText: formatDetailWon(eqPayTotalInterest)
+      },
+      {
+        type: 'equal-principal',
+        name: '원금균등',
+        fullName: '원금균등상환',
+        firstPaymentVal: firstPrincipalPayment,
+        firstPaymentMain: formatDetailWon(firstPrincipalPayment),
+        firstPaymentSub: `→ ${formatDetailWon(lastPrincipalPayment)}`,
+        totalInterest: eqPrinTotalInterest,
+        totalInterestText: formatDetailWon(eqPrinTotalInterest)
+      },
+      {
+        type: 'interest-only',
+        name: '만기일시',
+        fullName: '만기일시상환',
+        firstPaymentVal: monthlyInterestOnly,
+        firstPaymentMain: formatDetailWon(monthlyInterestOnly),
+        firstPaymentSub: '(이자만)',
+        totalInterest: intOnlyTotalInterest,
+        totalInterestText: formatDetailWon(intOnlyTotalInterest)
+      }
+    ];
+
+    let currMethod = methods.find(m => m.type === currentType);
+    if (!currMethod) {
+      const gradFirst = LoanCalculator.calculateGraduatedFirstPayment(amount, annualRatePercent, termYears);
+      const gradTotalInt = LoanCalculator.calculateTotalInterest(amount, annualRatePercent, termYears, 'graduated');
+      currMethod = {
+        type: currentType,
+        name: currentType === 'graduated' ? '체증식' : currentType,
+        fullName: currentType === 'graduated' ? '체증식분할상환' : currentType,
+        firstPaymentVal: gradFirst,
+        firstPaymentMain: formatDetailWon(gradFirst),
+        firstPaymentSub: '(체증식)',
+        totalInterest: gradTotalInt || eqPayTotalInterest
+      };
+    }
+
+    if (lblCurrentType) {
+      lblCurrentType.className = 'text-xs text-slate-300 mb-4 flex flex-wrap items-center justify-between gap-2 bg-slate-800/70 border border-slate-700/80 px-3.5 py-2.5 rounded-xl';
+      lblCurrentType.innerHTML = `
+        <span class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+          <span>현재 선택한 상환방식: <strong class="text-white font-extrabold">${currMethod.fullName}</strong></span>
+        </span>
+        <span class="text-indigo-300 font-extrabold bg-indigo-950/90 border border-indigo-500/40 px-2.5 py-1 rounded-lg text-xs">
+          초기 월납입액: <strong class="text-white text-sm">${currMethod.firstPaymentMain}</strong> <span class="text-[10.5px] text-indigo-300 font-normal">${currMethod.firstPaymentSub || ''}</span>
+        </span>
+      `;
+    }
+
+    // 비교 테이블 HTML 생성
+    let tableHtml = '';
+    methods.forEach(m => {
+      const isSelected = (m.type === currentType);
+      let diffHtml = '';
+      let noteHtml = '';
+
+      if (isSelected) {
+        noteHtml = '<span class="inline-block px-2 py-0.5 rounded-md bg-indigo-500/30 border border-indigo-400/50 text-xs font-extrabold text-indigo-200">현재 선택</span>';
+      } else if (currentType === 'equal-principal' && m.type === 'equal-payment') {
+        // 원금균등 선택 시 레퍼런스(캡처 2)와 동일하게 원리금균등 행의 증감/비고 생략
+        diffHtml = '';
+        noteHtml = '';
+      } else {
+        const diff = m.totalInterest - currMethod.totalInterest;
+        if (diff < 0) {
+          diffHtml = `<span class="block text-[10.5px] font-semibold text-emerald-400">▼${formatDetailWon(Math.abs(diff))}</span>`;
+          noteHtml = '<span class="text-xs font-semibold text-emerald-400">이자 감소</span>';
+        } else if (diff > 0) {
+          diffHtml = `<span class="block text-[10.5px] font-semibold text-rose-400">▲${formatDetailWon(diff)}</span>`;
+          noteHtml = '<span class="text-xs font-semibold text-rose-400">이자 증가</span>';
+        } else {
+          noteHtml = '<span class="text-xs text-slate-400">-</span>';
+        }
+      }
+
+      tableHtml += `
+        <tr class="border-b border-slate-800/60 transition ${isSelected ? 'bg-indigo-950/50 border-l-4 border-l-indigo-400' : ' opacity-85 hover:opacity-100'}">
+          <td class="py-3 px-3 font-bold ${isSelected ? 'text-indigo-200' : 'text-slate-300'} text-xs whitespace-nowrap">
+            ${m.name} ${isSelected ? '<span class="ml-1 text-[10px] text-indigo-400">●</span>' : ''}
+          </td>
+          <td class="py-3 px-3 text-right">
+            <span class="${isSelected ? 'text-[15px] font-extrabold text-indigo-300 underline decoration-indigo-400/60 underline-offset-4' : 'text-sm font-bold text-slate-200'}">${m.firstPaymentMain}</span>
+            <span class="block text-[10px] ${isSelected ? 'text-indigo-300/90 font-medium' : 'text-slate-400 font-normal'}">${m.firstPaymentSub}</span>
+          </td>
+          <td class="py-3 px-3 text-right">
+            <span class="text-sm font-bold ${isSelected ? 'text-white' : 'text-slate-200'}">${m.totalInterestText}</span>
+            ${diffHtml}
+          </td>
+          <td class="py-3 px-3 text-right whitespace-nowrap">
+            ${noteHtml}
+          </td>
+        </tr>
+      `;
+    });
+    tbodyComp.innerHTML = tableHtml;
+
+    // 팁 박스 생성 (원금균등 선택 시 레퍼런스 캡처 2와 동일하게 숨김 처리)
+    if (tipBox && tipText) {
+      if (currentType === 'equal-payment') {
+        tipBox.classList.remove('hidden');
+        const saved = eqPayTotalInterest - eqPrinTotalInterest;
+        const initialMore = firstPrincipalPayment - mPayment;
+        tipText.innerHTML = `<strong>원금균등으로 변경하면 ${formatDetailWon(saved)}을 절약할 수 있어요!</strong><br><span class="text-slate-400">단, 초기 월납입액이 ${formatDetailWon(initialMore)} 더 높습니다.</span>`;
+      } else if (currentType === 'equal-principal') {
+        tipBox.classList.add('hidden');
+      } else if (currentType === 'interest-only') {
+        tipBox.classList.remove('hidden');
+        const saved = intOnlyTotalInterest - eqPayTotalInterest;
+        tipText.innerHTML = `<strong>원리금균등으로 변경하면 ${formatDetailWon(saved)}을 절약할 수 있어요!</strong><br><span class="text-slate-400">매월 원금을 함께 갚아 만기 시 목돈 일시 상환 부담을 없앱니다.</span>`;
+      } else {
+        tipBox.classList.remove('hidden');
+        tipText.innerHTML = `<strong>원리금균등 분할상환을 권장합니다.</strong><br><span class="text-slate-400">매월 일정한 지출 계획을 수립할 수 있습니다.</span>`;
+      }
+    }
+
+    // 전환 버튼 바 생성 (현재 방식 제외 버튼, 받침 유무에 따른 조사 '로/으로' 정밀 적용)
+    if (switchBtnsContainer) {
+      const candidates = methods.filter(m => m.type !== currentType);
+      switchBtnsContainer.className = candidates.length === 3
+        ? 'mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2.5'
+        : 'mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5';
+      switchBtnsContainer.innerHTML = candidates.map(c => `
+        <button type="button" class="btn-switch-repay-type w-full py-2.5 px-4 bg-slate-800/90 hover:bg-slate-700 active:bg-slate-950 border border-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs" data-target-type="${c.type}">
+          ${c.name === '만기일시' ? '만기일시로 계산' : c.name + '으로 계산'}
+        </button>
+      `).join('');
+
+      switchBtnsContainer.querySelectorAll('.btn-switch-repay-type').forEach(btn => {
+        btn.onclick = () => {
+          const targetType = btn.getAttribute('data-target-type');
+          if (!targetType) return;
+          if (amortType) amortType.value = targetType;
+          if (selRepayType) selRepayType.value = targetType;
+          state.repayType = targetType;
+          if (typeof recalculate === 'function') recalculate({ fromAmort: true });
+          calculateAmortization(true);
+          const methodObj = methods.find(m => m.type === targetType);
+          showToast(`✨ [${methodObj ? methodObj.name : targetType}] 방식으로 상환일정표를 재계산했습니다.`);
+        };
+      });
+    }
+
+    // --- B. 원금 vs 이자 추이 그래프 렌더링 ---
+    function getSampleYears(totalYrs) {
+      if (totalYrs <= 5) {
+        const yrs = [];
+        for (let y = 1; y <= totalYrs; y++) yrs.push(y);
+        return yrs;
+      }
+      if (totalYrs <= 10) return [1, 2, 3, 5, 7, totalYrs];
+      if (totalYrs <= 20) return [1, 3, 5, 10, 15, totalYrs];
+      if (totalYrs <= 30) return [1, 5, 10, 15, 20, 25, totalYrs];
+      return [1, 5, 10, 15, 20, 30, totalYrs];
+    }
+
+    const sampleYears = getSampleYears(termYears);
+
+    // 연차별 원금 및 이자 추출
+    const chartRows = sampleYears.map(yr => {
+      let p = 0;
+      let i = 0;
+      if (yearlyScheduleData && yearlyScheduleData[yr]) {
+        p = yearlyScheduleData[yr].principal;
+        i = yearlyScheduleData[yr].interest;
+      }
+      return { year: yr, principal: p, interest: i, total: p + i };
+    });
+
+    // X축 최대 스케일 선정
+    const maxVal = Math.max(...chartRows.map(r => r.total), 1);
+    function getNiceMaxScale(val) {
+      const candidateSteps = [500000, 1000000, 1500000, 2000000, 2500000, 3000000, 4000000, 5000000, 10000000, 20000000];
+      for (const step of candidateSteps) {
+        const scale = step * 4;
+        if (scale >= val) {
+          return { step, scale };
+        }
+      }
+      const step = Math.ceil(val / 4 / 1000000) * 1000000;
+      return { step, scale: step * 4 };
+    }
+
+    const { step, scale } = getNiceMaxScale(maxVal);
+
+    // 가로 바 렌더링
+    chartBarsContainer.innerHTML = chartRows.map(row => {
+      const pWidth = Math.min(100, Math.max(0, (row.principal / scale) * 100));
+      const iWidth = Math.min(100 - pWidth, Math.max(0, (row.interest / scale) * 100));
+
+      const hasP = pWidth > 0.5;
+      const hasI = iWidth > 0.5;
+
+      const pRoundClass = hasI ? 'rounded-l-md' : 'rounded-md';
+      const iRoundClass = hasP ? 'rounded-r-md' : 'rounded-md';
+
+      return `
+        <div class="flex items-center gap-3">
+          <span class="w-8 text-right text-xs font-semibold text-slate-400 shrink-0">${row.year}년</span>
+          <div class="flex-1 h-7 bg-slate-950/70 rounded-md flex overflow-hidden p-0.5 items-center border border-slate-800/80" style="height: 28px;">
+            ${hasP ? `<div class="h-full bg-blue-600 ${pRoundClass} transition-all duration-300" style="width: ${pWidth.toFixed(2)}%; height: 22px; min-height: 22px; background-color: #2563eb; display: block;" title="${row.year}년차 원금: ${Math.round(row.principal).toLocaleString()}원"></div>` : ''}
+            ${hasI ? `<div class="h-full bg-emerald-500 ${iRoundClass} transition-all duration-300" style="width: ${iWidth.toFixed(2)}%; height: 22px; min-height: 22px; background-color: #10b981; display: block;" title="${row.year}년차 이자: ${Math.round(row.interest).toLocaleString()}원"></div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // X축 눈금 레이블 렌더링
+    function formatScaleMoney(val) {
+      if (val === 0) return '0원';
+      if (val >= 100000000) {
+        const eok = Math.floor(val / 100000000);
+        const man = Math.floor((val % 100000000) / 10000);
+        return man > 0 ? `${eok}억 ${man.toLocaleString()}만원` : `${eok}억원`;
+      }
+      const man = Math.floor(val / 10000);
+      return `${man.toLocaleString()}만원`;
+    }
+
+    if (chartXAxis) {
+      const ticks = [0, step, step * 2, step * 3, scale];
+      chartXAxis.innerHTML = ticks.map(t => `<span>${formatScaleMoney(t)}</span>`).join('');
+    }
+
+    container.classList.remove('hidden');
+    refreshIcons();
+  }
+
+    function calculateAmortization(skipScroll = false) {
     if (!amortAmount || !amortType || !amortRate || !amortTerm || !tbodyAmortResult || !amortResultContainer) return;
     
     const amount = Number(amortAmount.value.replace(/[^0-9]/g, '')) || 0;
@@ -4182,12 +4881,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     if (amount <= 0 || term <= 0) {
-      showToast('⚠️ 대출금액과 대출기간을 올바르게 입력해주세요.');
+      if (!skipScroll) showToast('⚠️ 대출금액과 대출기간을 올바르게 입력해주세요.');
       return;
     }
     
     let html = '';
     let balance = amount;
+    const yearlyData = {};
     
     if (type === 'equal-payment') {
       // 원리금균등분할상환
@@ -4252,6 +4952,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (balance < 0) balance = 0;
         prevDate = currentDate;
         
+        const yr = Math.ceil(i / 12);
+        if (!yearlyData[yr]) yearlyData[yr] = { principal: 0, interest: 0 };
+        yearlyData[yr].principal += principal;
+        yearlyData[yr].interest += interest;
+        
         html += `
           <tr class="${i % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}">
             <td class="px-3 py-2 text-center text-slate-500">${i}</td>
@@ -4298,6 +5003,11 @@ document.addEventListener('DOMContentLoaded', () => {
         balance -= principal;
         if (balance < 0) balance = 0;
         prevDate = currentDate;
+        
+        const yrPrinc = Math.ceil(i / 12);
+        if (!yearlyData[yrPrinc]) yearlyData[yrPrinc] = { principal: 0, interest: 0 };
+        yearlyData[yrPrinc].principal += principal;
+        yearlyData[yrPrinc].interest += interest;
         
         html += `
           <tr class="${i % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}">
@@ -4373,6 +5083,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (balance < 0) balance = 0;
         prevDate = currentDate;
         
+        const yrGrad = Math.ceil(i / 12);
+        if (!yearlyData[yrGrad]) yearlyData[yrGrad] = { principal: 0, interest: 0 };
+        yearlyData[yrGrad].principal += principal;
+        yearlyData[yrGrad].interest += interest;
+        
         html += `
           <tr class="${i % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}">
             <td class="px-3 py-2 text-center text-slate-500">${i}</td>
@@ -4409,6 +5124,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (balance < 0) balance = 0;
         prevDate = currentDate;
         
+        const yrIO = Math.ceil(i / 12);
+        if (!yearlyData[yrIO]) yearlyData[yrIO] = { principal: 0, interest: 0 };
+        yearlyData[yrIO].principal += principal;
+        yearlyData[yrIO].interest += interest;
+        
         html += `
           <tr class="${i % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}">
             <td class="px-3 py-2 text-center text-slate-500">${i}</td>
@@ -4423,19 +5143,79 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     tbodyAmortResult.innerHTML = html;
+    const amortTableCountBadge = document.getElementById('amort-table-count-badge');
+    if (amortTableCountBadge) {
+      amortTableCountBadge.innerHTML = `<i data-lucide="list-ordered" class="w-3.5 h-3.5 text-blue-600"></i><span>총 ${term}회차 (${Math.round(term / 12)}년) · 20라인 표시 (스크롤하여 전체 조회)</span>`;
+    }
+    renderAmortizationComparisonAndChart(amount, Number(amortRate.value) || 4.8, Math.round(term / 12), type, yearlyData, Number(amortGrace ? amortGrace.value : 0) || 0);
     amortResultContainer.classList.remove('hidden');
-    showToast('상환일정표 계산이 완료되었습니다. 👇');
     
-    // Scroll to result only if explicitly clicked
+    // 명시적으로 [계산하기] 버튼을 클릭한 경우에만 토스트 및 스크롤 실행
     if (skipScroll !== true) {
+      showToast('상환일정표 계산이 완료되었습니다. 👇');
       setTimeout(() => {
         amortResultContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     }
   }
   
+  // 상환일정표 입력창 실시간 양방향 자동 계산 바인딩
   if (amortAmount) {
-    bindMoneyInput(amortAmount);
+    bindMoneyInput(amortAmount, () => {
+      const val = parseMoney(amortAmount.value);
+      if (val > 0 && state.isLoanCapped && inpLoanCapAmount) {
+        inpLoanCapAmount.value = formatMoney(val);
+        state.loanCapAmount = val;
+        if (typeof recalculate === 'function') recalculate({ fromAmort: true });
+      }
+      calculateAmortization(true);
+    });
+  }
+  if (amortRate) {
+    const syncAmortRate = () => {
+      const rVal = Number(amortRate.value);
+      if (rVal > 0) {
+        if (inpRate) inpRate.value = rVal;
+        if (rngRate) rngRate.value = rVal;
+        state.loanRate = rVal;
+        if (typeof recalculate === 'function') recalculate({ fromAmort: true });
+      }
+      calculateAmortization(true);
+    };
+    amortRate.addEventListener('input', syncAmortRate);
+    amortRate.addEventListener('change', syncAmortRate);
+  }
+  if (amortTerm) {
+    const syncAmortTerm = () => {
+      const tVal = Number(amortTerm.value);
+      if (tVal > 0 && selLoanYears) {
+        const opt = selLoanYears.querySelector(`option[value="${tVal}"]`);
+        if (opt) selLoanYears.value = String(tVal);
+        state.loanYears = tVal;
+        if (typeof recalculate === 'function') recalculate({ fromAmort: true });
+      }
+      calculateAmortization(true);
+    };
+    amortTerm.addEventListener('input', syncAmortTerm);
+    amortTerm.addEventListener('change', syncAmortTerm);
+  }
+  if (amortType) {
+    amortType.addEventListener('change', () => {
+      if (selRepayType) selRepayType.value = amortType.value;
+      state.repayType = amortType.value;
+      if (typeof recalculate === 'function') recalculate({ fromAmort: true });
+      calculateAmortization(true);
+    });
+  }
+  if (amortGrace) {
+    amortGrace.addEventListener('input', () => calculateAmortization(true));
+    amortGrace.addEventListener('change', () => calculateAmortization(true));
+  }
+  if (amortDate) {
+    amortDate.addEventListener('change', () => calculateAmortization(true));
+  }
+  if (amortFirstDate) {
+    amortFirstDate.addEventListener('change', () => calculateAmortization(true));
   }
 
   // 1-2) 사이드바 가구 조건 변경 배너 및 하단 액션 버튼 바인딩
@@ -4755,26 +5535,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (inpLoanCapAmount) {
     bindMoneyInput(inpLoanCapAmount, () => recalculate());
   }
-  if (btnSyncFundPlanLoan) {
-    btnSyncFundPlanLoan.addEventListener('click', () => {
-      const planMortgage = parseMoney(fpInpMortgage ? fpInpMortgage.value : (modalFpInpMortgage?.value || 150000000));
-      if (inpLoanCapAmount) {
-        inpLoanCapAmount.value = formatMoney(planMortgage);
-      }
-      state.loanCapAmount = planMortgage;
-      if (chkLoanCapMode) {
-        chkLoanCapMode.checked = true;
-      }
-      state.isLoanCapped = true;
-      if (containerLoanCapInput) {
-        containerLoanCapInput.classList.remove('hidden');
-      }
-      recalculate();
-      const fmt = typeof ScenarioEngine !== 'undefined' ? ScenarioEngine.formatKoreanMoney : formatMoney;
-      showToast(`🎯 계획서 대출금액(${fmt(planMortgage)})으로 한도가 동기화되었습니다.`);
-    });
-  }
-
+  // 5-6-2-b) 단일 토글 버튼(btnToggleLoanCap)은 updateLoanCapSidebarStatus에서 상태별 onclick으로 완벽 제어됨
   // 5-6-3) 목표 한도 간편 증감 버튼 바 클릭 바인딩
   document.querySelectorAll('.loan-cap-adjust-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -4897,7 +5658,19 @@ document.addEventListener('DOMContentLoaded', () => {
   rngRate.addEventListener('input', handleRateSliderChange);
   rngRate.addEventListener('change', handleRateSliderChange);
 
+  inpRate.addEventListener('focus', () => {
+    setTimeout(() => {
+      try { inpRate.select(); } catch (e) {}
+    }, 30);
+  });
+
   inpRate.addEventListener('input', () => {
+    rngRate.value = inpRate.value;
+    syncRateToRadios(Number(inpRate.value));
+    recalculate();
+  });
+
+  inpRate.addEventListener('change', () => {
     rngRate.value = inpRate.value;
     syncRateToRadios(Number(inpRate.value));
     recalculate();
@@ -5086,7 +5859,7 @@ document.addEventListener('DOMContentLoaded', () => {
         inpRate.value = rate;
         rngRate.value = rate;
         syncRateToRadios(rate);
-        showToast(`연 ${rate.toFixed(1)}% 금리가 [${modeLabel} 시뮬레이터]에 즉시 적용되었습니다! 🚀`);
+        showToast(`연 ${Number.isInteger(rate) ? rate.toFixed(1) : Number(rate.toFixed(2))}% 금리가 [${modeLabel} 시뮬레이터]에 즉시 적용되었습니다! 🚀`);
       }
 
       validateAndAutoCorrectLoanRules('rate-preset', { selectedRate: state.loanRate });
